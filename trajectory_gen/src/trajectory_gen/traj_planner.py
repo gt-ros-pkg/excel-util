@@ -7,7 +7,7 @@ from hrl_geom.pose_converter import PoseConv
 from hrl_geom.transformations import rotation_from_matrix as mat_to_ang_axis_point
 from hrl_geom.transformations import rotation_matrix as ang_axis_point_to_mat
 from hrl_geom.transformations import euler_matrix
-from min_jerk_sampler import sample_min_jerk_knots
+from min_jerk_sampler import sample_min_jerk_knots, min_jerk_gen
 
 # returns x_a - x_b such that 
 def pose_diff(x_a, x_b):
@@ -121,6 +121,17 @@ class TrajPlanner(object):
                                                  dur, max_dq, min_dt)
         q_waypts = self.interpolate_q(q_init, q_goal, s_knots)
         return np.array(t_knots), np.array(q_waypts)
+
+    def min_jerk_interp_q_knots(self, 
+            q_i, q_f, t_knots, qd_i=[0.]*6, qd_f=[0.]*6, qdd_i=[0.]*6, qdd_f=[0.]*6):
+        q_knots, qd_knots, qdd_knots = [], [], []
+        d = t_knots[-1]
+        for i in range(6):
+            a, ad, add = min_jerk_gen(q_i[i], qd_i[i], qdd_i[i], q_f[i], qd_f[i], qdd_f[i], d)
+            q_knots.append([np.polyval(a, t_knot) for t_knot in t_knots])
+            qd_knots.append([np.polyval(ad, t_knot) for t_knot in t_knots])
+            qdd_knots.append([np.polyval(add, t_knot) for t_knot in t_knots])
+        return np.array(zip(*q_knots)), np.array(zip(*qd_knots)), np.array(zip(*qdd_knots))
 
     # muliplies weights times joint differences to find maximum scaled joint difference
     # finds the duration from the average velocity and joint difference
