@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Author: Jimmy Da Silva
+  Contributers: Kelsey Hawkins, Ajit Krisshna N L, Muhammad Asif Rana 
+
+-->
+<robot xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+	xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
+	xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" 
+	xmlns:xacro="http://ros.org/wiki/xacro">
+
+   <xacro:include filename="$(find excel_description)/urdf/table_rail.transmission.xacro" />
+   <xacro:include filename="$(find excel_description)/urdf/table_rail.gazebo.xacro" />
+   <!--<xacro:include filename="$(find ur_description)/urdf/materials.urdf.xacro" />-->
+
+   <property name="pi" value="3.14159265" />
+   <property name="scale" value="0.001 0.001 0.001" />
+
+   <!-- Inertia parameters -->
+   <property name="rail_mass" value="50.0" />
+
+   <!-- Kinematic model -->
+   <property name="rail_length" value="3.75" />
+
+   <!-- Collision model -->
+   <property name="table_collision_offset" value="0.80137 0.05588 0.9" />
+
+   <xacro:macro name="table_rail" params="prefix">
+
+      <link name="${prefix}table_link">
+         <visual>
+            <geometry>
+               <mesh filename="package://excel_description/meshes/visual/table+rail.dae" />
+            </geometry>
+            <origin rpy="0.0 0.0 0.0" xyz="0 0.0 0" />
+         </visual>
+         <collision>
+            <geometry>
+               <mesh filename="package://excel_description/meshes/collision/table_collision.stl" />
+            </geometry>
+            <origin rpy="0.0 0.0 0.0" xyz="0 0.0 0" />
+         </collision>
+      </link>
+
+      <joint name="${prefix}table_rail_joint" type="fixed">
+         <parent link="${prefix}table_link" />
+         <child link="${prefix}rail_link" />
+         <origin rpy="0.0 0.0 0.0" xyz="${table_collision_offset}" />
+      </joint>
+
+      <link name="${prefix}rail_link">
+         <inertial>
+            <mass value="${rail_mass}" />
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
+         </inertial>
+      </link>
+
+      <joint name="${prefix}rail_base_joint" type="prismatic">
+         <parent link="${prefix}rail_link" />
+         <child link="${prefix}base_link" />
+         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
+         <axis xyz="0 1 0" />
+         <limit effort="10.0" lower="0.0" upper="${rail_length}" velocity="${pi}" />
+         <dynamics damping="10" friction="0.1" />
+      </joint>
+
+      <xacro:table_rail_transmission prefix="${prefix}" />
+      <xacro:table_rail_gazebo prefix="${prefix}" />
+
+   </xacro:macro>
+</robot>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Author: Jimmy Da Silva
+  Contributers: Kelsey Hawkins, Ajit Krisshna N L, Muhammad Asif Rana 
+
+-->
+<robot xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" 
+	xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
+	xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" 
+	xmlns:xacro="http://ros.org/wiki/xacro">
+
+   <xacro:macro name="table_rail_gazebo" params="prefix">
+
+      <gazebo reference="${prefix}table_link">
+         <material value="Gazebo/Blue " />
+         <turnGravityOff>false</turnGravityOff>
+      </gazebo>
+
+   </xacro:macro>
+
+</robot>

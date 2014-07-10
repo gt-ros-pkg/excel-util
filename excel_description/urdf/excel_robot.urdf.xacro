@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Author: Jimmy Da Silva
+  Contributers: Kelsey Hawkins, Ajit Krisshna N L, Muhammad Asif Rana 
+
+-->
+<robot xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" 		
+	xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
+	xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" 
+	xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="excel">
+
+   <!-- common stuff -->
+   <xacro:include filename="$(find ur_description)/urdf/gazebo.urdf.xacro" />
+
+   <!-- include ur10 -->
+   <xacro:include filename="$(find excel_description)/urdf/ur10_new.urdf.xacro" />
+
+   <!-- include table&rail -->
+   <xacro:include filename="$(find excel_description)/urdf/table_rail.urdf.xacro" />
+
+   <!-- ur10 -->
+   <xacro:ur10_robot prefix="" />
+
+   <!-- table&rail -->
+   <xacro:table_rail prefix="" />
+
+</robot>
