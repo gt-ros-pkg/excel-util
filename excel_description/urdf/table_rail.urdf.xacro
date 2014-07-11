@@ -4,10 +4,7 @@
   Contributers: Kelsey Hawkins, Ajit Krisshna N L, Muhammad Asif Rana 
 
 -->
-<robot xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
-	xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
-	xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" 
-	xmlns:xacro="http://ros.org/wiki/xacro">
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
 
    <xacro:include filename="$(find excel_description)/urdf/table_rail.transmission.xacro" />
    <xacro:include filename="$(find excel_description)/urdf/table_rail.gazebo.xacro" />
@@ -42,10 +39,13 @@
          </collision>
       </link>
 
-      <joint name="${prefix}table_rail_joint" type="fixed">
+      <joint name="${prefix}table_rail_joint" type="prismatic">
          <parent link="${prefix}table_link" />
          <child link="${prefix}rail_link" />
          <origin rpy="0.0 0.0 0.0" xyz="${table_collision_offset}" />
+         <axis xyz="0 1 0" />
+         <limit effort="10.0" lower="0.0" upper="${rail_length}" velocity="${pi}" />
+         <dynamics damping="10" friction="0.1" />
       </joint>
 
       <link name="${prefix}rail_link">
@@ -55,13 +55,10 @@
          </inertial>
       </link>
 
-      <joint name="${prefix}rail_base_joint" type="prismatic">
+      <joint name="${prefix}rail_base_joint" type="fixed">
          <parent link="${prefix}rail_link" />
          <child link="${prefix}base_link" />
          <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
-         <axis xyz="0 1 0" />
-         <limit effort="10.0" lower="0.0" upper="${rail_length}" velocity="${pi}" />
-         <dynamics damping="10" friction="0.1" />
       </joint>
 
       <xacro:table_rail_transmission prefix="${prefix}" />
