@@ -32,7 +32,6 @@ generate_messages(
 )
 
 catkin_package(
- INCLUDE_DIRS include
  LIBRARIES excel_moveit
  CATKIN_DEPENDS joint_state_publisher moveit_planners_ompl moveit_ros_move_group moveit_ros_visualization robot_state_publisher geometry_msgs roscpp rospy xacro
  DEPENDS system_lib
