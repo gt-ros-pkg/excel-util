@@ -1,8 +1,7 @@
 <launch>
+  <param name="target_joint" value="elbow_joint"/>
+  <param name="target_value" value="1.0" />
 
-  <node name="excel_moveit" pkg="excel_moveit" type="moveit_joint_node" output="screen">
-    <param name="target_joint" value="elbow_joint"/>
-    <param name="target_value" value="1.0" />
-  </node>
+  <node name="excel_moveit" pkg="excel_moveit" type="moveit_joint_node" output="screen" />
 
 </launch>
