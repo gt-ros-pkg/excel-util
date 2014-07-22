@@ -1,7 +1,0 @@
-<launch>
-
-  <param name="target_position" value="Final" />
-
-  <node name="excel_moveit" pkg="excel_moveit" type="moveit_to_known_position_node" output="screen" />
-
-</launch>
