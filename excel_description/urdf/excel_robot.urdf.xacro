@@ -4,16 +4,13 @@
   Contributers: Kelsey Hawkins, Ajit Krisshna N L, Muhammad Asif Rana 
 
 -->
-<robot xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller" 		
-	xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
-	xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" 
-	xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="excel">
+<robot xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="excel">
 
    <!-- common stuff -->
    <xacro:include filename="$(find ur_description)/urdf/gazebo.urdf.xacro" />
 
    <!-- include ur10 -->
-   <xacro:include filename="$(find excel_description)/urdf/ur10_new.urdf.xacro" />
+   <xacro:include filename="$(find ur_description)/urdf/ur10.urdf.xacro" />
 
    <!-- include table&rail -->
    <xacro:include filename="$(find excel_description)/urdf/table_rail.urdf.xacro" />
