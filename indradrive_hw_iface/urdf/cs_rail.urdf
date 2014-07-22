@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<robot name="cs_rail">
+
+	<link name="base_link" >
+  </link>
+
+	<joint name="base_joint" type="fixed">
+		<parent link="base_link" />
+		<child link = "rail_base_link" />
+		<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+	</joint>
+
+	<link name="rail_base_link" >
+		<inertial>
+		  <mass value="1.0" />
+		  <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+		</inertial>
+	</link>
+
+	<joint name="rail_joint" type="prismatic">
+		<parent link="rail_base_link" />
+		<child link = "rail_carriage" />
+		<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+    <limit effort="10.0" lower="0.0" upper="3.5" velocity="2.0" />
+	</joint>
+
+	<link name="rail_carriage" >
+		<inertial>
+		  <mass value="1.0" />
+		  <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+		</inertial>
+	</link>
+
+</robot>

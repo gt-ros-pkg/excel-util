@@ -1,0 +1,5 @@
+constraints:
+  goal_time: 0.5
+  rail_joint:
+    goal:       0.001
+    trajectory: 0.003

@@ -1,0 +1,28 @@
+<launch>
+
+  <param name="robot_description" textfile="$(find indradrive_hw_iface)/urdf/cs_rail.urdf" />
+
+  <rosparam>
+    joint_state_pub:
+      type: joint_state_controller/JointStateController
+      publish_rate: 100
+
+    vel_trajectory_ctrl:
+      type: velocity_controllers/JointTrajectoryController
+      mode: vel
+
+  </rosparam>
+
+  <rosparam>
+    vel_trajectory_ctrl:
+      joints:
+        - rail_joint
+  </rosparam>
+
+  <rosparam command="load" file="$(find indradrive_hw_iface)/launch/trajectory_ctrl_constraints.yaml"
+            param="vel_trajectory_ctrl" />
+
+  <node name="cs_spawn_ctrls" type="spawner" pkg="controller_manager"
+        output="screen" args="joint_state_pub vel_trajectory_ctrl" />
+
+</launch>
