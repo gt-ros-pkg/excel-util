@@ -1,0 +1,19 @@
+<launch>
+
+  <arg name="x" default="" />
+  <arg name="y" default="" />
+  <arg name="z" default="" />
+  <arg name="x_axis_tolerance" value="1" />
+  <arg name="y_axis_tolerance" value="1" />
+  <arg name="z_axis_tolerance" value="3.14" />
+
+  <node name="excel_move_to_xyz" pkg="excel_move" type="move_to_carthesian_position_node" output="screen">
+	<param name="x_goal" value="$(arg x)" />
+  	<param name="y_goal" value="$(arg y)" />
+  	<param name="z_goal" value="$(arg z)" />
+  	<param name="x_axis_tolerance" value="$(arg x_axis_tolerance)" />
+  	<param name="y_axis_tolerance=" value="$(arg y_axis_tolerance)" />
+ 	<param name="z_axis_tolerance=" value="$(arg z_axis_tolerance)" />
+  </node>
+
+</launch>
