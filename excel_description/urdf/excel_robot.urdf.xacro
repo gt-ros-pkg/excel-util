@@ -15,10 +15,16 @@
    <!-- include table&rail -->
    <xacro:include filename="$(find excel_description)/urdf/table_rail.urdf.xacro" />
 
+   <!-- include gripper -->
+   <xacro:include filename="$(find excel_description)/urdf/gripper.urdf.xacro" />
+
    <!-- ur10 -->
    <xacro:ur10_robot prefix="" />
 
    <!-- table&rail -->
    <xacro:table_rail prefix="" />
+
+   <!-- gripper -->
+   <xacro:gripper prefix="" />
 
 </robot>
