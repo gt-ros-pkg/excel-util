@@ -19,7 +19,7 @@ def main():
         return
 
     jtp1 = JointTrajectoryPoint()
-    jtp1.positions = [0.0]
+    jtp1.positions = [-0.1]
     jtp1.velocities = [0.0]
     jtp1.accelerations = [0.0]
     jtp1.time_from_start = rospy.Duration.from_sec(5.)
@@ -37,15 +37,18 @@ def main():
     jtp3.time_from_start = rospy.Duration.from_sec(15.)
 
     fjt = FollowJointTrajectoryGoal()
-    fjt.trajectory.header.stamp = rospy.Time.now()
+    # fjt.trajectory.header.stamp = rospy.Time.now()+rospy.Duration(5.0)
+    fjt.trajectory.header.stamp = rospy.Time()
     fjt.trajectory.joint_names = ['rail_joint']
     fjt.trajectory.points = [jtp1, jtp2, jtp3]
 
     act_cli.send_goal(fjt)
     rospy.loginfo("Starting trajectory")
-    rospy.sleep(0.1)
+    rospy.sleep(0.0)
     act_cli.wait_for_result()
     rospy.loginfo("Trajectory complete")
+    print act_cli.get_result()
+    print act_cli.get_state()
 
 if __name__ == "__main__":
     main()

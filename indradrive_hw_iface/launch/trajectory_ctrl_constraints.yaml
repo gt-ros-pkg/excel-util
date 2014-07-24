@@ -1,5 +1,6 @@
 constraints:
   goal_time: 0.5
+  stopped_velocity_tolerance: 0.02
   rail_joint:
     goal:       0.001
-    trajectory: 0.003
+    trajectory: 0.03

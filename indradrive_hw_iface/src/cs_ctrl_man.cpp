@@ -24,9 +24,11 @@ int main(int argc, char** argv)
   controller_manager::ControllerManager cm(&cs_hw, nh);
 
   ros::Duration period(1.0/1000.0);
+  ros::Rate r(1000.0);
   while (ros::ok()) {
     cs_hw.read();
     cm.update(ros::Time::now(), period);
     cs_hw.write();
+    r.sleep();
   }
 }

@@ -9,7 +9,8 @@
 
     vel_trajectory_ctrl:
       type: velocity_controllers/JointTrajectoryController
-      mode: vel
+      gains:
+        rail_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
 
   </rosparam>
 

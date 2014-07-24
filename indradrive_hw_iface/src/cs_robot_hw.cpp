@@ -28,7 +28,7 @@ void IndradriveCSRobotHW::read()
 
 void IndradriveCSRobotHW::write()
 {
-  pos_act_ += vel_cmd_;
+  pos_act_ += vel_cmd_*0.001;
   vel_act_ = vel_cmd_;
 }
 
