@@ -8,7 +8,7 @@ IndradriveCSRobotHW::IndradriveCSRobotHW(ros::NodeHandle& nh, std::string& joint
 {
   // Register joint interface handle
   jnt_state_iface_.registerHandle(
-      JointStateHandle(joint_name, &pos_act_, &vel_act_, &eff_act_));
+      JointStateHandle(joint_name, &pos_fb_, &vel_fb_, &eff_fb_));
   jnt_vel_iface_.registerHandle(
       JointHandle(jnt_state_iface_.getHandle(joint_name), &vel_cmd_));
 
@@ -19,7 +19,7 @@ IndradriveCSRobotHW::IndradriveCSRobotHW(ros::NodeHandle& nh, std::string& joint
 
 void IndradriveCSRobotHW::init()
 {
-  pos_act_ = 0.0; vel_act_ = 0.0; eff_act_ = 0.0; vel_cmd_ = 0.0;
+  pos_fb_ = 0.0; vel_fb_ = 0.0; eff_fb_ = 0.0; vel_cmd_ = 0.0;
 }
 
 void IndradriveCSRobotHW::read()
@@ -28,8 +28,8 @@ void IndradriveCSRobotHW::read()
 
 void IndradriveCSRobotHW::write()
 {
-  pos_act_ += vel_cmd_*0.001;
-  vel_act_ = vel_cmd_;
+  pos_fb_ += vel_cmd_*0.001;
+  vel_fb_ = vel_cmd_;
 }
 
 IndradriveCSRobotHW::~IndradriveCSRobotHW()
