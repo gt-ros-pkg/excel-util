@@ -1,0 +1,11 @@
+<launch>
+  <arg name="robot_ip" />
+
+  <include file="$(find excel_hw_iface)/launch/load_excel_ctrl.launch" />
+
+  <node pkg="excel_hw_iface" type="excel_ctrl_man" name="excel_ctrl_man">
+    <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
+              param="joint_names" />
+    <param name="robot_ip" value="$(arg robot_ip)" />
+  </node>
+</launch>
