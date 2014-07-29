@@ -23,7 +23,4 @@
   <rosparam command="load" file="$(find indradrive_hw_iface)/launch/trajectory_ctrl_constraints.yaml"
             param="vel_trajectory_ctrl" />
 
-  <node name="cs_spawn_ctrls" type="spawner" pkg="controller_manager"
-        output="screen" args="joint_state_pub vel_trajectory_ctrl" />
-
 </launch>
