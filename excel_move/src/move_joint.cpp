@@ -19,5 +19,5 @@ int main(int argc, char **argv)
   group.setJointValueTarget(joint, value);
   // plan the motion and then move the group to the sampled target
   group.move();
-  ros::waitForShutdown();
+  ros::shutdown();
 }

@@ -55,9 +55,6 @@ int main(int argc, char **argv)
     target_pose.orientation.z = quat.z();
     target_pose.orientation.w = quat.w();
 
-    tf::TransformBroadcaster br;
-    tf::Transform transform;
-
     moveit_msgs::OrientationConstraint ocm = moveit_msgs::OrientationConstraint();
 
     ocm.header.frame_id = "table_link";
@@ -82,6 +79,9 @@ int main(int argc, char **argv)
     ROS_INFO("Planning and moving...");
     group.move();
 
+    tf::TransformBroadcaster br;
+    tf::Transform transform;
+
     ROS_INFO("Displaying goal frame...");
     while (nh_.ok()){
         transform.setOrigin(tf::Vector3(target_pose.position.x,target_pose.position.y,target_pose.position.z ));
@@ -90,5 +90,5 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-    ros::waitForShutdown();
+    ros::shutdown();
 }

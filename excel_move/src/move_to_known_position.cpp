@@ -16,5 +16,5 @@ int main(int argc, char **argv)
   group.setNamedTarget(position);
   // plan the motion and then move the group to the sampled target 
   group.move();
-  ros::waitForShutdown();
+  ros::shutdown();
 }
