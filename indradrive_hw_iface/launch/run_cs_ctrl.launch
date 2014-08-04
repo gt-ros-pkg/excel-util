@@ -1,5 +1,8 @@
 <launch>
   <include file="$(find indradrive_hw_iface)/launch/load_cs_ctrl.launch" />
+
+  <node name="cs_spawn_ctrls" type="spawner" pkg="controller_manager"
+        output="screen" args="joint_state_pub vel_trajectory_ctrl" />
    
   <node pkg="indradrive_hw_iface" type="indradrive_cs_ctrl_man" name="indradrive_cs_ctrl_man">
     <param name="joint_name" value="rail_joint"/>

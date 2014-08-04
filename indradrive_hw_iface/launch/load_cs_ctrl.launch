@@ -19,12 +19,4 @@
   <rosparam command="load" file="$(find indradrive_hw_iface)/launch/trajectory_ctrl_constraints.yaml"
             param="vel_trajectory_ctrl" />
 
-  <node name="cs_spawn_ctrls" type="spawner" pkg="controller_manager"
-        output="screen" args="joint_state_pub" />
-
-  <node name="cs_load_ctrls" type="controller_manager" pkg="controller_manager"
-        output="screen" args="load vel_trajectory_ctrl" />
-  
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-
 </launch>
