@@ -1,0 +1,17 @@
+<launch>
+
+  <arg name="x" default="0.5" />
+  <arg name="y" default="0.5" />
+  <arg name="z" default="0.83" />
+  <arg name="angle" default="0" />
+  <arg name="size" default="small" />
+
+  <node name="excel_add_bin" pkg="excel_bins" type="add_bin_node" output="screen">
+	<param name="x_goal" value="$(arg x)" />
+  	<param name="y_goal" value="$(arg y)" />
+  	<param name="z_goal" value="$(arg z)" />
+  	<param name="bin_size" value="$(arg size)" />
+  	<param name="angle" value="$(arg angle)" />
+  </node>
+
+</launch>
