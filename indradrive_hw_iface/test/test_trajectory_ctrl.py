@@ -8,6 +8,8 @@ from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryG
 from std_msgs.msg import Float64MultiArray
 import rospy
 import actionlib
+from sensor_msgs.msg import JointState
+
 
 def main():
     rospy.init_node("test_traj_ctrl")
@@ -17,24 +19,26 @@ def main():
     if not act_cli.wait_for_server(rospy.Duration.from_sec(1.)):
         rospy.logerr("Can't find action server")
         return
+    js_msg = rospy.wait_for_message('/joint_states', JointState)
+    pos_i = js_msg.position[0]
 
     jtp1 = JointTrajectoryPoint()
-    jtp1.positions = [-0.1]
+    jtp1.positions = [pos_i-0.7]
     jtp1.velocities = [0.0]
     jtp1.accelerations = [0.0]
-    jtp1.time_from_start = rospy.Duration.from_sec(5.)
+    jtp1.time_from_start = rospy.Duration.from_sec(10.0)
 
     jtp2 = JointTrajectoryPoint()
-    jtp2.positions = [0.3]
-    jtp2.velocities = [0.1]
+    jtp2.positions = [pos_i+0.7]
+    jtp2.velocities = [0.0]
     jtp2.accelerations = [0.0]
-    jtp2.time_from_start = rospy.Duration.from_sec(10.)
+    jtp2.time_from_start = rospy.Duration.from_sec(20.)
 
     jtp3 = JointTrajectoryPoint()
-    jtp3.positions = [0.1]
+    jtp3.positions = [pos_i]
     jtp3.velocities = [0.0]
     jtp3.accelerations = [0.0]
-    jtp3.time_from_start = rospy.Duration.from_sec(15.)
+    jtp3.time_from_start = rospy.Duration.from_sec(30.)
 
     fjt = FollowJointTrajectoryGoal()
     # fjt.trajectory.header.stamp = rospy.Time.now()+rospy.Duration(5.0)

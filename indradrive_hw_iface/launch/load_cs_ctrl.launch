@@ -9,21 +9,22 @@
 
     vel_trajectory_ctrl:
       type: velocity_controllers/JointTrajectoryController
-      gains:
-        rail_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
-
-  </rosparam>
-
-  <rosparam>
-    vel_trajectory_ctrl:
       joints:
         - rail_joint
+      gains:
+        rail_joint: {p: 100.0, d: 0, i: 0, i_clamp: 1}
+
   </rosparam>
 
   <rosparam command="load" file="$(find indradrive_hw_iface)/launch/trajectory_ctrl_constraints.yaml"
             param="vel_trajectory_ctrl" />
 
   <node name="cs_spawn_ctrls" type="spawner" pkg="controller_manager"
-        output="screen" args="joint_state_pub vel_trajectory_ctrl" />
+        output="screen" args="joint_state_pub" />
+
+  <node name="cs_load_ctrls" type="controller_manager" pkg="controller_manager"
+        output="screen" args="load vel_trajectory_ctrl" />
+  
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
 
 </launch>

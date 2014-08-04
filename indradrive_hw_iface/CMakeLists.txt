@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+find_library(ECAT_LIBRARY ethercat PATH /opt/etherlab/lib)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -83,6 +84,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES indradrive_hw_iface
+  DEPENDS expat ${ECAT_LIBRARY}
 #  CATKIN_DEPENDS controller_interface hardware_interface roscpp
 #  DEPENDS system_lib
 )
@@ -96,16 +98,23 @@ catkin_package(
 # include_directories(include)
 include_directories(
   include
+  /opt/etherlab/include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
 add_library(indradrive_hw_iface
   src/cs_robot_hw.cpp
+  src/ethercat_ctrl.cpp
+  src/vel_ec_ctrl.cpp
 )
 
 target_link_libraries(indradrive_hw_iface
   ${catkin_LIBRARIES}
+  ${ECAT_LIBRARY}
+  expat
+  rt
+  m
 )
 
 ## Declare a cpp executable
@@ -114,6 +123,19 @@ add_executable(indradrive_cs_ctrl_man src/cs_ctrl_man.cpp)
 target_link_libraries(indradrive_cs_ctrl_man
   ${catkin_LIBRARIES}
   indradrive_hw_iface
+)
+
+add_executable(vel_ctrl_man src/vel_ctrl_man.cpp)
+
+target_link_libraries(vel_ctrl_man
+  ${catkin_LIBRARIES}
+  indradrive_hw_iface
+)
+
+add_executable(test_rt_prio src/test_rt_prio.cpp)
+
+target_link_libraries(test_rt_prio
+  ${catkin_LIBRARIES}
 )
 
 ## Add cmake target dependencies of the executable/library

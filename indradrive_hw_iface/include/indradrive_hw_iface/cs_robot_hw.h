@@ -19,14 +19,13 @@ class IndradriveCSRobotHW : public hardware_interface::RobotHW
 public:
   IndradriveCSRobotHW(ros::NodeHandle& nh, std::string& joint_name);
 
-  virtual void init();
+  virtual int init();
   virtual void read();
   virtual void write();
 
   ~IndradriveCSRobotHW();
 
-private:
-
+protected:
   ros::NodeHandle nh_;
 
   // ros_control interfaces
@@ -36,6 +35,7 @@ private:
   double pos_fb_, vel_fb_, eff_fb_;
   double vel_cmd_;
 
+  uint64_t counter_;
 };
 }
 

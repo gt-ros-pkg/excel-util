@@ -1,0 +1,12 @@
+<launch>
+  <include file="$(find indradrive_hw_iface)/launch/load_cs_ctrl.launch" />
+   
+  <node pkg="indradrive_hw_iface" type="vel_ctrl_man" name="vel_ctrl_man"
+        output="screen" >
+    <param name="joint_name" value="rail_joint"/>
+    <param name="scale_pos_fb" value="0.0000001"/>
+    <param name="scale_vel_fb" value="0.000001"/>
+    <param name="scale_vel_cmd" value="100000.0"/>
+  </node>
+
+</launch>

@@ -17,9 +17,10 @@ IndradriveCSRobotHW::IndradriveCSRobotHW(ros::NodeHandle& nh, std::string& joint
   registerInterface(&jnt_vel_iface_);
 }
 
-void IndradriveCSRobotHW::init()
+int IndradriveCSRobotHW::init()
 {
   pos_fb_ = 0.0; vel_fb_ = 0.0; eff_fb_ = 0.0; vel_cmd_ = 0.0;
+  return 0;
 }
 
 void IndradriveCSRobotHW::read()
