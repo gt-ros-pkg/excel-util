@@ -1,7 +1,0 @@
-<launch>
-
-  <param name="target_position" value="Initial" />
-
-  <node name="excel_move_to_known" pkg="excel_moveit" type="moveit_to_known_position_node" output="screen" />
-
-</launch>
