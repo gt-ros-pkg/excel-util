@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     //sleep(1.0);
 
     ROS_INFO("Descent");
-    target_pose.position.z = 1.05;
+    target_pose.position.z = 1.06;
     group.setPoseTarget(target_pose);
     group.move();
     //sleep(1.0);
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
     new_bin_pose.orientation.z = quat_bin.z();
     new_bin_pose.orientation.w = quat_bin.w();
     new_bin_pose.position = target_pose.position;
-    new_bin_pose.position.z = 0.83;
+    new_bin_pose.position.z = 0.84;
     attached_object.object.mesh_poses.push_back(new_bin_pose);
     planning_scene.world.collision_objects.push_back(attached_object.object);
     planning_scene_diff_publisher.publish(planning_scene);
