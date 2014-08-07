@@ -33,7 +33,7 @@
          </visual>
          <collision>
             <geometry>
-               <mesh filename="package://excel_description/meshes/collision/table_collision.stl" />
+               <mesh filename="package://excel_description/meshes/collision/table+rail_collision.stl" />
             </geometry>
             <origin rpy="0.0 0.0 0.0" xyz="0 0.0 0" />
          </collision>
