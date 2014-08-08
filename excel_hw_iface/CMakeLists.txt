@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   ur_ctrl_client
 )
+find_library(INDRADRIVE_LIBRARY indradrive_hw_iface)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -98,10 +99,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+
+if(INDRADRIVE_LIBRARY_FOUND)
 add_executable(excel_ctrl_man src/excel_ctrl_man.cpp)
 target_link_libraries(excel_ctrl_man
   ${catkin_LIBRARIES}
 )
+endif()
 
 ## Declare a cpp library
 # add_library(excel_hw_iface

@@ -81,6 +81,12 @@ find_library(ECAT_LIBRARY ethercat PATH /opt/etherlab/lib)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+
+###########
+## Build ##
+###########
+
+if( ECAT_LIBRARY_FOUND )
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES indradrive_hw_iface
@@ -89,11 +95,6 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-###########
-## Build ##
-###########
-
-if( ECAT_LIBRARY_FOUND )
   include_directories(
     include
     /opt/etherlab/include
@@ -153,5 +154,11 @@ if( ECAT_LIBRARY_FOUND )
     FILES_MATCHING PATTERN "*.h"
     PATTERN ".svn" EXCLUDE
   )
+else()
+catkin_package(
+  INCLUDE_DIRS include
+#  CATKIN_DEPENDS controller_interface hardware_interface roscpp
+#  DEPENDS system_lib
+)
 endif()
 
