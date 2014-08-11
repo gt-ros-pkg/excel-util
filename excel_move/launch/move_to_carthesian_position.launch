@@ -3,6 +3,7 @@
   <arg name="x" default="" />
   <arg name="y" default="" />
   <arg name="z" default="" />
+  <arg name="constraint" default="false" />
   <arg name="x_axis_tolerance" value="1" />
   <arg name="y_axis_tolerance" value="1" />
   <arg name="z_axis_tolerance" value="3.14" />
@@ -14,6 +15,7 @@
   	<param name="x_axis_tolerance" value="$(arg x_axis_tolerance)" />
   	<param name="y_axis_tolerance=" value="$(arg y_axis_tolerance)" />
  	<param name="z_axis_tolerance=" value="$(arg z_axis_tolerance)" />
+ 	<param name="constraint=" value="$(arg constraint)" />
   </node>
 
 </launch>
