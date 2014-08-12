@@ -45,36 +45,7 @@ int main(int argc, char **argv)
     service_request.ik_request.group_name = "excel";
     service_request.ik_request.pose_stamped.header.frame_id = "table_link";
     service_request.ik_request.avoid_collisions = true;
-    service_request.ik_request.attempts = 50;
-
-    // Joint Constraints //
-    std::vector<moveit_msgs::JointConstraint> joint_constraints;
-    joint_constraints.resize(4);
-    joint_constraints[0].joint_name="elbow_joint";
-    joint_constraints[0].position=-M_PI/2;
-    joint_constraints[0].tolerance_above=M_PI/2;
-    joint_constraints[0].tolerance_below=M_PI/2;
-    joint_constraints[0].weight=1.0;
-
-    joint_constraints[1].joint_name="shoulder_lift_joint";
-    joint_constraints[1].position=-M_PI/2;
-    joint_constraints[1].tolerance_above=M_PI/2;
-    joint_constraints[1].tolerance_below=M_PI/2;
-    joint_constraints[1].weight=1.0;
-
-    joint_constraints[2].joint_name="wrist_1_joint";
-    joint_constraints[2].position=-M_PI/2;
-    joint_constraints[2].tolerance_above=M_PI/2;
-    joint_constraints[2].tolerance_below=M_PI/2;
-    joint_constraints[2].weight=1.0;
-
-    joint_constraints[3].joint_name="wrist_2_joint";
-    joint_constraints[3].position=M_PI/2;
-    joint_constraints[3].tolerance_above=M_PI/2;
-    joint_constraints[3].tolerance_below=M_PI/2;
-    joint_constraints[3].weight=1.0;
-
-    service_request.ik_request.constraints.joint_constraints = joint_constraints;
+    service_request.ik_request.attempts = 10;
 
     if(path_constraint){
         ROS_INFO("PATH CONSTRAINT ON");
@@ -88,8 +59,8 @@ int main(int argc, char **argv)
         ocm.orientation.w = c_quat.w();
         ocm.link_name = "ee_link";
         ocm.absolute_x_axis_tolerance = M_PI;
-        ocm.absolute_y_axis_tolerance = M_PI;
-        ocm.absolute_z_axis_tolerance = M_PI;
+        ocm.absolute_y_axis_tolerance = 0.1;
+        ocm.absolute_z_axis_tolerance = 0.1;
         ocm.weight = 1.0;
 
         moveit_msgs::Constraints constraints;
