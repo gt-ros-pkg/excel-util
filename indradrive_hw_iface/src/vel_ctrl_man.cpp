@@ -14,6 +14,15 @@
 #include <rtdk.h>
 #include <pthread.h>
 
+#endif
+
+typedef indradrive::VelocityEthercatController VelEcatCtrl;
+VelEcatCtrl *cs_hw_ptr;
+controller_manager::ControllerManager *cm_ptr;
+bool stop_requested;
+
+#ifdef XENOMAI_REALTIME
+
 RT_TASK update_loop_task_info;
 
 void signal_handler(int sig)
@@ -23,11 +32,6 @@ void signal_handler(int sig)
 
 #endif
 
-typedef indradrive::VelocityEthercatController VelEcatCtrl;
-VelEcatCtrl *cs_hw_ptr;
-controller_manager::ControllerManager *cm_ptr;
-bool stop_requested;
-
 void update_loop_task(void *arg)
 {
   ros::Duration period(1.0/1000.0);
@@ -36,7 +40,7 @@ void update_loop_task(void *arg)
 #else
   ros::Rate r(1000.0);
 #endif
-  while (ros::ok() && !stop_reqeusted) {
+  while (ros::ok() && !stop_requested) {
 #ifdef XENOMAI_REALTIME
 		rt_task_wait_period(NULL);
 #else
@@ -50,7 +54,7 @@ void update_loop_task(void *arg)
 
 int main(int argc, char** argv)
 {
-  stop_reqeusted = false;
+  stop_requested = false;
   ros::init(argc, argv, "cs_controller_man");
 
   ros::AsyncSpinner spinner(1);
@@ -97,10 +101,10 @@ int main(int argc, char** argv)
   }
 
   printf("Deleting realtime task...\n");
-  rt_task_delete(&my_task);
+  rt_task_delete(&update_loop_task_info);
 
 #else
-  update_loop_task();
+  update_loop_task(NULL);
 #endif
 
   delete cm_ptr;

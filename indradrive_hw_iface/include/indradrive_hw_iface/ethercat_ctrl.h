@@ -24,7 +24,7 @@ extern "C"
 
 namespace indradrive {
 
-#define MEASURE_TIMING
+// #define MEASURE_TIMING
 #define CLOCK_TO_USE CLOCK_REALTIME
 #define PERIOD_NS 1000000
 #define NSEC_PER_SEC (1000000000L)

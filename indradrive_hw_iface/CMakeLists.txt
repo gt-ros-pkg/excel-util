@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(indradrive_hw_iface)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   controller_interface
   hardware_interface
@@ -11,89 +8,40 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
-find_library(ECAT_LIBRARY ethercat PATH /opt/etherlab/lib)
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-################################################
-## Declare ROS messages, services and actions ##
-################################################
-
-## To declare and build messages, services or actions from within this
-## package, follow these steps:
-## * Let MSG_DEP_SET be the set of packages whose message types you use in
-##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
-## * In the file package.xml:
-##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
-##   * If MSG_DEP_SET isn't empty the following dependencies might have been
-##     pulled in transitively but can be declared for certainty nonetheless:
-##     * add a build_depend tag for "message_generation"
-##     * add a run_depend tag for "message_runtime"
-## * In this file (CMakeLists.txt):
-##   * add "message_generation" and every package in MSG_DEP_SET to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * add "message_runtime" and every package in MSG_DEP_SET to
-##     catkin_package(CATKIN_DEPENDS ...)
-##   * uncomment the add_*_files sections below as needed
-##     and list every .msg/.srv/.action file to be processed
-##   * uncomment the generate_messages entry below
-##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
-
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
-
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES indradrive_hw_iface
-  DEPENDS expat ${ECAT_LIBRARY}
-#  CATKIN_DEPENDS controller_interface hardware_interface roscpp
-#  DEPENDS system_lib
-)
-
 ###########
 ## Build ##
 ###########
 
-if( ECAT_LIBRARY_FOUND )
+find_library(ECAT_LIBRARY
+  NAMES ethercat
+  PATHS /opt/etherlab/lib
+)
+
+find_library(XENOMAI_LIBRARY
+  NAMES xenomai
+  PATHS /usr/xenomai/lib
+)
+
+if( NOT (ECAT_LIBRARY MATCHES "ECAT_LIBRARY-NOTFOUND") )
+
+  if( XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND" )
+
+    catkin_package(
+      INCLUDE_DIRS include
+      LIBRARIES idcs_hw_vel_ctrl
+      DEPENDS expat ${ECAT_LIBRARY}
+    #  CATKIN_DEPENDS controller_interface hardware_interface roscpp
+    )
+  else()
+
+    catkin_package(
+      INCLUDE_DIRS include
+      LIBRARIES idcs_hw_vel_ctrl
+      DEPENDS expat ${ECAT_LIBRARY} xenomai native rtdm
+    #  CATKIN_DEPENDS controller_interface hardware_interface roscpp
+    )
+  endif()
+
   include_directories(
     include
     /opt/etherlab/include
@@ -101,13 +49,13 @@ if( ECAT_LIBRARY_FOUND )
   )
   
   ## Declare a cpp library
-  add_library(indradrive_hw_iface
+  add_library(idcs_hw_vel_ctrl
     src/cs_robot_hw.cpp
     src/ethercat_ctrl.cpp
     src/vel_ec_ctrl.cpp
   )
   
-  target_link_libraries(indradrive_hw_iface
+  target_link_libraries(idcs_hw_vel_ctrl
     ${catkin_LIBRARIES}
     ${ECAT_LIBRARY}
     expat
@@ -116,18 +64,18 @@ if( ECAT_LIBRARY_FOUND )
   )
   
   ## Declare a cpp executable
-  add_executable(indradrive_cs_ctrl_man src/cs_ctrl_man.cpp)
+  add_executable(idcs_ctrl_man src/cs_ctrl_man.cpp)
   
-  target_link_libraries(indradrive_cs_ctrl_man
+  target_link_libraries(idcs_ctrl_man
     ${catkin_LIBRARIES}
-    indradrive_hw_iface
+    idcs_hw_vel_ctrl
   )
   
   add_executable(vel_ctrl_man src/vel_ctrl_man.cpp)
   
   target_link_libraries(vel_ctrl_man
     ${catkin_LIBRARIES}
-    indradrive_hw_iface
+    idcs_hw_vel_ctrl
   )
   
   add_executable(test_rt_prio src/test_rt_prio.cpp)
@@ -136,22 +84,67 @@ if( ECAT_LIBRARY_FOUND )
     ${catkin_LIBRARIES}
   )
 
-  #############
-  ## Install ##
-  #############
+  if( XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND" )
+    message( "Xenomai not found" )
   
-  ## Mark executables and/or libraries for installation
-  install(TARGETS indradrive_hw_iface
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
+    ## Mark executables and/or libraries for installation
+    install(TARGETS idcs_hw_vel_ctrl vel_ctrl_man idcs_ctrl_man
+      ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+      LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+      RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+    
+    ## Mark cpp header files for installation
+    install(DIRECTORY include/${PROJECT_NAME}/
+      DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+      FILES_MATCHING PATTERN "*.h"
+      PATTERN ".svn" EXCLUDE
+    )
+
+  else()
+    message( "Xenomai found, also installing xeno realtime binaries" )
   
-  ## Mark cpp header files for installation
-  install(DIRECTORY include/${PROJECT_NAME}/
-    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-    FILES_MATCHING PATTERN "*.h"
-    PATTERN ".svn" EXCLUDE
+    include_directories(
+      include
+      /opt/etherlab/include
+      ${catkin_INCLUDE_DIRS}
+      /usr/xenomai/include
+    )
+    link_directories(/usr/xenomai/lib)
+    
+    add_executable(vel_ctrl_man_xeno src/vel_ctrl_man.cpp)
+    set_target_properties(vel_ctrl_man_xeno PROPERTIES COMPILE_DEFINITIONS "XENOMAI_REALTIME")
+    target_link_libraries(vel_ctrl_man_xeno
+      ${catkin_LIBRARIES}
+      idcs_hw_vel_ctrl
+      xenomai
+      native
+      rtdm
+    )
+  
+    ## Mark executables and/or libraries for installation
+    install(TARGETS idcs_hw_vel_ctrl vel_ctrl_man idcs_ctrl_man vel_ctrl_man_xeno
+      ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+      LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+      RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+  
+    ## Mark cpp header files for installation
+    install(DIRECTORY include/${PROJECT_NAME}/
+      DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+      FILES_MATCHING PATTERN "*.h"
+      PATTERN ".svn" EXCLUDE
+    )
+
+  endif()
+
+else()
+
+  catkin_package(
+    INCLUDE_DIRS include
+  #  CATKIN_DEPENDS controller_interface hardware_interface roscpp
   )
+  message( "Ethercat master libary not found so indradrive controller will not be built." )
+
 endif()
 

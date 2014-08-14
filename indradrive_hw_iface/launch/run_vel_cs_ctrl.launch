@@ -1,7 +1,15 @@
 <launch>
   <include file="$(find indradrive_hw_iface)/launch/load_cs_ctrl.launch" />
+
+  <node name="cs_spawn_ctrls" type="spawner" pkg="controller_manager"
+        output="screen" args="joint_state_pub" />
+
+  <node name="cs_load_ctrls" type="controller_manager" pkg="controller_manager"
+        output="screen" args="load vel_trajectory_ctrl" />
+  
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
    
-  <node pkg="indradrive_hw_iface" type="vel_ctrl_man" name="vel_ctrl_man"
+  <node pkg="indradrive_hw_iface" type="vel_ctrl_man_xeno" name="vel_ctrl_man_xeno"
         output="screen" >
     <param name="joint_name" value="rail_joint"/>
     <param name="scale_pos_fb" value="0.0000001"/>
