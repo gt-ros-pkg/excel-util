@@ -2,6 +2,8 @@
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit_msgs/AttachedCollisionObject.h>
 #include <moveit_msgs/CollisionObject.h>
+#include <moveit_msgs/JointConstraint.h>
+#include <moveit_msgs/GetPositionIK.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/move_group_interface/move_group.h>
@@ -19,10 +21,54 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "pick_bin");
     ros::NodeHandle nh_, nh_param_("~");
+    usleep(1000*1000);
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
+    // Loading the group //
+    move_group_interface::MoveGroup group("excel");
+    group.setPlanningTime(8.0);
+
     double x_target, y_target, angle_target;
+    bool path_constraint;
+    nh_param_.getParam("constraint",path_constraint);
+
+    // IK Service //
+    ros::ServiceClient service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
+    while(!service_client.exists())
+    {
+        ROS_INFO("Waiting for service");
+        sleep(1.0);
+    }
+    moveit_msgs::GetPositionIK::Request service_request;
+    moveit_msgs::GetPositionIK::Response service_response;
+    service_request.ik_request.group_name = "excel";
+    service_request.ik_request.pose_stamped.header.frame_id = "table_link";
+    service_request.ik_request.avoid_collisions = true;
+    service_request.ik_request.attempts = 10;
+
+    if(path_constraint){
+        ROS_INFO("PATH CONSTRAINT ON");
+        tf::Quaternion c_quat = tf::createQuaternionFromRPY(0,M_PI/2,M_PI);
+        moveit_msgs::OrientationConstraint ocm = moveit_msgs::OrientationConstraint();
+
+        ocm.header.frame_id = "table_link";
+        ocm.orientation.x = c_quat.x();
+        ocm.orientation.y = c_quat.y();
+        ocm.orientation.z = c_quat.z();
+        ocm.orientation.w = c_quat.w();
+        ocm.link_name = "ee_link";
+        ocm.absolute_x_axis_tolerance = M_PI;
+        ocm.absolute_y_axis_tolerance = 0.1;
+        ocm.absolute_z_axis_tolerance = 0.1;
+        ocm.weight = 1.0;
+
+        moveit_msgs::Constraints constraints;
+        constraints.orientation_constraints.push_back(ocm);
+        constraints.name = "roll_pitch_control";
+
+        group.setPathConstraints(constraints);
+    }
 
     // Load parameters //
     nh_param_.getParam("x_goal",x_target);
@@ -50,10 +96,6 @@ int main(int argc, char **argv)
         sleep_t.sleep();
     }
 
-    // Loading the group //
-    move_group_interface::MoveGroup group("excel");
-    group.setPlanningTime(8.0);
-
     // Update the planning scene //
     planning_scene_monitor->requestPlanningSceneState();
     planning_scene::PlanningScenePtr full_planning_scene = planning_scene_monitor->getPlanningScene();
@@ -65,7 +107,7 @@ int main(int argc, char **argv)
     full_planning_scene->getCurrentState().getAttachedBodies(attached_bodies);
     std::vector<moveit_msgs::CollisionObject> collision_objects = planning_scene.world.collision_objects;
     ROS_INFO_STREAM("Nb AttachedBodies : " << attached_bodies.size());
-    ROS_INFO_STREAM("Nb of collision objects" << collision_objects.size() );
+    ROS_INFO_STREAM("Nb of collision objects : " << collision_objects.size() );
 
 
     ROS_INFO("Moving close to the bin");
@@ -75,18 +117,20 @@ int main(int argc, char **argv)
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
     tf::Quaternion quat = tf::createQuaternionFromRPY(M_PI/2-yaw,M_PI/2,M_PI);
-    object_pick_pose.position.z += 0.4;
-    object_pick_pose.orientation.x = quat.x();
-    object_pick_pose.orientation.y = quat.y();
-    object_pick_pose.orientation.z = quat.z();
-    object_pick_pose.orientation.w = quat.w();
-    group.setPoseTarget(object_pick_pose);
+    service_request.ik_request.pose_stamped.pose.position = object_pick_pose.position;
+    service_request.ik_request.pose_stamped.pose.position.z += 0.4;
+    service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
+    service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
+    service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
+    service_request.ik_request.pose_stamped.pose.orientation.w = quat.w();
+    service_client.call(service_request, service_response);
+    group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
-    //sleep(1.0);
 
     ROS_INFO("Descent");
-    object_pick_pose.position.z = 1.05;
-    group.setPoseTarget(object_pick_pose);
+    service_request.ik_request.pose_stamped.pose.position.z = 1.06;
+    service_client.call(service_request, service_response);
+    group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
 
     ROS_INFO("Attaching the bin");
@@ -95,33 +139,31 @@ int main(int argc, char **argv)
     attached_object.object = collision_objects[0];
     attached_object.object.operation = attached_object.object.ADD;
     attached_object_publisher.publish(attached_object);
-    //sleep(1.0);
 
     ROS_INFO("Lift");
-    object_pick_pose.position.z += 0.4;
-    group.setPoseTarget(object_pick_pose);
+    service_request.ik_request.pose_stamped.pose.position.z += 0.4;
+    service_client.call(service_request, service_response);
+    group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
-    //sleep(1.0);
 
     ROS_INFO("Moving to target");
-    geometry_msgs::Pose target_pose;
     tf::Quaternion quat_goal = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0,M_PI/2,M_PI);
-    target_pose.orientation.x = quat_goal.x();
-    target_pose.orientation.y = quat_goal.y();
-    target_pose.orientation.z = quat_goal.z();
-    target_pose.orientation.w = quat_goal.w();
-    target_pose.position.x = x_target;
-    target_pose.position.y = y_target;
-    target_pose.position.z = 1.45;
-    group.setPoseTarget(target_pose);
+    service_request.ik_request.pose_stamped.pose.position.x = x_target;
+    service_request.ik_request.pose_stamped.pose.position.y = y_target;
+    service_request.ik_request.pose_stamped.pose.position.z = 1.46;
+    service_request.ik_request.pose_stamped.pose.orientation.x = quat_goal.x();
+    service_request.ik_request.pose_stamped.pose.orientation.y = quat_goal.y();
+    service_request.ik_request.pose_stamped.pose.orientation.z = quat_goal.z();
+    service_request.ik_request.pose_stamped.pose.orientation.w = quat_goal.w();
+    service_client.call(service_request, service_response);
+    group.setJointValueTarget(service_response.solution.joint_state);;
     group.move();
-    //sleep(1.0);
 
     ROS_INFO("Descent");
-    target_pose.position.z = 1.05;
-    group.setPoseTarget(target_pose);
+    service_request.ik_request.pose_stamped.pose.position.z = 1.06;
+    service_client.call(service_request, service_response);
+    group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
-    //sleep(1.0);
 
     // Update the scene //
     full_planning_scene = planning_scene_monitor->getPlanningScene();
@@ -136,23 +178,21 @@ int main(int argc, char **argv)
     new_bin_pose.orientation.y = quat_bin.y();
     new_bin_pose.orientation.z = quat_bin.z();
     new_bin_pose.orientation.w = quat_bin.w();
-    new_bin_pose.position = target_pose.position;
-    new_bin_pose.position.z = 0.83;
+    new_bin_pose.position = service_request.ik_request.pose_stamped.pose.position;
+    new_bin_pose.position.z = 0.84;
     attached_object.object.mesh_poses.push_back(new_bin_pose);
     planning_scene.world.collision_objects.push_back(attached_object.object);
     planning_scene_diff_publisher.publish(planning_scene);
-    //sleep(1.0);
 
     ROS_INFO("Lift");
-    target_pose.position.z += 0.4;
-    group.setPoseTarget(target_pose);
+    service_request.ik_request.pose_stamped.pose.position.z += 0.4;
+    service_client.call(service_request, service_response);
+    group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
-    //sleep(1.0);
 
     ROS_INFO("Go to Initial position");
     group.setNamedTarget("Initial");
     group.move();
-    //sleep(1.0);
 
     ros::shutdown();
 }

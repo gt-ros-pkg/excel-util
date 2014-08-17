@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   ur_ctrl_client
 )
+find_library(INDRADRIVE_LIBRARY indradrive_hw_iface)
 
 
 catkin_package(

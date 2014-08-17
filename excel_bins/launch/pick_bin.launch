@@ -3,11 +3,13 @@
   <arg name="x" default="0.5" />
   <arg name="y" default="0.5" />
   <arg name="angle" default="0" />
+  <arg name="constraint" default="false"  />
 
   <node name="excel_pick_bin" pkg="excel_bins" type="pick_bin_node" output="screen">
 	<param name="x_goal" value="$(arg x)" />
   	<param name="y_goal" value="$(arg y)" />
   	<param name="angle" value="$(arg angle)" />
+  	<param name="constraint" value="$(arg constraint)" type="bool" />
   </node>
 
 </launch>
