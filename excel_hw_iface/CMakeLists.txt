@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   ur_ctrl_client
 )
 
-find_library(INDRADRIVE_LIBRARY indradrive_hw_iface)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -28,7 +27,11 @@ catkin_package(
 ## Build ##
 ###########
 
-if( INDRADRIVE_LIBRARY_FOUND )
+find_library(INDRADRIVE_LIBRARY NAMES indradrive_hw_iface)
+
+if( INDRADRIVE_LIBRARY MATCHES "INDRADRIVE_LIBRARY-NOTFOUND")
+  message( "Indradrive library not found so we're not building Excel binaries" )
+else()
   include_directories(
     ${catkin_INCLUDE_DIRS}
   )
