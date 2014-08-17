@@ -6,6 +6,10 @@ project(excel_hw_iface)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   hardware_interface
+  ur_ctrl_server
+  ur_ctrl_client
+  ur_controllers
+  simple_message
   indradrive_hw_iface
   roscpp
   ur_ctrl_client
@@ -100,6 +104,7 @@ include_directories(
 
 add_executable(excel_ctrl_man src/excel_ctrl_man.cpp)
 target_link_libraries(excel_ctrl_man
+  simple_message_float64 
   ${catkin_LIBRARIES}
 )
 

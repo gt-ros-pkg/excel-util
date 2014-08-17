@@ -44,10 +44,16 @@
   <build_depend>indradrive_hw_iface</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>ur_ctrl_client</build_depend>
+  <build_depend>ur_ctrl_server</build_depend>
+  <build_depend>ur_controllers</build_depend>
+  <build_depend>simple_message</build_depend>
   <run_depend>hardware_interface</run_depend>
   <run_depend>indradrive_hw_iface</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>ur_ctrl_client</run_depend>
+  <run_depend>ur_ctrl_server</run_depend>
+  <run_depend>ur_controllers</run_depend>
+  <run_depend>simple_message</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
