@@ -16,31 +16,66 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_library(INDRADRIVE_LIBRARY indradrive_hw_iface)
 
-
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES excel_hw_iface
-#  CATKIN_DEPENDS hardware_interface indradrive_hw_iface roscpp ur_ctrl_client
-#  DEPENDS system_lib
-)
-
 ###########
 ## Build ##
 ###########
 
-find_library(INDRADRIVE_LIBRARY NAMES indradrive_hw_iface)
+find_library(INDRADRIVE_LIBRARY 
+  NAMES indradrive_hw_iface
+)
+
+find_library(XENOMAI_LIBRARY
+  NAMES xenomai
+  PATHS /usr/xenomai/lib
+)
 
 if( INDRADRIVE_LIBRARY MATCHES "INDRADRIVE_LIBRARY-NOTFOUND")
   message( "Indradrive library not found so we're not building Excel binaries" )
+  catkin_package()
 else()
-  include_directories(
-    ${catkin_INCLUDE_DIRS}
-  )
-  
-  add_executable(excel_ctrl_man src/excel_ctrl_man.cpp)
-  target_link_libraries(excel_ctrl_man
-    ${catkin_LIBRARIES}
-  )
+  if( XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND")
+    catkin_package(
+      CATKIN_DEPENDS indradrive_hw_iface ur_ctrl_server ur_ctrl_client
+    )
+
+    include_directories(
+      ${catkin_INCLUDE_DIRS}
+    )
+    
+    add_executable(excel_ctrl_man src/excel_ctrl_man.cpp)
+    target_link_libraries(excel_ctrl_man
+      ${catkin_LIBRARIES}
+    )
+  else()
+    message( "Xenomai libraries found, building realtime binaries..." )
+
+    catkin_package(
+      DEPENDS ${XENOMAI_LIBRARY}
+      CATKIN_DEPENDS indradrive_hw_iface ur_ctrl_server ur_ctrl_client
+    )
+
+    include_directories(
+      include
+      /opt/etherlab/include
+      /usr/xenomai/include
+      ${catkin_INCLUDE_DIRS}
+    )
+    link_directories(/usr/xenomai/lib)
+    
+    add_executable(excel_ctrl_man src/excel_ctrl_man.cpp)
+    target_link_libraries(excel_ctrl_man
+      ${catkin_LIBRARIES}
+    )
+
+    add_executable(excel_ctrl_man_xeno src/excel_ctrl_man.cpp)
+    set_target_properties(excel_ctrl_man_xeno PROPERTIES COMPILE_DEFINITIONS "XENOMAI_REALTIME")
+    target_link_libraries(excel_ctrl_man_xeno
+      xenomai
+      native
+      rtdm
+      ${catkin_LIBRARIES}
+    )
+  endif()
 endif()
 
 #############

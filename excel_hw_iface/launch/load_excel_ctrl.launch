@@ -3,15 +3,42 @@
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find excel_description)/urdf/excel_robot.urdf.xacro'" />
 
   <rosparam>
-    joint_state_pub:
-      type: joint_state_controller/JointStateController
-      publish_rate: 100
+    vel_forward_ctrl:
+      type: ur_controllers/VelocityForwardController
+      mode: vel
+
+    pva_enable_mode:
+      type: ur_controllers/PosVelAccModeController
+      joint_names: 
+        - joint_command
+      mode: pva_enable
+    vel_enable_mode:
+      type: ur_controllers/VelocityModeController
+      joint_names: 
+        - joint_command
+      mode: vel_enable
 
     vel_trajectory_ctrl:
       type: velocity_controllers/JointTrajectoryController
       mode: vel
+      
+    config_fwd_ctrl:
+      type: ur_controllers/ConfigForwardController
+
+    mode_state_pub:
+      type: ur_controllers/StatePublishController
+
+    joint_state_pub:
+      type: joint_state_controller/JointStateController
+      publish_rate: 100
+
+    ur_diagnostics_pub:
+      type: ur_controllers/DiagnosticPublishController
+      publish_rate: 1
 
   </rosparam>
+  <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
+            param="vel_forward_ctrl/joint_names" />
 
   <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
             param="vel_trajectory_ctrl/joints" />
@@ -19,8 +46,5 @@
             param="vel_trajectory_ctrl/gains" />
   <rosparam command="load" file="$(find excel_hw_iface)/launch/trajectory_ctrl_constraints.yaml"
             param="vel_trajectory_ctrl" />
-
-  <node name="excel_spawn_ctrls" type="spawner" pkg="controller_manager"
-        output="screen" args="joint_state_pub vel_trajectory_ctrl" />
 
 </launch>
