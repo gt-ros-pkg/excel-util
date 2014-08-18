@@ -11,9 +11,10 @@ int main(int argc, char **argv)
     static tf::TransformBroadcaster br;
     tf::Transform transform, transform2;
     tf::Quaternion q;
-    transform.setOrigin( tf::Vector3(0.0, 1.5, 4.5) );
-    transform2.setOrigin( tf::Vector3(1.3, 3.5, 4.2) );
-    q.setRPY(M_PI, 0, -M_PI/2.0);
+    transform.setOrigin( tf::Vector3(0.53, 1.42, 2.52) );
+    transform2.setOrigin( tf::Vector3(1.59, 0.11, 2.63) );
+    q.setRPY(M_PI, 0, 0);
+    //q.setRPY(0, 0, 0);
     transform.setRotation(q);
     transform2.setRotation(q);
     while(ros::ok()){
