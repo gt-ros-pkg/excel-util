@@ -1,7 +1,9 @@
 <launch>
 
-  <param name="target_position" value="Initial" />
+  <arg name="position" default="Initial" />
 
-  <node name="excel_move_to_known" pkg="excel_move" type="moveit_to_known_position_node" output="screen" />
+  <node name="excel_move_to_known" pkg="excel_move" type="moveit_to_known_position_node" output="screen">
+	<param name="target_position" value="$(arg position)" />
+  </node>
 
 </launch>
