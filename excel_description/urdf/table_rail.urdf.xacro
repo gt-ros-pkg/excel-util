@@ -17,25 +17,25 @@
    <property name="rail_mass" value="50.0" />
 
    <!-- Kinematic model -->
-   <property name="rail_length" value="3.75" />
+   <property name="rail_length" value="3.54" />
 
    <!-- Collision model -->
-   <property name="table_collision_offset" value="0.80137 0.05588 0.9" />
+   <property name="table_collision_offset" value="0.135 0.81 0.935" />
 
    <xacro:macro name="table_rail" params="prefix">
 
       <link name="${prefix}table_link">
          <visual>
             <geometry>
-               <mesh filename="package://excel_description/meshes/visual/table+rail.dae" />
+               <mesh filename="package://excel_description/meshes/visual/tables+rail.dae"/>
             </geometry>
-            <origin rpy="0.0 0.0 0.0" xyz="0 0.0 0" />
+            <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
          </visual>
          <collision>
             <geometry>
-               <mesh filename="package://excel_description/meshes/collision/table+rail_collision.stl" />
+               <mesh filename="package://excel_description/meshes/collision/tables+rail.stl"/>
             </geometry>
-            <origin rpy="0.0 0.0 0.0" xyz="0 0.0 0" />
+            <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
          </collision>
       </link>
 
@@ -43,7 +43,7 @@
          <parent link="${prefix}table_link" />
          <child link="${prefix}rail_link" />
          <origin rpy="0.0 0.0 0.0" xyz="${table_collision_offset}" />
-         <axis xyz="0 1 0" />
+         <axis xyz="1 0 0" />
          <limit effort="10.0" lower="0.0" upper="${rail_length}" velocity="${pi}" />
          <dynamics damping="10" friction="0.1" />
       </joint>
