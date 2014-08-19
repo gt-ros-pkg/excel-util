@@ -49,8 +49,8 @@
     <group_state name="Initial" group="excel">
         <joint name="elbow_joint" value="1.3413" />
         <joint name="shoulder_lift_joint" value="-1.1119" />
-        <joint name="shoulder_pan_joint" value="1.4825" />
-        <joint name="table_rail_joint" value="0" />
+        <joint name="shoulder_pan_joint" value="-0.9178" />
+        <joint name="table_rail_joint" value="1.7103" />
         <joint name="wrist_1_joint" value="-1.8355" />
         <joint name="wrist_2_joint" value="-1.6237" />
         <joint name="wrist_3_joint" value="0" />
@@ -58,8 +58,8 @@
     <group_state name="Final" group="excel">
         <joint name="elbow_joint" value="1.6413" />
         <joint name="shoulder_lift_joint" value="-1.0236" />
-        <joint name="shoulder_pan_joint" value="-1.0589" />
-        <joint name="table_rail_joint" value="1.6507" />
+        <joint name="shoulder_pan_joint" value="1.8355" />
+        <joint name="table_rail_joint" value="3.0428" />
         <joint name="wrist_1_joint" value="-2.1708" />
         <joint name="wrist_2_joint" value="-1.5178" />
         <joint name="wrist_3_joint" value="0.5648" />

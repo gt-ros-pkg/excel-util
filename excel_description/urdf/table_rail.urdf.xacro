@@ -19,8 +19,9 @@
    <!-- Kinematic model -->
    <property name="rail_length" value="3.54" />
 
-   <!-- Collision model -->
-   <property name="table_collision_offset" value="0.135 0.81 0.935" />
+   <!-- Collision model 
+   <property name="table_collision_offset" value="0.135 0.81 0.935" />-->
+   <property name="table_collision_offset" value="3.675 0.81 0.935" />
 
    <xacro:macro name="table_rail" params="prefix">
 
@@ -42,7 +43,7 @@
       <joint name="${prefix}table_rail_joint" type="prismatic">
          <parent link="${prefix}table_link" />
          <child link="${prefix}rail_link" />
-         <origin rpy="0.0 0.0 0.0" xyz="${table_collision_offset}" />
+         <origin rpy="0.0 0.0 ${pi}" xyz="${table_collision_offset}" />
          <axis xyz="1 0 0" />
          <limit effort="10.0" lower="0.0" upper="${rail_length}" velocity="${pi}" />
          <dynamics damping="10" friction="0.1" />
@@ -58,7 +59,7 @@
       <joint name="${prefix}rail_base_joint" type="fixed">
          <parent link="${prefix}rail_link" />
          <child link="${prefix}base_link" />
-         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
+         <origin rpy="0.0 0.0 ${pi}" xyz="0.0 0.0 0.0" />
       </joint>
 
       <xacro:table_rail_transmission prefix="${prefix}" />
