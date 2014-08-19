@@ -3,7 +3,7 @@
   <arg name="x" default="0.5" />
   <arg name="y" default="0.5" />
   <arg name="z" default="0.875" />
-  <arg name="h" default="0.125" />
+  <arg name="h" default="0.127" />
   <arg name="dz" default="0.2" />
   <arg name="angle" default="0" />
   <arg name="constraint" default="false"  />

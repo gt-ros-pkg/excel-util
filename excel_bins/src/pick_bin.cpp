@@ -29,7 +29,8 @@ int main(int argc, char **argv)
     move_group_interface::MoveGroup group("excel");
     group.setPlanningTime(8.0);
 
-    double x_target, y_target, z_bin, h_bin, dz, angle_target;
+    double x_target, y_target, z_target, z_bin, h_bin, dz, angle_target;
+    double gripper_offset = 0.1;
     bool path_constraint;
 
     // Load parameters //
@@ -40,6 +41,8 @@ int main(int argc, char **argv)
     nh_param_.getParam("dz",dz);
     nh_param_.getParam("angle",angle_target);
     nh_param_.getParam("constraint",path_constraint);
+    z_target = gripper_offset+z_bin+h_bin;
+
 
     // IK Service //
     ros::ServiceClient service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
@@ -123,7 +126,7 @@ int main(int argc, char **argv)
     m.getRPY(roll, pitch, yaw);
     tf::Quaternion quat = tf::createQuaternionFromRPY(M_PI/2-yaw,M_PI/2,M_PI);
     service_request.ik_request.pose_stamped.pose.position = object_pick_pose.position;
-    service_request.ik_request.pose_stamped.pose.position.z = z_bin+dz;
+    service_request.ik_request.pose_stamped.pose.position.z = z_target+dz;
     service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
     service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
     service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
@@ -133,7 +136,7 @@ int main(int argc, char **argv)
     group.move();
 
     ROS_INFO("Descent");
-    service_request.ik_request.pose_stamped.pose.position.z = z_bin+h_bin;
+    service_request.ik_request.pose_stamped.pose.position.z -= dz ;
     service_client.call(service_request, service_response);
     group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
@@ -155,7 +158,6 @@ int main(int argc, char **argv)
     tf::Quaternion quat_goal = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0,M_PI/2,M_PI);
     service_request.ik_request.pose_stamped.pose.position.x = x_target;
     service_request.ik_request.pose_stamped.pose.position.y = y_target;
-    service_request.ik_request.pose_stamped.pose.position.z = z_bin+dz;
     service_request.ik_request.pose_stamped.pose.orientation.x = quat_goal.x();
     service_request.ik_request.pose_stamped.pose.orientation.y = quat_goal.y();
     service_request.ik_request.pose_stamped.pose.orientation.z = quat_goal.z();
@@ -165,7 +167,7 @@ int main(int argc, char **argv)
     group.move();
 
     ROS_INFO("Descent");
-    service_request.ik_request.pose_stamped.pose.position.z = z_bin+h_bin;
+    service_request.ik_request.pose_stamped.pose.position.z -= dz;
     service_client.call(service_request, service_response);
     group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
