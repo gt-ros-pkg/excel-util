@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Author: Jimmy Da Silva
+  Contributers: Kelsey Hawkins, Ajit Krisshna N L, Muhammad Asif Rana 
+
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+   <property name="pi" value="3.14159265" />
+
+   <xacro:macro name="cameras" params="prefix">
+
+      <link name="${prefix}45_camera_link">
+      </link>
+
+      <joint name="${prefix}45_camera_joint" type="fixed">
+         <parent link="${prefix}table_link" />
+         <child link="${prefix}45_camera_link" />
+         <origin rpy="${pi} 0.0 0.0" xyz="0.53 1.42 2.52" />
+      </joint>
+
+      <link name="${prefix}35_camera_link">
+      </link>
+
+      <joint name="${prefix}35_camera_joint" type="fixed">
+         <parent link="${prefix}table_link" />
+         <child link="${prefix}35_camera_link" />
+         <origin rpy="${pi} 0.0 0.0" xyz="1.59 0.11 2.63" />
+      </joint>
+
+      <link name="${prefix}kinect_1_link">
+      </link>
+
+      <joint name="${prefix}kinect_1_joint" type="fixed">
+         <parent link="${prefix}table_link" />
+         <child link="${prefix}kinect_1_link" />
+         <origin rpy="0.0 0.0 0.0" xyz="3 3 3" />
+      </joint>
+
+      <link name="${prefix}kinect_2_link">
+      </link>
+
+      <joint name="${prefix}kinect_2_joint" type="fixed">
+         <parent link="${prefix}table_link" />
+         <child link="${prefix}kinect_2_link" />
+         <origin rpy="0.0 0.0 0.0" xyz="2 2 2" />
+      </joint>
+
+      <link name="${prefix}gripper_camera_link">
+      </link>
+
+      <joint name="${prefix}gripper_camera_joint" type="fixed">
+         <parent link="${prefix}ee_link" />
+         <child link="${prefix}gripper_camera_link" />
+         <origin rpy="0.0 0.0 0.0" xyz="0.1 0.1 0.1" />
+      </joint>
+
+
+   </xacro:macro>
+</robot>

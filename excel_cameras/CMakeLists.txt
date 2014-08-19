@@ -101,13 +101,6 @@ include_directories(
 )
 
 
-add_library(excel_camera_transform src/camera_transform.cpp)
- 
-
-add_executable(excel_camera_transform_node src/camera_transform.cpp)
-
-
-target_link_libraries(excel_camera_transform_node ${catkin_LIBRARIES})
 
 #############
 ## Install ##

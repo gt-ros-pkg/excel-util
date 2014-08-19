@@ -1,7 +1,5 @@
 <launch>
-	<node name="camera_transform" pkg="excel_cameras" type="excel_camera_transform_node" respawn="false" output="screen"/>
-
-	<arg name="marker_size" default="4.85" />
+	<arg name="marker_size" default="5.7" />
 	<arg name="max_new_marker_error" default="0.08" />
 	<arg name="max_track_error" default="0.2" />
 	<arg name="cam_image_topic" default="/35_camera/image_color" />
@@ -10,7 +8,7 @@
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
 	
 
-	<arg name="marker_size2" default="4.85" />
+	<arg name="marker_size2" default="5.7" />
 	<arg name="max_new_marker_error2" default="0.08" />
 	<arg name="max_track_error2" default="0.2" />
 	<arg name="cam_image_topic2" default="/45_camera/image_color" />
