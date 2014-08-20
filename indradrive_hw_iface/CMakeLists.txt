@@ -107,19 +107,19 @@ if( NOT (ECAT_LIBRARY MATCHES "ECAT_LIBRARY-NOTFOUND") )
     include_directories(
       include
       /opt/etherlab/include
-      ${catkin_INCLUDE_DIRS}
       /usr/xenomai/include
+      ${catkin_INCLUDE_DIRS}
     )
     link_directories(/usr/xenomai/lib)
     
     add_executable(vel_ctrl_man_xeno src/vel_ctrl_man.cpp)
     set_target_properties(vel_ctrl_man_xeno PROPERTIES COMPILE_DEFINITIONS "XENOMAI_REALTIME")
     target_link_libraries(vel_ctrl_man_xeno
-      ${catkin_LIBRARIES}
       idcs_hw_vel_ctrl
       xenomai
       native
       rtdm
+      ${catkin_LIBRARIES}
     )
   
     ## Mark executables and/or libraries for installation

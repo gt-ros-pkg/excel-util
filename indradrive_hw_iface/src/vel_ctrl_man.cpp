@@ -17,8 +17,9 @@
 #endif
 
 typedef indradrive::VelocityEthercatController VelEcatCtrl;
-VelEcatCtrl *cs_hw_ptr;
-controller_manager::ControllerManager *cm_ptr;
+
+boost::shared_ptr<VelEcatCtrl> cs_hw_ptr;
+boost::shared_ptr<controller_manager::ControllerManager> cm_ptr;
 bool stop_requested;
 
 #ifdef XENOMAI_REALTIME
@@ -66,13 +67,13 @@ int main(int argc, char** argv)
   std::string joint_name;
   nh_priv.param<std::string>("joint_name", joint_name, "indradrive_cs_joint");
 
-  cs_hw_ptr = new VelEcatCtrl(nh, nh_priv, joint_name);
+  cs_hw_ptr.reset(new VelEcatCtrl(nh, nh_priv, joint_name));
   if(cs_hw_ptr->init()) {
     printf("Failed to initialize controller\n");
     return -1;
   }
 
-  cm_ptr = new controller_manager::ControllerManager(cs_hw_ptr, nh);
+  cm_ptr.reset(new controller_manager::ControllerManager(cs_hw_ptr.get(), nh));
 
 #ifdef XENOMAI_REALTIME
   int ret;
@@ -107,6 +108,4 @@ int main(int argc, char** argv)
   update_loop_task(NULL);
 #endif
 
-  delete cm_ptr;
-  delete cs_hw_ptr;
 }
