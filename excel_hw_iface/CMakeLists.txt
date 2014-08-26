@@ -14,14 +14,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   ur_ctrl_client
 )
-find_library(INDRADRIVE_LIBRARY indradrive_hw_iface)
 
 ###########
 ## Build ##
 ###########
 
 find_library(INDRADRIVE_LIBRARY 
-  NAMES indradrive_hw_iface
+  NAMES idcs_hw_vel_ctrl
 )
 
 find_library(XENOMAI_LIBRARY
