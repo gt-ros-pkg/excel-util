@@ -19,8 +19,13 @@
       mode: vel_enable
 
     vel_trajectory_ctrl:
-      type: velocity_controllers/JointTrajectoryController
+      type: vel_pid_controllers/JointTrajectoryController
       mode: vel
+
+    vel_jogging_ctrl:
+      type: vel_fwd_controllers/JoggingCommandController
+      mode: vel
+      heartbeat_timeout: 0.3
       
     config_fwd_ctrl:
       type: ur_controllers/ConfigForwardController
@@ -39,12 +44,16 @@
   </rosparam>
   <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
             param="vel_forward_ctrl/joint_names" />
-
+  <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
+            param="vel_jogging_ctrl/joints" />
   <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
             param="vel_trajectory_ctrl/joints" />
+
   <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_gains.yaml"
             param="vel_trajectory_ctrl/gains" />
   <rosparam command="load" file="$(find excel_hw_iface)/launch/trajectory_ctrl_constraints.yaml"
             param="vel_trajectory_ctrl" />
+  <rosparam command="load" file="$(find excel_hw_iface)/launch/vel_jogging_ctrl_params.yaml"
+            param="vel_jogging_ctrl" />
 
 </launch>
