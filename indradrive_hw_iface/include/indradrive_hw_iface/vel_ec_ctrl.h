@@ -4,24 +4,11 @@
 #include <indradrive_hw_iface/ethercat_ctrl.h>
 #include <realtime_tools/realtime_publisher.h>
 
-#include <std_msgs/UInt8.h>
-#include <std_msgs/UInt32.h>
+#include <std_msgs/UInt16.h>
 
 using realtime_tools::RealtimePublisher;
 
 namespace indradrive {
-
-namespace DevCtrlCmds {
-  enum DevCtrlCmds_
-  {
-    DRIVE_ON,
-    TORQUE_ENABLE,
-    CTRLED_MAX_DECEL,
-    TORQUE_DISABLE,
-    BEST_POSSIB_DECEL,
-    DRIVE_RESET
-  };
-}
 
 class VelocityEthercatController : public EthercatController
 {
@@ -34,7 +21,7 @@ protected:
   virtual void readTelegram();
   virtual void writeTelegram();
 
-  void driveControlCB(std_msgs::UInt8ConstPtr msg);
+  void driveControlCB(std_msgs::UInt16ConstPtr msg);
 
   PDOConfiguration* drv_stat_pdo_;
   PDOConfiguration* pos_fb_pdo_;
@@ -44,7 +31,7 @@ protected:
   PDOConfiguration* pos_cmd_pdo_;
   PDOConfiguration* vel_cmd_pdo_;
 
-  RealtimePublisher<std_msgs::UInt32> drv_stat_pub_;
+  RealtimePublisher<std_msgs::UInt16> drv_stat_pub_;
   ros::Subscriber drv_ctrl_sub_;
 
   double scale_pos_fb_;

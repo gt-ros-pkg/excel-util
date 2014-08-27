@@ -27,34 +27,13 @@ VelocityEthercatController::VelocityEthercatController(
   // nh.param<double>("scale_pos_cmd", scale_pos_cmd_, 1.0);
   nh_priv.param<double>("scale_vel_cmd", scale_vel_cmd_, 1.0);
 
-  drv_ctrl_sub_ = nh_priv.subscribe("drive_control_cmd", 1, 
+  drv_ctrl_sub_ = nh_priv.subscribe("master_ctrl_cmd", 1, 
                                &VelocityEthercatController::driveControlCB, this);
 }
 
-void VelocityEthercatController::driveControlCB(std_msgs::UInt8ConstPtr msg)
+void VelocityEthercatController::driveControlCB(std_msgs::UInt16ConstPtr msg)
 {
-  switch(msg->data) {
-    case DevCtrlCmds::DRIVE_ON:
-      drive_state_cmd_ |= 0x8000;
-      break;
-    case DevCtrlCmds::TORQUE_ENABLE:
-      drive_state_cmd_ |= 0xE000;
-      break;
-    case DevCtrlCmds::CTRLED_MAX_DECEL:
-      drive_state_cmd_ &= 0xDFFF;
-      break;
-    case DevCtrlCmds::TORQUE_DISABLE:
-      drive_state_cmd_ &= 0xBFFF;
-      break;
-    case DevCtrlCmds::BEST_POSSIB_DECEL:
-      drive_state_cmd_ &= 0x7FFF;
-      break;
-    case DevCtrlCmds::DRIVE_RESET:
-      drive_state_cmd_ = 0x0000;
-      break;
-    default:
-      break;
-  }
+  drive_state_cmd_ = (msg->data & 0xFBFF); // do not allow bit 10 to be set
 }
 
 int VelocityEthercatController::configureIDNs()
