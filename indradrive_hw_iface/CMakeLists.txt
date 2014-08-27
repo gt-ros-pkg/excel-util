@@ -6,7 +6,10 @@ find_package(catkin REQUIRED COMPONENTS
   hardware_interface
   controller_manager
   roscpp
+  std_msgs
 )
+
+catkin_python_setup()
 
 ###########
 ## Build ##
