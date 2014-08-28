@@ -7,16 +7,20 @@ class DriveStatusControl(object):
     ENABLED = 'Drive Enable (AF)'
     READY = 'Drive Ready (Ab)'
     HALTED = 'Drive Halt (AH)'
+    DISCONNECTED = 'Topic Disconnected'
     UNKNOWN = 'Drive Status Unknown'
 
-    def __init__(self, topic_prefix='', timeout=5.):
+    def __init__(self, topic_prefix='', timeout=5., timeout_dur=0.2):
         self._cur_status = None
+        self._last_status_time = rospy.Time()
+        self._timeout_dur = timeout_dur
         self._command_pub = rospy.Publisher(topic_prefix+'master_ctrl_cmd', UInt16)
         self._status_sub = rospy.Subscriber(topic_prefix+'drive_status', UInt16, self._status_cb)
         self.wait_for_status(timeout)
 
     def _status_cb(self, msg):
         self._cur_status = msg.data
+        self._last_status_time = rospy.Time.now()
 
     def wait_for_status(self, timeout=5.):
         if timeout <= 0.:
@@ -30,7 +34,12 @@ class DriveStatusControl(object):
         rospy.logwarn('Timed out waiting for drive_status')
         return False
 
+    def is_connected(self):
+        return (rospy.Time.now() - self._last_status_time).to_sec() < self._timeout_dur
+
     def get_drive_mode(self):
+        if not self.is_connected():
+            return DriveStatusControl.DISCONNECTED
         if (self._cur_status & 0xE008) == 0xC008:
             return DriveStatusControl.ENABLED
         elif (self._cur_status & 0xE008) == 0xC000:
@@ -50,6 +59,8 @@ class DriveStatusControl(object):
         return self.get_drive_mode() is DriveStatusControl.HALTED
 
     def enable_drive(self, timeout=5.):
+        if not self.is_connected():
+            return False
         if self.is_drive_enabled():
             return True
         elif not self.is_drive_ready() and not self.is_drive_halted():
@@ -66,6 +77,8 @@ class DriveStatusControl(object):
         return False
 
     def halt_drive(self, timeout=5.):
+        if not self.is_connected():
+            return False
         if self.is_drive_halted():
             return True
         elif not self.is_drive_enabled():
@@ -83,6 +96,8 @@ class DriveStatusControl(object):
         return False
 
     def disable_drive(self, timeout=5., best_pos_deccel=False):
+        if not self.is_connected():
+            return False
         if self.is_drive_ready():
             return True
         if not best_pos_deccel:
@@ -99,3 +114,7 @@ class DriveStatusControl(object):
             r.sleep()
         rospy.logwarn('Timed out waiting for drive halted confirmation')
         return False
+
+    def shutdown(self):
+        self._command_pub.unregister()
+        self._status_sub.unregister()
