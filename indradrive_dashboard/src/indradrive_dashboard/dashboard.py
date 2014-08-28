@@ -55,6 +55,7 @@ class IndradriveDashboard(Dashboard):
 
     def shutdown_dashboard(self):
         self._drv_ctrl.shutdown()
+        self._update_timer.shutdown()
 
 class EnableWidget(IconToolButton):
     def __init__(self, _drv_ctrl):

@@ -67,6 +67,9 @@ class DriveStatusControl(object):
             return False
         # drive is ready, let's enable it
         self._command_pub.publish(UInt16(0xE000))
+        if timeout <= 0.:
+            # not going to wait for status update
+            return True
         start_time = rospy.Time.now()
         r = rospy.Rate(100.)
         while not rospy.is_shutdown() and (rospy.Time.now() - start_time).to_sec() < timeout:
@@ -85,6 +88,9 @@ class DriveStatusControl(object):
             return False
         # drive is enabled, let's halt it
         self._command_pub.publish(UInt16(0xC000))
+        if timeout <= 0.:
+            # not going to wait for status update
+            return True
         start_time = rospy.Time.now()
         r = rospy.Rate(100.)
         while not rospy.is_shutdown() and (rospy.Time.now() - start_time).to_sec() < timeout:
@@ -105,6 +111,9 @@ class DriveStatusControl(object):
         else:
             cmd_msg = UInt16(0x4000)
         self._command_pub.publish(cmd_msg)
+        if timeout <= 0.:
+            # not going to wait for status update
+            return True
         start_time = rospy.Time.now()
         r = rospy.Rate(100.)
         while not rospy.is_shutdown() and (rospy.Time.now() - start_time).to_sec() < timeout:
