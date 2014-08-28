@@ -1,0 +1,14 @@
+<library path="src">
+  <class name="IndradriveDashboard" 
+         type="indradrive_dashboard.dashboard.IndradriveDashboard" 
+         base_class_type="rqt_gui_py::Plugin">
+    <description>
+      Dashboard for Indradrive control box
+    </description>
+    <qtgui>
+      <label>Indradrive Dashboard</label>
+      <icon type="file">images/indradrive_icon.png</icon>
+      <statustip>Interface for enabling and monitoring Indradrive control box</statustip>
+    </qtgui>
+  </class>
+</library>
