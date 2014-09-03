@@ -6,7 +6,10 @@ find_package(catkin REQUIRED COMPONENTS
   hardware_interface
   controller_manager
   roscpp
+  std_msgs
 )
+
+catkin_python_setup()
 
 ###########
 ## Build ##
@@ -78,12 +81,6 @@ if( NOT (ECAT_LIBRARY MATCHES "ECAT_LIBRARY-NOTFOUND") )
     idcs_hw_vel_ctrl
   )
   
-  add_executable(test_rt_prio src/test_rt_prio.cpp)
-  
-  target_link_libraries(test_rt_prio
-    ${catkin_LIBRARIES}
-  )
-
   if( XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND" )
     message( "Xenomai not found" )
   

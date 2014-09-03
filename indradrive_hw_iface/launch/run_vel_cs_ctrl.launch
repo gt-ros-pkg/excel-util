@@ -14,7 +14,7 @@
     <param name="joint_name" value="rail_joint"/>
     <param name="scale_pos_fb" value="0.0000001"/>
     <param name="scale_vel_fb" value="0.000001"/>
-    <param name="scale_vel_cmd" value="100000.0"/>
+    <param name="scale_vel_cmd" value="1000000.0"/>
   </node>
 
 </launch>
