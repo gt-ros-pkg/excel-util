@@ -1,8 +1,5 @@
 <launch>
-   <!-- Determine this using rosrun pointgrey_camera_driver list_cameras.
-       If not specified, defaults to first camera found. -->
   <arg name="camera_serial" default="14180963" />
-  <arg name="calibrated" default="1" />
 
   <group ns="overhead_rob_ws_cam">
     <node pkg="nodelet" type="nodelet" name="camera_nodelet_manager" args="manager" />
@@ -13,9 +10,8 @@
       <param name="serial" value="$(arg camera_serial)" />
       <param name="desired_freq" value="15.0" />
       
-      <!-- Use the camera_calibration package to create this file -->
-      <param name="camera_info_url" if="$(arg calibrated)"
-             value="file://$(env HOME)/.ros/camera_info/$(arg camera_serial).yaml" />
+      <param name="camera_info_url"
+             value="file://$(find excel_cameras)/calibration_files/overhead_rob_ws.yaml" />
     </node>
 
     <node pkg="nodelet" type="nodelet" name="image_proc_debayer"
