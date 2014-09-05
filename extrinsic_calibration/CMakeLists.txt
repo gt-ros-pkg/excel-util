@@ -8,6 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   hrl_geom
   pcl_ros
   tf
+  image_transport
+  cv_bridge
 )
 
 # Opencv
@@ -119,19 +121,27 @@ include_directories(
 add_library(extrinsic_calibration
   src/calibration_job.cpp
   src/extrinsic_calibration.cpp
+  src/calibration_broadcaster.cpp
 )
 target_link_libraries(extrinsic_calibration
   gtsam
   ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
 )
 
 add_executable(test_calibration
   src/test_calibration.cpp
 )
-
 target_link_libraries(test_calibration
   ${catkin_LIBRARIES}
+  extrinsic_calibration
+)
+
+add_executable(ros_calibration_server
+  src/ros_calibration_server.cpp
+)
+target_link_libraries(ros_calibration_server
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
   extrinsic_calibration
 )
 

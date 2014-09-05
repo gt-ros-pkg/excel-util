@@ -1,8 +1,17 @@
 #ifndef EXTRINSIC_CALIBRATION_EXTRINSIC_CALIBRATION_H
 #define EXTRINSIC_CALIBRATION_EXTRINSIC_CALIBRATION_H
 
-#include <extrinsic_calibration/calibration_job.h>
+#include <gtsam/nonlinear/Symbol.h>
+#include <gtsam/slam/PriorFactor.h>
+#include <gtsam/slam/ProjectionFactor.h>
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/nonlinear/DoglegOptimizer.h>
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
+#include <gtsam/nonlinear/Values.h>
+#include <gtsam/linear/linearExceptions.h>
+#include <gtsam/linear/Sampler.h>
 
+#include <extrinsic_calibration/calibration_job.h>
 
 namespace extrinsic_calibration 
 {

@@ -1,6 +1,13 @@
 
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/range/algorithm/random_shuffle.hpp>
+
 #include <extrinsic_calibration/calibration_job.h>
 #include <extrinsic_calibration/extrinsic_calibration.h>
+#include <extrinsic_calibration/calibration_broadcaster.h>
 
 using namespace extrinsic_calibration;
 
@@ -46,6 +53,7 @@ void randomCalibSetup(boost::mt19937& rng, CalibrationSetup& cal_setup, const in
     std::string cam_name = "/camera_" + boost::lexical_cast<std::string>(i+1);
     shared_ptr<Camera> cam = shared_ptr<Camera>(new Camera);
     cam->frame = cam_name;
+    cam->image_topic = cam_name + "/image";
     cam->calibrated_cam.reset(new gtsam::SimpleCamera(cam_pose, cam_calib));
     cal_setup.cameras.push_back(cam);
   }
@@ -64,7 +72,7 @@ void randomCalibSetup(boost::mt19937& rng, CalibrationSetup& cal_setup, const in
     for(int j=0;j<num_rows;j++) 
       for(int k=0;k<num_cols;k++) 
         target->target_pts.push_back(gtsam::Point3(cal_board_spacing*j, cal_board_spacing*k, 0.0));
-    target->type = "chessboard";
+    target->type = 0;
     target->pt_spacing = cal_board_spacing;
     target->rows = num_rows;
     target->cols = num_cols;
@@ -93,6 +101,7 @@ void randomCalibJob(boost::mt19937& rng, CalibrationSetup& cal_truth, Calibratio
     shared_ptr<Camera> new_cam = shared_ptr<Camera>(
         new Camera);
     new_cam->frame = cam->frame;
+    new_cam->image_topic = cam->image_topic;
     gtsam::Pose3 cam_pose = cam->calibrated_cam->pose();
     cam_pose = cam_pose * gtsam::Pose3::Expmap(init_calib_smplr.sample());
     new_cam->guess_cam.reset(new gtsam::SimpleCamera(cam_pose, cam->calibrated_cam->calibration()));
@@ -156,6 +165,7 @@ void testReadWriteCalibSetup(ros::NodeHandle& nh, CalibrationSetupPtr& write_cal
     shared_ptr<Camera> read_cam = read_cal_setup->cameras[i];
     shared_ptr<Camera> write_cam = write_cal_setup->cameras[i];
     ROS_ASSERT(read_cam->frame == write_cam->frame);
+    ROS_ASSERT(read_cam->image_topic == write_cam->image_topic);
     ROS_ASSERT(read_cam->guess_cam->equals(*(write_cam->guess_cam)));
     ROS_ASSERT(read_cam->calibrated_cam->equals(*(write_cam->calibrated_cam)));
   }
@@ -213,7 +223,8 @@ int main(int argc, char* argv[])
   CalibrationJobPtr cal_job = CalibrationJobPtr(new CalibrationJob);
   randomCalibJob(rng, cal_setup, cal_job, num_scenes);
   // cameraArmTargetCalibrate(cal_job, 5.0);
-  cameraArmTargetPointCalibrate(cal_job);
+  // cameraArmTargetPointCalibrate(cal_job);
+  cameraArmTargetDetectPointCalibrate(cal_job);
   std::cout << "Guess calibration difference:\n";
   cal_job->setup->diffCalib(cal_job->setup, false, true);
   std::cout << "After calibration difference:\n";

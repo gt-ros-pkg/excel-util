@@ -5,40 +5,26 @@
 #include <gtsam/geometry/Point3.h>
 #include <gtsam/geometry/Point2.h>
 #include <gtsam/geometry/SimpleCamera.h>
-#include <gtsam/nonlinear/Symbol.h>
-#include <gtsam/slam/PriorFactor.h>
-#include <gtsam/slam/ProjectionFactor.h>
-#include <gtsam/nonlinear/NonlinearFactorGraph.h>
-#include <gtsam/nonlinear/DoglegOptimizer.h>
-#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
-#include <gtsam/nonlinear/Values.h>
-#include <gtsam/linear/linearExceptions.h>
-#include <gtsam/linear/Sampler.h>
 
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_real.hpp>
-#include <boost/random/uniform_int.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/range/algorithm/random_shuffle.hpp>
+#include <boost/foreach.hpp>
 
-#include <geometry_msgs/Pose.h>
+#include <ros/ros.h>
 
 #include <vector>
 #include <math.h>
-
-#include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
 
 using boost::shared_ptr;
 
 namespace extrinsic_calibration 
 {
 
-tf::Transform gtsamPoseToTF(gtsam::Pose3& gtsam_pose);
+#define TARGET_TYPE_CHESSBOARD 0
+#define TARGET_TYPE_CIRCLES 1
 
 struct Camera
 {
   std::string frame;
+  std::string image_topic;
   shared_ptr<gtsam::SimpleCamera> guess_cam;
   shared_ptr<gtsam::SimpleCamera> calibrated_cam;
 };
@@ -46,7 +32,7 @@ struct Camera
 struct Target
 {
   std::string frame;
-  std::string type;
+  int type;
   double pt_spacing;
   int rows;
   int cols;
@@ -81,36 +67,21 @@ struct CalibrationSetup
   void writeToParam(ros::NodeHandle& nh, const std::string& param_name);
 };
 
-typedef shared_ptr<CalibrationSetup> CalibrationSetupPtr;
-
 struct CalibrationJob 
 {
-  CalibrationSetupPtr setup;
+  shared_ptr<CalibrationSetup> setup;
   std::vector<shared_ptr<Scene> > scenes;
   static shared_ptr<CalibrationJob> readFromParam(ros::NodeHandle& nh, 
       const std::string& setup_param_name, const std::string& job_param_name);
   void writeToParam(ros::NodeHandle& nh, const std::string& param_name);
 };
 
+typedef shared_ptr<CalibrationSetup> CalibrationSetupPtr;
 typedef shared_ptr<CalibrationJob> CalibrationJobPtr;
-
-class CalibrationBroadcaster
-{
-public:
-  CalibrationBroadcaster(ros::NodeHandle nh, CalibrationSetupPtr& setup, bool use_calib=true);
-  void setUseCalib(bool use_calib) { use_calib_ = use_calib; }
-
-protected:
-  void timerCallback(const ros::TimerEvent & timer_event);
-
-  CalibrationSetupPtr setup_;
-  bool use_calib_;
-
-  ros::NodeHandle nh_;
-  ros::Timer timer_;
-  tf::TransformBroadcaster tf_broadcaster_;
-  std::vector<ros::Publisher> target_pc_pubs_;
-};
+typedef shared_ptr<Camera> CameraPtr;
+typedef shared_ptr<Target> TargetPtr;
+typedef shared_ptr<Detection> DetectionPtr;
+typedef shared_ptr<Scene> ScenePtr;
 }
 
 #endif
