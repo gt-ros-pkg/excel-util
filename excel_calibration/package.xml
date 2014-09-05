@@ -41,9 +41,9 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>excel_description</build_depend>
-  <build_depend>industrial_extrinsic_cal</build_depend>
+  <!--<build_depend>industrial_extrinsic_cal</build_depend>-->
   <run_depend>excel_description</run_depend>
-  <run_depend>industrial_extrinsic_cal</run_depend>
+  <!--<run_depend>industrial_extrinsic_cal</run_depend>-->
 
 
   <!-- The export tag contains other, unspecified, tags -->

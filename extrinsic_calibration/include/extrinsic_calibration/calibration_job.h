@@ -38,37 +38,22 @@ tf::Transform gtsamPoseToTF(gtsam::Pose3& gtsam_pose);
 
 struct Camera
 {
-  shared_ptr<gtsam::SimpleCamera> calibrated_cam;
+  std::string frame;
   shared_ptr<gtsam::SimpleCamera> guess_cam;
-  std::string calibrated_frame;
-  std::string guess_frame;
-
-  Camera(const std::string& _calibrated_frame, const std::string& _guess_frame);
+  shared_ptr<gtsam::SimpleCamera> calibrated_cam;
 };
-
-Camera::Camera(const std::string& _calibrated_frame, const std::string& _guess_frame) :
-  calibrated_frame(_calibrated_frame),
-  guess_frame(_guess_frame)
-{
-}
-
 
 struct Target
 {
-  shared_ptr<gtsam::Pose3> calibrated_pose;
+  std::string frame;
+  std::string type;
+  double pt_spacing;
+  int rows;
+  int cols;
   shared_ptr<gtsam::Pose3> guess_pose;
-  std::string calibrated_frame;
-  std::string guess_frame;
+  shared_ptr<gtsam::Pose3> calibrated_pose;
   std::vector<gtsam::Point3> target_pts;
-
-  Target(const std::string& _calibrated_frame, const std::string& _guess_frame);
 };
-
-Target::Target(const std::string& _calibrated_frame, const std::string& _guess_frame) :
-  calibrated_frame(_calibrated_frame),
-  guess_frame(_guess_frame)
-{
-}
 
 struct Detection
 {
@@ -85,26 +70,46 @@ struct Scene
 
 struct CalibrationSetup 
 {
+  std::string world_frame;
+  std::string ee_frame;
   std::vector<shared_ptr<Camera> > cameras;
   std::vector<shared_ptr<Target> > targets;
 
-  CalibrationSetup(ros::NodeHandle _nh, 
-                   const std::string& _world_frame, const std::string& _ee_frame);
-
-  ros::NodeHandle nh;
-  std::string world_frame;
-  std::string ee_frame;
-  ros::Timer timer;
-  tf::TransformBroadcaster tf_broadcaster;
-  std::vector<ros::Publisher> target_pc_pubs;
-  std::vector<ros::Publisher> target_pc_guess_pubs;
-  void timerCallback(const ros::TimerEvent & timer_event);
+  void diffCalib(shared_ptr<CalibrationSetup>& that, 
+                 bool this_use_calib, bool that_use_calib);
+  static shared_ptr<CalibrationSetup> readFromParam(ros::NodeHandle& nh, const std::string& param_name);
+  void writeToParam(ros::NodeHandle& nh, const std::string& param_name);
 };
+
+typedef shared_ptr<CalibrationSetup> CalibrationSetupPtr;
 
 struct CalibrationJob 
 {
-  shared_ptr<CalibrationSetup> setup;
+  CalibrationSetupPtr setup;
   std::vector<shared_ptr<Scene> > scenes;
+  static shared_ptr<CalibrationJob> readFromParam(ros::NodeHandle& nh, 
+      const std::string& setup_param_name, const std::string& job_param_name);
+  void writeToParam(ros::NodeHandle& nh, const std::string& param_name);
+};
+
+typedef shared_ptr<CalibrationJob> CalibrationJobPtr;
+
+class CalibrationBroadcaster
+{
+public:
+  CalibrationBroadcaster(ros::NodeHandle nh, CalibrationSetupPtr& setup, bool use_calib=true);
+  void setUseCalib(bool use_calib) { use_calib_ = use_calib; }
+
+protected:
+  void timerCallback(const ros::TimerEvent & timer_event);
+
+  CalibrationSetupPtr setup_;
+  bool use_calib_;
+
+  ros::NodeHandle nh_;
+  ros::Timer timer_;
+  tf::TransformBroadcaster tf_broadcaster_;
+  std::vector<ros::Publisher> target_pc_pubs_;
 };
 }
 

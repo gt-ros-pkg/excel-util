@@ -42,17 +42,58 @@ class CameraArmTargetFactor : public NoiseModelFactor2<Pose3, Pose3>
       Matrix Dcam_pose;
       Matrix Dcam_point;
       Point2 pt_img_est = cam.project(pt_wl, Dcam_pose, Dcam_point);
-      // std::cout << "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" << std::endl;
-      // cam.print();
-      // std::cout << Dcam_pose << std::endl;
-      // std::cout << Dcam_point << std::endl;
-      // std::cout << Dtgt_pose << std::endl;
-      // std::cout << "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn" << std::endl;
       if(H_1) {
         (*H_1) = Dcam_pose;
       }
       if(H_2) {
         (*H_2) = Dcam_point*Dee_point*Dtgt_pose;
+      }
+      return (pt_img_est - pt_img).vector();
+    }
+};
+
+class CameraArmTargetPointFactor : public NoiseModelFactor3<Pose3, Pose3, Point3>
+{
+  public:
+    Cal3_S2 calib_cam;
+    Pose3 pose_ee;
+    Point2 pt_img;
+    CameraArmTargetPointFactor(const SharedNoiseModel& noiseModel, 
+                          Key j1, Key j2, Key j3, Cal3_S2 _calib_cam, Pose3 _pose_ee, 
+                                          Point2 _pt_img) :
+      NoiseModelFactor3<Pose3, Pose3, Point3>(noiseModel, j1, j2, j3), 
+        calib_cam(_calib_cam), pose_ee(_pose_ee), pt_img(_pt_img)
+      {
+        // calib_cam.print();
+        // std::cout << "pose_ee:" << std::endl << pose_ee << std::endl;
+        // std::cout << "pt_img:" << std::endl << pt_img << std::endl;
+      }
+
+    Vector evaluateError(const Pose3& pose_cam,
+                         const Pose3& pose_tgt,
+                         const Point3& pt_tgt,
+                         boost::optional<Matrix&> H_1 = boost::none,
+                         boost::optional<Matrix&> H_2 = boost::none,
+                         boost::optional<Matrix&> H_3 = boost::none) const
+    {
+      Matrix Dtgt_pose;
+      Matrix Dtgt_point;
+      Point3 pt_ee = pose_tgt.transform_to(pt_tgt, Dtgt_pose, Dtgt_point);
+      Matrix Dee_pose;
+      Matrix Dee_point;
+      Point3 pt_wl = pose_ee.transform_from(pt_ee, Dee_pose, Dee_point);
+      SimpleCamera cam(pose_cam, calib_cam);
+      Matrix Dcam_pose;
+      Matrix Dcam_point;
+      Point2 pt_img_est = cam.project(pt_wl, Dcam_pose, Dcam_point);
+      if(H_1) {
+        (*H_1) = Dcam_pose;
+      }
+      if(H_2) {
+        (*H_2) = Dcam_point*Dee_point*Dtgt_pose;
+      }
+      if(H_3) {
+        (*H_3) = Dcam_point*Dee_point*Dtgt_point;
       }
       return (pt_img_est - pt_img).vector();
     }

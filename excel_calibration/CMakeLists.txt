@@ -6,7 +6,6 @@ project(excel_calibration)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   excel_description
-  industrial_extrinsic_cal
 )
 
 ## System dependencies are found with CMake's conventions

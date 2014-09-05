@@ -118,6 +118,7 @@ include_directories(
 ## Declare a cpp library
 add_library(extrinsic_calibration
   src/calibration_job.cpp
+  src/extrinsic_calibration.cpp
 )
 target_link_libraries(extrinsic_calibration
   gtsam
