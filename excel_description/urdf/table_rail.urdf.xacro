@@ -17,7 +17,8 @@
    <property name="rail_mass" value="50.0" />
 
    <!-- Kinematic model -->
-   <property name="rail_length" value="3.75" />
+   <property name="rail_lower_limit" value="0.05" />
+   <property name="rail_upper_limit" value="3.45" />
 
    <!-- Collision model -->
    <property name="table_collision_offset" value="0.80137 0.05588 0.9" />
@@ -44,7 +45,7 @@
          <child link="${prefix}rail_link" />
          <origin rpy="0.0 0.0 0.0" xyz="${table_collision_offset}" />
          <axis xyz="0 1 0" />
-         <limit effort="10.0" lower="0.0" upper="${rail_length}" velocity="${pi}" />
+         <limit effort="10.0" lower="${rail_lower_limit}" upper="${rail_upper_limit}" velocity="${pi}" />
          <dynamics damping="10" friction="0.1" />
       </joint>
 
@@ -58,7 +59,7 @@
       <joint name="${prefix}rail_base_joint" type="fixed">
          <parent link="${prefix}rail_link" />
          <child link="${prefix}base_link" />
-         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
+         <origin rpy="0.0 0.0 ${-pi/2}" xyz="0.0 0.0 0.0" />
       </joint>
 
       <xacro:table_rail_transmission prefix="${prefix}" />

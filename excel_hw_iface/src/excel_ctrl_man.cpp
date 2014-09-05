@@ -32,6 +32,7 @@ RT_TASK update_loop_task_info;
 void signal_handler(int sig)
 {
   stop_requested = true;
+  ros::shutdown();
 }
 
 #endif
@@ -64,7 +65,7 @@ void update_loop_task(void *arg)
 int main(int argc, char** argv)
 {
   stop_requested = false;
-  ros::init(argc, argv, "cs_controller_man");
+  ros::init(argc, argv, "excel_ctrl_man");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
@@ -87,16 +88,17 @@ int main(int argc, char** argv)
   for(int i=1;i<7;i++)
     ur_joint_names.push_back(v[i]);
 
-  cs_hw_ptr.reset(new VelEcatCtrl(nh, nh_priv, indradrive_joint_name));
-  cs_hw_ptr->init();
-
   ur_hw_ptr.reset(new ur::URRobotHW(nh, ur_joint_names));
-  ur_hw_ptr->init(robot_ip);
+
+  cs_hw_ptr.reset(new VelEcatCtrl(nh, nh_priv, indradrive_joint_name));
 
   excel_hw.registerInterfaceManager(cs_hw_ptr.get());
   excel_hw.registerInterfaceManager(ur_hw_ptr.get());
 
   cm_ptr.reset(new controller_manager::ControllerManager(&excel_hw, nh));
+
+  ur_hw_ptr->init(robot_ip);
+  cs_hw_ptr->init();
 
 #ifdef XENOMAI_REALTIME
   int ret;
