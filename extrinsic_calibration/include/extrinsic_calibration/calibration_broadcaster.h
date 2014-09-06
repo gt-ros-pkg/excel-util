@@ -22,6 +22,7 @@ namespace extrinsic_calibration
 typedef pcl::PointCloud<pcl::PointXYZRGB> PCRGB;
 
 tf::Transform gtsamPoseToTF(gtsam::Pose3& gtsam_pose);
+gtsam::Pose3 tfPoseToGtsam(tf::Transform& tf_pose);
 
 class CalibrationBroadcaster
 {

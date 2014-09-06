@@ -14,11 +14,20 @@ tf::Transform gtsamPoseToTF(gtsam::Pose3& gtsam_pose)
   return transform;
 }
 
+gtsam::Pose3 tfPoseToGtsam(tf::Transform& tf_pose)
+{
+  tf::Vector3 pos = tf_pose.getOrigin();
+  tf::Quaternion quat = tf_pose.getRotation();
+  gtsam::Point3 pos_gt(pos.x(), pos.y(), pos.z());
+  gtsam::Rot3 rot_gt = gtsam::Rot3::quaternion(quat[3], quat[0], quat[1], quat[2]);
+  return gtsam::Pose3(rot_gt, pos_gt);
+}
+
 CalibrationBroadcaster::
 CalibrationBroadcaster(ros::NodeHandle nh, CalibrationSetupPtr& setup, bool use_calib) :
   nh_(nh), setup_(setup), use_calib_(use_calib)
 {
-  timer_ = nh_.createTimer(ros::Rate(1.0), &CalibrationBroadcaster::timerCallback, this);
+  timer_ = nh_.createTimer(ros::Rate(5.0), &CalibrationBroadcaster::timerCallback, this);
 }
 
 void CalibrationBroadcaster::timerCallback(const ros::TimerEvent & timer_event)
@@ -50,10 +59,14 @@ void CalibrationBroadcaster::timerCallback(const ros::TimerEvent & timer_event)
     }
     PCRGB::Ptr pc_msg (new PCRGB);
     pc_msg->height = pc_msg->width = 1;
+    float percent_done = 0.0, percent_change = 1./target->target_pts.size();
     BOOST_FOREACH(gtsam::Point3 gt_pt, target->target_pts) {
-      pcl::PointXYZRGB pc_pt(155+std::min((int)(gt_pt.x()*100),130), 155+std::min((int)(gt_pt.y()*130),100), 55); // r g b uint8
+      pcl::PointXYZRGB pc_pt((uint8_t) (percent_done*255), 
+                             255, 
+                             (uint8_t) (255-percent_done*255)); // r g b uint8
       pc_pt.x = gt_pt.x(); pc_pt.y = gt_pt.y(); pc_pt.z = gt_pt.z();
       pc_msg->points.push_back(pc_pt);
+      percent_done += percent_change;
     }
     pc_msg->width = pc_msg->points.size();
 

@@ -120,7 +120,7 @@ CalibrationSetupPtr CalibrationSetup::
                    "We must have a pattern with strictly more columns than rows");
     for(int j=0;j<tgt->rows;j++) 
       for(int k=0;k<tgt->cols;k++) 
-        tgt->target_pts.push_back(gtsam::Point3(tgt->pt_spacing*j, tgt->pt_spacing*k, 0.0));
+        tgt->target_pts.push_back(gtsam::Point3(tgt->pt_spacing*k, tgt->pt_spacing*j, 0.0));
     setup->targets.push_back(tgt);
   }
   return setup;

@@ -34,7 +34,7 @@ class CameraArmTargetFactor : public NoiseModelFactor2<Pose3, Pose3>
     {
       Matrix Dtgt_pose;
       Matrix Dtgt_point;
-      Point3 pt_ee = pose_tgt.transform_to(pt_tgt, Dtgt_pose, Dtgt_point);
+      Point3 pt_ee = pose_tgt.transform_from(pt_tgt, Dtgt_pose, Dtgt_point);
       Matrix Dee_pose;
       Matrix Dee_point;
       Point3 pt_wl = pose_ee.transform_from(pt_ee, Dee_pose, Dee_point);
@@ -78,7 +78,7 @@ class CameraArmTargetPointFactor : public NoiseModelFactor3<Pose3, Pose3, Point3
     {
       Matrix Dtgt_pose;
       Matrix Dtgt_point;
-      Point3 pt_ee = pose_tgt.transform_to(pt_tgt, Dtgt_pose, Dtgt_point);
+      Point3 pt_ee = pose_tgt.transform_from(pt_tgt, Dtgt_pose, Dtgt_point);
       Matrix Dee_pose;
       Matrix Dee_point;
       Point3 pt_wl = pose_ee.transform_from(pt_ee, Dee_pose, Dee_point);

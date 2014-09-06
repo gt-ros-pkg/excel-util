@@ -1,0 +1,27 @@
+world_frame: /table_link
+ee_frame: /ee_link
+cameras:
+- frame: /kinect_front_rgb_optical_frame
+  image_topic: /kinect_front/rgb/image_rect_color
+  guess_cam:
+    calibration: {fx: 555.1, fy: 555.0, skew: 0.0, u0: 319, v0: 244.2}
+    pose:
+      translation: {x: 1.555, y: 4.795, z: 2.280}
+      rotation: {x: -0.048, y: 0.859, z: -0.509, w: 0.028}
+  calibrated_cam:
+    calibration: {fx: 555.1, fy: 555.0, skew: 0.0, u0: 319, v0: 244.2}
+    pose:
+      translation: {x: 0.0, y: 0.0, z: 0.0}
+      rotation: {x: 0.0, y: 0.0, z: 0.0, w: 0.0}
+targets:
+- frame: /circle_grid_frame
+  type: 1
+  pt_spacing: 0.1158
+  rows: 5
+  cols: 7
+  guess_pose:
+    translation: {x: 0.0368, y: -0.2365, z: -0.7861}
+    rotation: {x: 0.0, y: -0.70710808, z: 0.0, w: 0.70710548}
+  calibrated_pose:
+    translation: {x: 0.0, y: 0.0, z: 0.0}
+    rotation: {x: 0.0, y: 0.0, z: 0.0, w: 0.0}
