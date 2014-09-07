@@ -22,7 +22,7 @@
 
    <!-- Collision model 
    <property name="table_collision_offset" value="0.135 0.81 0.935" />-->
-   <property name="table_collision_offset" value="3.675 0.81 0.935" />
+   <property name="table_collision_offset" value="3.620 0.81 0.935" />
 
    <xacro:macro name="table_rail" params="prefix">
 
@@ -60,7 +60,7 @@
       <joint name="${prefix}rail_base_joint" type="fixed">
          <parent link="${prefix}rail_link" />
          <child link="${prefix}base_link" />
-         <origin rpy="0.0 0.0 ${pi}" xyz="0.0 0.0 0.0" />
+         <origin rpy="0.0 0.0 ${pi}" xyz="0.0 0.0 0.034" />
       </joint>
 
       <xacro:table_rail_transmission prefix="${prefix}" />
