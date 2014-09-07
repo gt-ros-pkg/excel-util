@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<launch>
+  <node pkg="tf" type="static_transform_publisher" name="circlegrid7x5_large_tf_pub" args="0.0368 -0.2365 -0.7861 0 -1.5708 0 ee_link circlegrid7x5_large_frame 10" />
+</launch>

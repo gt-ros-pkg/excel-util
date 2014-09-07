@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<launch>
+  <include file="$(find excel_calibration)/launch/circlegrid7x5_large_tf.launch" />
+  <include file="$(find excel_calibration)/launch/kinect_front_guess_tf.launch" />
+  <!--<include file="$(find excel_calibration)/launch/kinect_back_guess_tf.launch" />-->
+  <node pkg="industrial_extrinsic_cal" type="service_node" name="calibration_service_node" output="screen" >
+    <rosparam>
+      camera_file: "kinects_camera_def.yaml"
+      target_file: "circlegrid7x5_large_target_def.yaml"
+      cal_job_file: "kinects_caljob_def.yaml"
+      package_name: "excel_calibration"
+      store_results_file_name: "world_to_camera_tf_broadcaster.launch"
+    </rosparam>
+  </node>
+</launch>

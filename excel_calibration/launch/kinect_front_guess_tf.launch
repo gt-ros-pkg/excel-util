@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<launch>
+  <node pkg="tf" type="static_transform_publisher" name="kinect_front_guess_tf_pub" args="1.60 4.8 2.28 -1.46 0.5 0.0 table_link kinect_front_link 100" />
+</launch>
