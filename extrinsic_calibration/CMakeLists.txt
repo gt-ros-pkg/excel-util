@@ -102,7 +102,7 @@ ENDIF (GTSAM_FOUND)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES extrinsic_calibration
-  CATKIN_DEPENDS hrl_geom opencv2 pcl_ros tf
+  CATKIN_DEPENDS hrl_geom pcl_ros tf
 #  DEPENDS system_lib
 )
 

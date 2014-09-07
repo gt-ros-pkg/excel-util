@@ -4,7 +4,8 @@
     args="-0.025 0.0 0.0 0.0 0.0 0.0 kinect_front_rgb_optical_frame kinect_front_depth_optical_frame 100" />
   <node pkg="extrinsic_calibration" type="ros_calibration_server" name="ros_calibration_server" 
         output="screen">
-    <rosparam command="load" file="$(find excel_calibration)/yaml/calib_setup.yaml" 
+    <rosparam command="load" 
+              file="$(find excel_calibration)/calib_data/kinx2_ovrhdx2_calib_setup.yaml" 
               param="calibration_setup" />
             <!-- <rosparam command="delete" param="calibration_job"/> -->
   </node>
