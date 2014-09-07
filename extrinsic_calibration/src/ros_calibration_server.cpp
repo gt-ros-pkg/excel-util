@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <std_srvs/Empty.h>
 #include <std_msgs/Bool.h>
 #include <image_transport/image_transport.h>
@@ -38,6 +39,7 @@ protected:
   ScenePtr cur_scene_;
 
   void imageCallback(int camera_ind, const sensor_msgs::ImageConstPtr& msg);
+  bool checkTargetFlip(DetectionPtr& detect);
   bool detectCallback(std_srvs::Empty::Request& request, 
                       std_srvs::Empty::Response& response);
   bool calibrateCallback(std_srvs::Empty::Request& request, 
@@ -103,6 +105,10 @@ void CalibrationServer::imageCallback(int camera_ind, const sensor_msgs::ImageCo
         detect->target_ind = target_ind;
         for(int i = 0; i < target_img_pts.size(); ++i) 
           detect->image_pts.push_back(gtsam::Point2(target_img_pts[i].x, target_img_pts[i].y));
+        if(checkTargetFlip(detect))
+          ROS_WARN("Flipping target.");
+        else
+          ROS_INFO("Not flipping target.");
         cur_scene_->detections.push_back(detect);
         saving_detections_[camera_ind][target_ind] = false;
       }
@@ -112,14 +118,37 @@ void CalibrationServer::imageCallback(int camera_ind, const sensor_msgs::ImageCo
   }
 }
 
+bool CalibrationServer::checkTargetFlip(DetectionPtr& detect)
+{
+  CameraPtr cam = cal_job_->setup->cameras[detect->camera_ind];
+  TargetPtr tgt = cal_job_->setup->targets[detect->target_ind];
+  gtsam::Pose3 pose_ee = cur_scene_->arm_pose;
+  gtsam::Pose3 pose_tgt = *(tgt->guess_pose);
+  int n_pts = tgt->target_pts.size();
+  double mag_diff_img = 0.0, mag_diff_img_flip = 0.0;
+  for(int i=0; i < n_pts; ++i) {
+    gtsam::Point3 pt_tgt = tgt->target_pts[i];
+    gtsam::Point3 pt_ee = pose_tgt.transform_from(pt_tgt);
+    gtsam::Point3 pt_wl = pose_ee.transform_from(pt_ee);
+    gtsam::Point2 pt_img_est = cam->guess_cam->project(pt_wl);
+    gtsam::Point2 pt_img = detect->image_pts[i];
+    gtsam::Point2 pt_img_flip = detect->image_pts[n_pts-i-1];
+    mag_diff_img += (pt_img - pt_img_est).norm();
+    mag_diff_img_flip += (pt_img_flip - pt_img_est).norm();
+  }
+  std::cout << "img, img_flip: (" << mag_diff_img << ", " << mag_diff_img_flip << ")\n";
+  if(mag_diff_img_flip < mag_diff_img) {
+    std::reverse(detect->image_pts.begin(), detect->image_pts.end());
+    return true;
+  }
+  return false;
+}
+
 bool CalibrationServer::detectCallback(std_srvs::Empty::Request& request, 
                                        std_srvs::Empty::Response& response)
 {
   cur_scene_.reset(new Scene);
   std::cout << "detectCallback in\n";
-  for(int i = 0; i < saving_detections_.size(); ++i)
-    for(int j = 0; j < saving_detections_[i].size(); ++j)
-      saving_detections_[i][j] = true;
   
   tf::StampedTransform arm_pose_tf;
   try {
@@ -133,6 +162,11 @@ bool CalibrationServer::detectCallback(std_srvs::Empty::Request& request,
   }
   cur_scene_->arm_pose = tfPoseToGtsam(arm_pose_tf);
   std::cout << cur_scene_->arm_pose << "\n";
+
+  for(int i = 0; i < saving_detections_.size(); ++i)
+    for(int j = 0; j < saving_detections_[i].size(); ++j)
+      saving_detections_[i][j] = true;
+
   ros::Duration(1.0).sleep();
   std::cout << "detections.size" << cur_scene_->detections.size() << "\n";
   cal_job_->scenes.push_back(cur_scene_);
@@ -163,7 +197,13 @@ bool CalibrationServer::calibrateCallback(std_srvs::Empty::Request& request,
   //     std::cout << "\n\n\n";
   //   }
   // }
-  cameraArmTargetDetectPointCalibrate(cal_job_, 2.0, 0.001, 0.05);
+  double pixel_noise = 2.0;
+  double xy_noise = 0.001;
+  double z_noise = 0.05;
+  nh_.getParam("pixel_noise", pixel_noise);
+  nh_.getParam("xy_noise", xy_noise);
+  nh_.getParam("z_noise", z_noise);
+  cameraArmTargetDetectPointCalibrate(cal_job_, pixel_noise, xy_noise, z_noise);
   calib_bc_.setUseCalib(true);
   return true;
 }

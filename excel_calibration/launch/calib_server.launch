@@ -2,11 +2,16 @@
 <launch>
   <node pkg="tf" type="static_transform_publisher" name="kinect_front_depth_tf_pub" 
     args="-0.025 0.0 0.0 0.0 0.0 0.0 kinect_front_rgb_optical_frame kinect_front_depth_optical_frame 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect_back_depth_tf_pub" 
+    args="-0.025 0.0 0.0 0.0 0.0 0.0 kinect_back_rgb_optical_frame kinect_back_depth_optical_frame 100" />
   <node pkg="extrinsic_calibration" type="ros_calibration_server" name="ros_calibration_server" 
         output="screen">
     <rosparam command="load" 
               file="$(find excel_calibration)/calib_data/kinx2_ovrhdx2_calib_setup.yaml" 
               param="calibration_setup" />
+            <rosparam command="load" 
+              file="$(find excel_calibration)/calib_data/kinx2_ovrhdx2_calib_job5.yaml" 
+              param="calibration_job" /> 
             <!-- <rosparam command="delete" param="calibration_job"/> -->
   </node>
 </launch>
