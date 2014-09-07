@@ -24,10 +24,10 @@
    <!-- ur10 -->
   <xacro:ur10_robot prefix="" 
                     j1_lwr_lmt="${-2.0*pi}" j1_upr_lmt="${2.0*pi}" 
-                    j2_lwr_lmt="${-2.0*pi}" j2_upr_lmt="${2.0*pi}" 
-                    j3_lwr_lmt="${-2.0*pi}" j3_upr_lmt="${2.0*pi}" 
-                    j4_lwr_lmt="${-2.0*pi}" j4_upr_lmt="${2.0*pi}" 
-                    j5_lwr_lmt="${-2.0*pi}" j5_upr_lmt="${2.0*pi}" 
+                    j2_lwr_lmt="${-pi}" j2_upr_lmt="${0.0}" 
+                    j3_lwr_lmt="${0.0}" j3_upr_lmt="${pi}" 
+                    j4_lwr_lmt="${-pi}" j4_upr_lmt="${0.0}" 
+                    j5_lwr_lmt="${-110.0*pi/180.0}" j5_upr_lmt="${0.0}" 
                     j6_lwr_lmt="${-2.0*pi}" j6_upr_lmt="${2.0*pi}" 
   />
 
