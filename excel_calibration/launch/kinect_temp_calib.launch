@@ -1,7 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-  <node pkg="tf" type="static_transform_publisher" name="kinect_front_depth_tf_pub" 
-    args="-0.025 0.0 0.0 0.0 0.0 0.0 kinect_front_rgb_optical_frame kinect_front_depth_optical_frame 100" />
-  <node pkg="tf" type="static_transform_publisher" name="kinect_front_rgb_tf_pub" 
-    args="1.549 4.793 2.276 -0.038 0.864 -0.501 0.033 /table_link /kinect_front_rgb_optical_frame 100" />
-</launch>
