@@ -1,4 +1,5 @@
 <?xml version="1.0" ?>
 <launch>
-  <node pkg="tf" type="static_transform_publisher" name="kinect_back_guess_tf_pub" args="3.77 0.0 2.3 2.1 0.6 0.0 table_link kinect_back_link 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect_back_guess_tf_pub" 
+    args="3.83 3.76 2.3 3.67 0.6 0.0 table_link kinect_back_link 100" />
 </launch>
