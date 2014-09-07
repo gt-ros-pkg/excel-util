@@ -17,5 +17,17 @@
     <node pkg="nodelet" type="nodelet" name="image_proc_debayer"
           args="load image_proc/debayer camera_nodelet_manager">
     </node>
+
+    <node pkg="nodelet" type="nodelet" name="image_proc_rectify"
+          args="load image_proc/rectify camera_nodelet_manager">
+      <remap from="image_mono" to="/overhead_rob_ws_cam/image_mono" />
+      <remap from="image_rect" to="/overhead_rob_ws_cam/image_rect" />
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="image_proc_color_rectify"
+          args="load image_proc/rectify camera_nodelet_manager">
+      <remap from="image_mono" to="/overhead_rob_ws_cam/image_color" />
+      <remap from="image_rect" to="/overhead_rob_ws_cam/image_rect_color" />
+    </node>
   </group>
 </launch>
