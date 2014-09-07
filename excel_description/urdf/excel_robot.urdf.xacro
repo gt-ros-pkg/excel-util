@@ -18,6 +18,9 @@
    <!-- include gripper -->
    <xacro:include filename="$(find excel_description)/urdf/gripper.urdf.xacro" />
 
+   <!-- include cameras -->
+   <xacro:include filename="$(find excel_description)/urdf/cameras.urdf.xacro" />
+
    <!-- ur10 -->
   <xacro:ur10_robot prefix="" joint_limited="false"/>
 
@@ -26,5 +29,8 @@
 
    <!-- gripper -->
    <xacro:gripper prefix="" />
+
+   <!-- cameras -->
+   <xacro:cameras prefix="" />
 
 </robot>

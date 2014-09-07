@@ -3,10 +3,10 @@
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "move_to_known_position");
-  ros::NodeHandle nh_;
+  ros::NodeHandle nh_param_("~");
   usleep(1000*1000);
   std::string position = "Initial";
-  nh_.param("target_position",position,position);
+  nh_param_.param("target_position",position,position);
   // start a ROS spinning thread
   ros::AsyncSpinner spinner(1);
   spinner.start();

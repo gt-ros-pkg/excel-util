@@ -29,9 +29,20 @@ int main(int argc, char **argv)
     move_group_interface::MoveGroup group("excel");
     group.setPlanningTime(8.0);
 
-    double x_target, y_target, angle_target;
+    double x_target, y_target, z_target, z_bin, h_bin, dz, angle_target;
+    double gripper_offset = 0.1;
     bool path_constraint;
+
+    // Load parameters //
+    nh_param_.getParam("x_goal",x_target);
+    nh_param_.getParam("y_goal",y_target);
+    nh_param_.getParam("z_bin",z_bin);
+    nh_param_.getParam("h_bin",h_bin);
+    nh_param_.getParam("dz",dz);
+    nh_param_.getParam("angle",angle_target);
     nh_param_.getParam("constraint",path_constraint);
+    z_target = gripper_offset+z_bin+h_bin;
+
 
     // IK Service //
     ros::ServiceClient service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
@@ -70,10 +81,7 @@ int main(int argc, char **argv)
         group.setPathConstraints(constraints);
     }
 
-    // Load parameters //
-    nh_param_.getParam("x_goal",x_target);
-    nh_param_.getParam("y_goal",y_target);
-    nh_param_.getParam("angle",angle_target);
+
 
     // Loading planning_scene_monitor //
     boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
@@ -118,7 +126,7 @@ int main(int argc, char **argv)
     m.getRPY(roll, pitch, yaw);
     tf::Quaternion quat = tf::createQuaternionFromRPY(M_PI/2-yaw,M_PI/2,M_PI);
     service_request.ik_request.pose_stamped.pose.position = object_pick_pose.position;
-    service_request.ik_request.pose_stamped.pose.position.z += 0.4;
+    service_request.ik_request.pose_stamped.pose.position.z = z_target+dz;
     service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
     service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
     service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
@@ -128,7 +136,7 @@ int main(int argc, char **argv)
     group.move();
 
     ROS_INFO("Descent");
-    service_request.ik_request.pose_stamped.pose.position.z = 1.06;
+    service_request.ik_request.pose_stamped.pose.position.z -= dz ;
     service_client.call(service_request, service_response);
     group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
@@ -141,7 +149,7 @@ int main(int argc, char **argv)
     attached_object_publisher.publish(attached_object);
 
     ROS_INFO("Lift");
-    service_request.ik_request.pose_stamped.pose.position.z += 0.4;
+    service_request.ik_request.pose_stamped.pose.position.z += dz;
     service_client.call(service_request, service_response);
     group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
@@ -150,7 +158,6 @@ int main(int argc, char **argv)
     tf::Quaternion quat_goal = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0,M_PI/2,M_PI);
     service_request.ik_request.pose_stamped.pose.position.x = x_target;
     service_request.ik_request.pose_stamped.pose.position.y = y_target;
-    service_request.ik_request.pose_stamped.pose.position.z = 1.46;
     service_request.ik_request.pose_stamped.pose.orientation.x = quat_goal.x();
     service_request.ik_request.pose_stamped.pose.orientation.y = quat_goal.y();
     service_request.ik_request.pose_stamped.pose.orientation.z = quat_goal.z();
@@ -160,7 +167,7 @@ int main(int argc, char **argv)
     group.move();
 
     ROS_INFO("Descent");
-    service_request.ik_request.pose_stamped.pose.position.z = 1.06;
+    service_request.ik_request.pose_stamped.pose.position.z -= dz;
     service_client.call(service_request, service_response);
     group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
@@ -179,20 +186,20 @@ int main(int argc, char **argv)
     new_bin_pose.orientation.z = quat_bin.z();
     new_bin_pose.orientation.w = quat_bin.w();
     new_bin_pose.position = service_request.ik_request.pose_stamped.pose.position;
-    new_bin_pose.position.z = 0.84;
+    new_bin_pose.position.z = z_bin;
     attached_object.object.mesh_poses.push_back(new_bin_pose);
     planning_scene.world.collision_objects.push_back(attached_object.object);
     planning_scene_diff_publisher.publish(planning_scene);
 
     ROS_INFO("Lift");
-    service_request.ik_request.pose_stamped.pose.position.z += 0.4;
+    service_request.ik_request.pose_stamped.pose.position.z += dz;
     service_client.call(service_request, service_response);
     group.setJointValueTarget(service_response.solution.joint_state);
     group.move();
-
+    /*
     ROS_INFO("Go to Initial position");
     group.setNamedTarget("Initial");
     group.move();
-
+*/
     ros::shutdown();
 }
