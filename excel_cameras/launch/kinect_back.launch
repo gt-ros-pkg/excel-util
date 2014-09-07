@@ -3,6 +3,7 @@
   <include file="$(find openni2_launch)/launch/openni2.launch">
     <arg name="camera" value="kinect_back" />
     <arg name="device_id" value="2@1" />
+    <arg name="depth_registration" value="true" />
     <arg name="rgb_camera_info_url" 
          value="file://$(find excel_cameras)/calibration_files/kinect_back.yaml" />
     <arg name="publish_tf" value="$(arg publish_tf)" />
