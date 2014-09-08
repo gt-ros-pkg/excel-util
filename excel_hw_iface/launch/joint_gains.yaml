@@ -1,7 +1,7 @@
-table_rail_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
-shoulder_pan_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
-shoulder_lift_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
-elbow_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
-wrist_1_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
-wrist_2_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
-wrist_3_joint: {p: 600000, d: 100, i: 0, i_clamp: 1}
+table_rail_joint: {p: 300, d: 0.2, i: 20, i_clamp: 1}
+shoulder_pan_joint: {p: 20, d: 0.2, i: 150, i_clamp: 5}
+shoulder_lift_joint: {p: 15, d: 0, i: 0, i_clamp: 1}
+elbow_joint: {p: 15, d: 0.5, i: 10, i_clamp: 1}
+wrist_1_joint: {p: 40, d: 0, i: 0, i_clamp: 1}
+wrist_2_joint: {p: 40, d: 0, i: 0, i_clamp: 1}
+wrist_3_joint: {p: 40, d: 0, i: 0, i_clamp: 1}

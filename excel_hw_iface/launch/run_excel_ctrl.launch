@@ -41,4 +41,6 @@
     <param name="scale_vel_cmd" value="1000000.0"/>
   </node>
 
+  <node name="estop_monitor" pkg="excel_hw_iface" type="estop_monitor.py" respawn="true" />
+
 </launch>

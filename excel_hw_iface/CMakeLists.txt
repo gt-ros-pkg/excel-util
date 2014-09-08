@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   ur_ctrl_client
 )
 
+catkin_python_setup()
+
 ###########
 ## Build ##
 ###########
