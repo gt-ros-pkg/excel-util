@@ -43,17 +43,34 @@ public:
     pc_pub_ = nh.advertise<PCRGB>("pc_out", 1);
   }
 protected:
-  void recvPCCallback(const PCRGB::ConstPtr& msg);
+  void recvPCCallback(const PCRGB::ConstPtr& pc_in);
 
-  PCRGB pc_in_;
+  PCRGB::Ptr pc_proc_;
   ros::NodeHandle nh_;
   ros::Subscriber pc_sub_;
   ros::Publisher pc_pub_;
 };
 
-void PCCylinderRemoval::recvPCCallback(const PCRGB::ConstPtr& msg)
+void PCCylinderRemoval::recvPCCallback(const PCRGB::ConstPtr& pc_in)
 {
-  pc_pub_.publish(msg);
+  Eigen::Matrix3f tf;
+  tf << -1.0,  0.0,  0.0,
+         0.0, -1.0,  0.0,
+         0.0,  0.0,  1.0;
+  if(!pc_proc_) {
+    pc_proc_.reset(new PCRGB(pc_in->width, pc_in->height));
+    // pc_proc_.reset(new PCRGB());
+    pc_proc_->header.frame_id = pc_in->header.frame_id;
+  }
+  pc_proc_->header.seq = pc_in->header.seq;
+  pc_proc_->header.stamp = pc_in->header.stamp;
+        
+  //Eigen::MatrixXf pc_in_mat = pc_in->getMatrixXfMap(3, 4, 0);
+  //Eigen::MatrixXf& pc_proc_mat = pc_proc_->getMatrixXfMap(3, 4, 0);
+  //pc_proc_mat = pc_in_mat * tf;
+  pc_proc_->getMatrixXfMap(3, 4, 0) = tf * pc_in->getMatrixXfMap(3, 4, 0);
+  //ROS_INFO("PTS SIZE %d", pc_proc_->points.size());
+  pc_pub_.publish(pc_proc_);
 }
 
 int main( int argc, char** argv )
