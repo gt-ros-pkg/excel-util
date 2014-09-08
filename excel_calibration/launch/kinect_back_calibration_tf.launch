@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<launch>
+  <node pkg="tf" type="static_transform_publisher" name="kinect_back_calibration_tf_pub" 
+    args="3.848 3.690 2.314 0.462 0.755 -0.401 -0.235 table_link kinect_back_calibration 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect_back_calib_link_tf_pub" 
+    args="-0.045 0.000 0.000 0.500 -0.500 0.500 0.500 kinect_back_calibration kinect_back_link 100" />
+</launch>
