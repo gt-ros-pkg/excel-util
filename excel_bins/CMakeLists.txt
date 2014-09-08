@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_ros_move_group
   moveit_ros_visualization
   robot_state_publisher
+  message_generation
   roscpp
   rospy
   shape_msgs
@@ -51,11 +52,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  Bin.msg
+  Bins.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -72,10 +73,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs#   shape_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs
+  excel_bins#   shape_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -107,10 +109,14 @@ include_directories(
 ## Declare a cpp library
 add_library(add_bin src/add_bin.cpp)
 add_library(pick_bin src/pick_bin.cpp)
+add_library(update_bins src/update_bins.cpp)
+#add_library(move_bin src/move_bin.cpp)
 
 ## Declare a cpp executable
 add_executable(add_bin_node src/add_bin.cpp)
 add_executable(pick_bin_node src/pick_bin.cpp)
+add_executable(update_bins_node src/update_bins.cpp)
+#add_executable(move_bin_node src/move_bin.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -119,6 +125,8 @@ add_executable(pick_bin_node src/pick_bin.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(add_bin_node ${catkin_LIBRARIES})
 target_link_libraries(pick_bin_node ${catkin_LIBRARIES})
+target_link_libraries(update_bins_node ${catkin_LIBRARIES})
+#target_link_libraries(move_bin_node ${catkin_LIBRARIES})
 
 #############
 ## Install ##
