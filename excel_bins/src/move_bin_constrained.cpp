@@ -1,4 +1,4 @@
-#include "move_bin.h"
+#include "move_bin_constrained.h"
 
 /*--------------------------------------------------------------------
  * MoveBin()
@@ -13,6 +13,7 @@ MoveBin::MoveBin() : group("excel") ,spinner(1)
 
 	ros::NodeHandle nh_, nh_param_("~");
 	ros::WallDuration sleep_t(0.5);
+
 	group.setPlanningTime(8.0);
 
 	service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
@@ -69,10 +70,13 @@ int MoveBin::move_on_top(int bin_number)
 	}
 
 	if (bin_found){
+		std::vector<double> group_variable_values;
+		group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
 		ROS_INFO("Moving on top of the bin");
-		geometry_msgs::Pose object_pick_pose = collision_objects[object_id].mesh_poses[0];
 		bin_height = collision_objects[object_id].meshes[0].vertices[0].z;
 
+
+		geometry_msgs::Pose object_pick_pose = collision_objects[object_id].mesh_poses[0];
 		tf::Quaternion co_quat(object_pick_pose.orientation.x, object_pick_pose.orientation.y, object_pick_pose.orientation.z, object_pick_pose.orientation.w);
 		tf::Matrix3x3 m(co_quat);
 		double roll, pitch, yaw;
@@ -84,9 +88,40 @@ int MoveBin::move_on_top(int bin_number)
 		service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
 		service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
 		service_request.ik_request.pose_stamped.pose.orientation.w = quat.w();
-		service_client.call(service_request, service_response);
 
+		/*
+		std::vector<std::string> joints;
+		joints.push_back("table_rail_joint");
+		joints.push_back("shoulder_pan_joint");
+		joints.push_back("shoulder_lift_joint");
+		joints.push_back("elbow_joint");
+		joints.push_back("wrist_1_joint");
+		joints.push_back("wrist_2_joint");
+		joints.push_back("wrist_3_joint");
+		group_variable_values[0] = 1000;
+		group_variable_values[1] = 1000;
+		group_variable_values[2] = -1.95;
+		group_variable_values[3] = 2.50;
+		group_variable_values[4] = -2.09;
+		group_variable_values[5] = -1.57;
+		group_variable_values[6] = -3.17;
+
+		service_request.ik_request.robot_state.joint_state.position = group_variable_values;
+		service_request.ik_request.robot_state.joint_state.name = joints;*/
+		service_client.call(service_request, service_response);
+		/*
+		std::vector<std::string> joints_null;
+		service_request.ik_request.robot_state.joint_state.name = joints_null;
+		 */		
+
+		//group_variable_values[0] = service_response.solution.joint_state.position[0];
+		//group_variable_values[1] = service_response.solution.joint_state.position[1];
+
+		//group.setJointValueTarget(group_variable_values);
 		group.setJointValueTarget(service_response.solution.joint_state);
+		/*for (int i=0;i<service_response.solution.joint_state.name.size();i++){
+			std::cout << service_response.solution.joint_state.name[i] << std::endl;
+		}*/
 		group.move();
 		return 1;
 	}else{
@@ -104,8 +139,29 @@ int MoveBin::move_on_top(int bin_number)
 void MoveBin::descent()
 {
 	ROS_INFO("Descent");
+
+	std::vector<double> group_variable_values;
+	group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
+
+
+	std::vector<std::string> joints;
+	joints.push_back("table_rail_joint");
+	joints.push_back("shoulder_pan_joint");
+	group_variable_values[0] = group_variable_values[0];
+	group_variable_values[1] = group_variable_values[1];
+
 	service_request.ik_request.pose_stamped.pose.position.z = TABLE_HEIGHT+GRIPPING_OFFSET+bin_height ;
+
+	service_request.ik_request.robot_state.joint_state.position = group_variable_values;
+	service_request.ik_request.robot_state.joint_state.name = joints;
+
 	service_client.call(service_request, service_response);
+	///*
+	std::vector<std::string> joints_null;
+	service_request.ik_request.robot_state.joint_state.name = joints_null;
+	//*/		
+
+
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.move();
 }
@@ -149,6 +205,22 @@ int MoveBin::attach_bin(int bin_number)
 }
 
 /*--------------------------------------------------------------------
+ * travelling_position()
+ * Move to travelling position
+ *------------------------------------------------------------------*/
+void MoveBin::travelling_position()
+{
+	ROS_INFO("Travelling position");	
+	service_response.solution.joint_state.position[2] = -1.89;
+	service_response.solution.joint_state.position[3] = 2.39;
+	service_response.solution.joint_state.position[4] = -2.06;
+	service_response.solution.joint_state.position[5] = -1.57;
+	service_response.solution.joint_state.position[6] = M_PI/2;
+	group.setJointValueTarget(service_response.solution.joint_state);
+	group.move();
+}
+
+/*--------------------------------------------------------------------
  * ascent()
  * Ascent to moving height
  *------------------------------------------------------------------*/
@@ -156,7 +228,27 @@ void MoveBin::ascent()
 {
 	ROS_INFO("Ascent");
 	service_request.ik_request.pose_stamped.pose.position.z =  TABLE_HEIGHT+GRIPPING_OFFSET+bin_height+DZ;
+
+	std::vector<double> group_variable_values;
+	group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
+
+
+	std::vector<std::string> joints;
+	joints.push_back("table_rail_joint");
+	joints.push_back("shoulder_pan_joint");
+	group_variable_values[0] = group_variable_values[0];
+	group_variable_values[1] = group_variable_values[1];
+
+
+	service_request.ik_request.robot_state.joint_state.position = group_variable_values;
+	service_request.ik_request.robot_state.joint_state.name = joints;
+
 	service_client.call(service_request, service_response);
+	///*
+	std::vector<std::string> joints_null;
+	service_request.ik_request.robot_state.joint_state.name = joints_null;
+	//*/	
+
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.move();
 }
@@ -168,6 +260,10 @@ void MoveBin::ascent()
 void MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 {
 	ROS_INFO("Carrying bin to target");
+	std::vector<double> group_variable_values;
+	service_request.ik_request.pose_stamped.pose.position.z =  TABLE_HEIGHT+GRIPPING_OFFSET+bin_height ;
+
+	group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
 	tf::Quaternion quat_goal = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0,M_PI/2,M_PI);
 	service_request.ik_request.pose_stamped.pose.position.x = x_target;
 	service_request.ik_request.pose_stamped.pose.position.y = y_target;
@@ -175,9 +271,43 @@ void MoveBin::carry_bin_to(double x_target, double y_target, double angle_target
 	service_request.ik_request.pose_stamped.pose.orientation.y = quat_goal.y();
 	service_request.ik_request.pose_stamped.pose.orientation.z = quat_goal.z();
 	service_request.ik_request.pose_stamped.pose.orientation.w = quat_goal.w();
+
+	//std::vector<std::string> links;
+	//links.push_back("base_link");
+	//service_request.ik_request.ik_link_names = links;
+
+	service_client.call(service_request, service_response);
+	group_variable_values[0] = service_response.solution.joint_state.position[0];
+	group_variable_values[1] = service_response.solution.joint_state.position[1];
+
+	group.setJointValueTarget(group_variable_values);
+	//group.setJointValueTarget(service_response.solution.joint_state);;
+	group.move();
+}
+
+/*--------------------------------------------------------------------
+ * move_on_top()
+ * Moves on top of the target location
+ *------------------------------------------------------------------*/
+void MoveBin::prepare(double x_target, double y_target, double angle_target)
+{
+	std::vector<double> group_variable_values;
+	group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
+	ROS_INFO("Moving on top of final location");
+	
+	tf::Quaternion quat = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0,M_PI/2,M_PI);
+	service_request.ik_request.pose_stamped.pose.position.x = x_target;
+	service_request.ik_request.pose_stamped.pose.position.y = y_target;
+	service_request.ik_request.pose_stamped.pose.position.z = TABLE_HEIGHT+GRIPPING_OFFSET+bin_height+DZ;
+	service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
+	service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
+	service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
+	service_request.ik_request.pose_stamped.pose.orientation.w = quat.w();
+
+
 	service_client.call(service_request, service_response);
 
-	group.setJointValueTarget(service_response.solution.joint_state);;
+	group.setJointValueTarget(service_response.solution.joint_state);
 	group.move();
 }
 
@@ -225,17 +355,39 @@ int main(int argc, char **argv)
 			ROS_ERROR("Aborting !");
 			continue;
 		}
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
 		movebin.descent();
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
 		if (!movebin.attach_bin(nb)){
 			ROS_ERROR("Aborting !");
 			continue;
 		}
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
 		movebin.ascent();
-
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
+		movebin.travelling_position();
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
 		movebin.carry_bin_to(x,y,o);
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
+		movebin.prepare(x,y,o);
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
 		movebin.descent();
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
 		movebin.detach_bin();
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
 		movebin.ascent();
+		//std::cout<< "Press keyboard !" << std::endl;
+		//std::cin.ignore();
+		movebin.travelling_position();
 	}
 
 	ros::shutdown();

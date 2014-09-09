@@ -22,6 +22,9 @@
 #include <shape_msgs/Mesh.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
+# define TABLE_HEIGHT 0.875  
+# define GRIPPING_OFFSET 0.1  
+# define DZ 0.2 
 
 class MoveBin
 {
@@ -77,7 +80,7 @@ public:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor;	
   boost::shared_ptr<tf::TransformListener> tf;
   move_group_interface::MoveGroup group;
-  double z_target, dz;
+  double bin_height;
   ros::AsyncSpinner spinner;
 };
 
