@@ -17,7 +17,19 @@ namespace indradrive
 class IndradriveCSRobotHW : public hardware_interface::RobotHW
 {
 public:
-  IndradriveCSRobotHW(ros::NodeHandle& nh, std::string& joint_name);
+  IndradriveCSRobotHW(ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name)
+    : nh_(nh)
+  {
+    // Register joint interface handle
+    jnt_state_iface_.registerHandle(
+        JointStateHandle(joint_name, &pos_fb_, &vel_fb_, &eff_fb_));
+    jnt_vel_iface_.registerHandle(
+        JointHandle(jnt_state_iface_.getHandle(joint_name), &vel_cmd_));
+
+    // // Register interfaces
+    registerInterface(&jnt_state_iface_);
+    registerInterface(&jnt_vel_iface_);
+  } 
 
   virtual int init();
   virtual void read();
