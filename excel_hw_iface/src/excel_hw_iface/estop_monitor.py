@@ -10,8 +10,16 @@ class EStopMonitor(object):
         self.excel = ExcelInterface()
         self.estop_sub = rospy.Subscriber('/mode_state_pub/is_emergency_stopped', Bool, 
                                           self.estop_cb)
+        self.sstop_sub = rospy.Subscriber('/mode_state_pub/is_security_stopped', Bool, 
+                                          self.sstop_cb)
 
     def estop_cb(self, msg):
+        if msg.data:
+            self.excel.rail.halt_drive()
+        else:
+            self.excel.rail.enable_drive()
+
+    def sstop_cb(self, msg):
         if msg.data:
             self.excel.rail.halt_drive()
         else:
