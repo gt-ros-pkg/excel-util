@@ -5,4 +5,4 @@ moveit_setup_assistant_config:
   SRDF:
     relative_path: config/excel.srdf
   CONFIG:
-    generated_timestamp: 1407445743
+    generated_timestamp: 1410383952

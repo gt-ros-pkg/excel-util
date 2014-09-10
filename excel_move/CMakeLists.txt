@@ -15,6 +15,11 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
 )
 
+catkin_package(
+  CATKIN_DEPENDS geometry_msgs joint_state_publisher moveit_planners_ompl moveit_ros_move_group moveit_ros_visualization robot_state_publisher roscpp rospy xacro
+  DEPENDS system_lib
+)
+
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
@@ -31,9 +36,3 @@ target_link_libraries(moveit_to_known_position_node ${catkin_LIBRARIES})
 target_link_libraries(moveit_joint_node ${catkin_LIBRARIES})
 target_link_libraries(move_to_carthesian_position_node ${catkin_LIBRARIES})
 
-#catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES excel_move
-#  CATKIN_DEPENDS geometry_msgs joint_state_publisher moveit_planners_ompl moveit_ros_move_group moveit_ros_visualization robot_state_publisher roscpp rospy xacro
-#  DEPENDS system_lib
-#)
