@@ -14,7 +14,7 @@ from excel_hw_iface.excel_interface import ExcelInterface
 def main():
     rospy.init_node("test_traj_ctrl")
 
-    excel = ExcelInterface()
+    excel = ExcelInterface(timeout=0.)
     act_cli = excel.vel_jnt_traj_act_cli
     if not act_cli.wait_for_server(rospy.Duration.from_sec(2.)):
         rospy.logerr("Can't find action server")
