@@ -1,5 +1,6 @@
 <launch>
   <arg name="robot_ip" />
+  <arg name="is_test" default="false" />
 
   <include file="$(find excel_hw_iface)/launch/load_excel_ctrl.launch" />
   
@@ -31,16 +32,27 @@
       </rosparam> 
   </node>
 
-  <node pkg="excel_hw_iface" type="excel_ctrl_man_xeno" name="excel_ctrl_man_xeno"
-        output="screen">
-    <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
-              param="joint_names" />
-    <param name="robot_ip" value="$(arg robot_ip)" />
-    <param name="scale_pos_fb" value="0.0000001"/>
-    <param name="scale_vel_fb" value="0.000001"/>
-    <param name="scale_vel_cmd" value="1000000.0"/>
-  </node>
+  <group unless="$(arg is_test)">
+    <node pkg="excel_hw_iface" type="excel_ctrl_man_xeno" name="excel_ctrl_man_xeno"
+          output="screen">
+      <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
+                param="joint_names" />
+      <param name="robot_ip" value="$(arg robot_ip)" />
+      <param name="scale_pos_fb" value="0.0000001"/>
+      <param name="scale_vel_fb" value="0.000001"/>
+      <param name="scale_vel_cmd" value="1000000.0"/>
+    </node>
 
-  <node name="estop_monitor" pkg="excel_hw_iface" type="estop_monitor.py" respawn="true" />
+    <node name="estop_monitor" pkg="excel_hw_iface" type="estop_monitor.py" respawn="true" />
+  </group>
+  <group if="$(arg is_test)">
+    <node pkg="excel_hw_iface" type="test_excel_ctrl_man" name="test_excel_ctrl_man"
+          output="screen">
+      <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
+                param="joint_names" />
+      <param name="robot_ip" value="$(arg robot_ip)" />
+      <param name="init_pos" value="0.5" />
+    </node>
+  </group>
 
 </launch>

@@ -15,7 +15,7 @@
 #include <sys/mman.h>
 #include <malloc.h>
 
-#include <indradrive_hw_iface/cs_robot_hw.h>
+#include <indradrive_hw_iface/idcs_robot_hw.h>
 
 extern "C"
 {
@@ -86,8 +86,8 @@ class EthercatController : public IndradriveCSRobotHW
 {
 public:
   EthercatController(
-    ros::NodeHandle& nh, std::string& joint_name) :
-    IndradriveCSRobotHW(nh, joint_name),
+    ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name) :
+    IndradriveCSRobotHW(nh, nh_priv, joint_name),
     master_(NULL),
     domain_(NULL),
     domain_pd_(NULL),

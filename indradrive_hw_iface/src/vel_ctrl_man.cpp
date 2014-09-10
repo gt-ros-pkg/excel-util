@@ -1,7 +1,6 @@
 
 #include <ros/ros.h>
 #include <controller_manager/controller_manager.h>
-#include <indradrive_hw_iface/vel_ec_ctrl.h>
 
 #ifdef XENOMAI_REALTIME
 
@@ -16,9 +15,15 @@
 
 #endif
 
-typedef indradrive::VelocityEthercatController VelEcatCtrl;
+#ifndef TEST_CTRL
+#include <indradrive_hw_iface/vel_ec_ctrl.h>
+typedef indradrive::VelocityEthercatController IDCSRobotHW;
+#else
+#include <indradrive_hw_iface/idcs_robot_hw.h>
+typedef indradrive::IndradriveCSRobotHW IDCSRobotHW;
+#endif
 
-boost::shared_ptr<VelEcatCtrl> cs_hw_ptr;
+boost::shared_ptr<IDCSRobotHW> cs_hw_ptr;
 boost::shared_ptr<controller_manager::ControllerManager> cm_ptr;
 bool stop_requested;
 
@@ -56,7 +61,7 @@ void update_loop_task(void *arg)
 int main(int argc, char** argv)
 {
   stop_requested = false;
-  ros::init(argc, argv, "cs_controller_man");
+  ros::init(argc, argv, "idcs_vel_ctrl_man");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
@@ -67,7 +72,7 @@ int main(int argc, char** argv)
   std::string joint_name;
   nh_priv.param<std::string>("joint_name", joint_name, "indradrive_cs_joint");
 
-  cs_hw_ptr.reset(new VelEcatCtrl(nh, nh_priv, joint_name));
+  cs_hw_ptr.reset(new IDCSRobotHW(nh, nh_priv, joint_name));
   if(cs_hw_ptr->init()) {
     printf("Failed to initialize controller\n");
     return -1;

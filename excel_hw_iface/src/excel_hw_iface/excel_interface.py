@@ -13,14 +13,14 @@ from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryG
 class ExcelInterface(object):
     RAIL_JOINT_NAME = 'table_rail_joint'
 
-    def __init__(self, js_prefix='', config_prefix='/config_fwd_ctrl'):
+    def __init__(self, js_prefix='', config_prefix='/config_fwd_ctrl', timeout=5.):
         self.js_prefix = js_prefix
         self.joint_state_inds = None
 
         self.joint_names = [ExcelInterface.RAIL_JOINT_NAME] + ArmInterface.JOINT_NAMES
 
         self.arm = ArmInterface(js_prefix, config_prefix)
-        self.rail = DriveStatusControl(topic_prefix='/excel_ctrl_man_xeno/')
+        self.rail = DriveStatusControl(topic_prefix='/excel_ctrl_man_xeno/', timeout=timeout)
 
         self.vel_jnt_traj_act_cli = actionlib.SimpleActionClient(
                 '/vel_trajectory_ctrl/follow_joint_trajectory', 

@@ -1,7 +1,6 @@
 
 #include <ros/ros.h>
 #include <controller_manager/controller_manager.h>
-#include <indradrive_hw_iface/vel_ec_ctrl.h>
 #include <ur_ctrl_client/ur_robot_hw.h>
 
 #ifdef XENOMAI_REALTIME
@@ -17,9 +16,15 @@
 
 #endif
 
-typedef indradrive::VelocityEthercatController VelEcatCtrl;
+#ifndef TEST_CTRL
+#include <indradrive_hw_iface/vel_ec_ctrl.h>
+typedef indradrive::VelocityEthercatController IDCSRobotHW;
+#else
+#include <indradrive_hw_iface/idcs_robot_hw.h>
+typedef indradrive::IndradriveCSRobotHW IDCSRobotHW;
+#endif
 
-boost::shared_ptr<VelEcatCtrl> cs_hw_ptr;
+boost::shared_ptr<IDCSRobotHW> idcs_hw_ptr;
 boost::shared_ptr<controller_manager::ControllerManager> cm_ptr;
 boost::shared_ptr<ur::URRobotHW> ur_hw_ptr;
 hardware_interface::RobotHW excel_hw;
@@ -52,11 +57,11 @@ void update_loop_task(void *arg)
 #else
     r.sleep();
 #endif
-    cs_hw_ptr->read();
+    idcs_hw_ptr->read();
     if(counter % 8 == 0) // 125 Hz
       ur_hw_ptr->read();
     cm_ptr->update(ros::Time::now(), period);
-    cs_hw_ptr->write();
+    idcs_hw_ptr->write();
     if(counter % 8 == 0) // 125 Hz
       ur_hw_ptr->write();
   }
@@ -90,15 +95,15 @@ int main(int argc, char** argv)
 
   ur_hw_ptr.reset(new ur::URRobotHW(nh, ur_joint_names));
 
-  cs_hw_ptr.reset(new VelEcatCtrl(nh, nh_priv, indradrive_joint_name));
+  idcs_hw_ptr.reset(new IDCSRobotHW(nh, nh_priv, indradrive_joint_name));
 
-  excel_hw.registerInterfaceManager(cs_hw_ptr.get());
+  excel_hw.registerInterfaceManager(idcs_hw_ptr.get());
   excel_hw.registerInterfaceManager(ur_hw_ptr.get());
 
   cm_ptr.reset(new controller_manager::ControllerManager(&excel_hw, nh));
 
   ur_hw_ptr->init(robot_ip);
-  cs_hw_ptr->init();
+  idcs_hw_ptr->init();
 
 #ifdef XENOMAI_REALTIME
   int ret;
