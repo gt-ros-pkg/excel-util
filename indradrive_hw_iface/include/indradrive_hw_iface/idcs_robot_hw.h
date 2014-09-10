@@ -18,7 +18,7 @@ class IndradriveCSRobotHW : public hardware_interface::RobotHW
 {
 public:
   IndradriveCSRobotHW(ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name)
-    : nh_(nh)
+    : nh_(nh), nh_priv_(nh_priv)
   {
     // Register joint interface handle
     jnt_state_iface_.registerHandle(
@@ -39,6 +39,7 @@ public:
 
 protected:
   ros::NodeHandle nh_;
+  ros::NodeHandle nh_priv_;
 
   // ros_control interfaces
   JointStateInterface     jnt_state_iface_;

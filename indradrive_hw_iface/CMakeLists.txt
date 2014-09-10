@@ -39,6 +39,7 @@ if( NOT (ECAT_LIBRARY MATCHES "ECAT_LIBRARY-NOTFOUND") )
     set(INCLUDE_DIRS ${INCLUDE_DIRS} /usr/xenomai/include)
     set(DEPENDS_LIBRARIES ${DEPENDS_LIBRARIES} xenomai native rtdm)
     set(CTRL_LINK_LIBS ${CTRL_LINK_LIBS} xenomai native rtdm)
+    link_directories(/usr/xenomai/lib)
   else()
     message( "Xenomai libary not found so RT driver will not be built" )
   endif()
@@ -71,20 +72,20 @@ if( NOT (ECAT_LIBRARY MATCHES "ECAT_LIBRARY-NOTFOUND") )
   
   ## Declare a cpp library
   add_library(idcs_hw_vel_ctrl
+    src/idcs_robot_hw.cpp
     src/ethercat_ctrl.cpp
     src/vel_ec_ctrl.cpp
   )
   target_link_libraries(idcs_hw_vel_ctrl ${CTRL_LINK_LIBS})
   
   add_executable(vel_ctrl_man src/vel_ctrl_man.cpp)
-  target_link_libraries(vel_ctrl_man idcs_test_vel_ctrl ${CTRL_LINK_LIBS})
+  target_link_libraries(vel_ctrl_man idcs_hw_vel_ctrl ${CTRL_LINK_LIBS})
   set(INST_TARGETS ${INST_TARGETS} vel_ctrl_man)
   
   if( NOT (XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND" ) )
-    link_directories(/usr/xenomai/lib)
     add_executable(vel_ctrl_man_xeno src/vel_ctrl_man.cpp)
     set_target_properties(vel_ctrl_man_xeno PROPERTIES COMPILE_DEFINITIONS "XENOMAI_REALTIME")
-    target_link_libraries(vel_ctrl_man_xeno ${CTRL_LINK_LIBS})
+    target_link_libraries(vel_ctrl_man_xeno idcs_hw_vel_ctrl ${CTRL_LINK_LIBS})
     set(INST_TARGETS ${INST_TARGETS} vel_ctrl_man_xeno)
   endif()
 endif()
