@@ -44,8 +44,8 @@ public:
   } 
 
   virtual int init();
-  virtual void read();
-  virtual void write();
+  virtual void read(ros::Time time, ros::Duration period);
+  virtual void write(ros::Time time, ros::Duration period);
 
   ~IndradriveCSRobotHW();
 

@@ -104,8 +104,8 @@ public:
     cycletime.tv_sec = 0; cycletime.tv_nsec = PERIOD_NS;
   }
   virtual int init();
-  virtual void read();
-  virtual void write();
+  virtual void read(ros::Time time, ros::Duration period);
+  virtual void write(ros::Time time, ros::Duration period);
 
   ~EthercatController();
 
@@ -132,7 +132,7 @@ protected:
 
   unsigned int sync_ref_counter;
   struct timespec cycletime;
-  struct timespec wakeupTime, time;
+  struct timespec wakeupTime, curTime;
 #ifdef MEASURE_TIMING
   struct timespec startTime, endTime, lastStartTime;
   uint32_t period_ns, exec_ns, latency_ns,

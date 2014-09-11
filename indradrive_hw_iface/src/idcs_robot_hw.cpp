@@ -11,11 +11,11 @@ int IndradriveCSRobotHW::init()
   return 0;
 }
 
-void IndradriveCSRobotHW::read()
+void IndradriveCSRobotHW::read(ros::Time time, ros::Duration period)
 {
 }
 
-void IndradriveCSRobotHW::write()
+void IndradriveCSRobotHW::write(ros::Time time, ros::Duration period)
 {
   static double target_pos = pos_fb_;
   const double dt = 0.001;

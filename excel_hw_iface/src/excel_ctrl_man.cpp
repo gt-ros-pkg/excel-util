@@ -50,26 +50,42 @@ void signal_handler(int sig)
 void update_loop_task(void *arg)
 {
   ros::Duration period(1.0/1000.0);
+  uint64_t counter = 0;
+  ros::Time now;
 #ifdef XENOMAI_REALTIME
 	rt_task_set_periodic(NULL, TM_NOW, 1000000); // ns
 #else
   ros::Rate r(1000.0);
 #endif
-  uint64_t counter = 0;
   while (ros::ok() && !stop_requested) {
 #ifdef XENOMAI_REALTIME
 		rt_task_wait_period(NULL);
 #else
     r.sleep();
 #endif
-    idcs_hw_ptr->read();
+    now = ros::Time::now();
+    idcs_hw_ptr->read(now, period);
     if(counter % 8 == 0) // 125 Hz
-      ur_hw_ptr->read();
-    cm_ptr->update(ros::Time::now(), period);
-    idcs_hw_ptr->write();
+      ur_hw_ptr->read(now, period);
+    cm_ptr->update(now, period);
+    idcs_hw_ptr->write(now, period);
     if(counter % 8 == 0) // 125 Hz
-      ur_hw_ptr->write();
+      ur_hw_ptr->write(now, period);
   }
+}
+
+void printLimits(JointLimits& limits, SoftJointLimits& soft_limits)
+{
+  std::cout << "min_position: " << limits.min_position << std::endl;
+  std::cout << "max_position: " << limits.max_position << std::endl;
+  std::cout << "max_velocity: " << limits.max_velocity << std::endl;
+  std::cout << "max_acceleration: " << limits.max_acceleration << std::endl;
+  std::cout << "max_jerk: " << limits.max_jerk << std::endl;
+  std::cout << "max_effort: " << limits.max_effort << std::endl;
+  std::cout << "soft_lower_limit: " << soft_limits.min_position << std::endl;
+  std::cout << "soft_upper_limit: " << soft_limits.max_position << std::endl;
+  std::cout << "k_position: " << soft_limits.k_position << std::endl;
+  std::cout << "k_velocity: " << soft_limits.k_velocity << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -118,6 +134,8 @@ int main(int argc, char** argv)
     ur_soft_limits[i].max_position = ur_limits[i].max_position;
     ur_soft_limits[i].k_position = 10.0;
     getSoftJointLimits(ur_joint_names[i], nh_priv, ur_soft_limits[i]);
+    std::cout << "Limits for joint " << ur_joint_names[i].c_str() << std::endl;
+    printLimits(ur_limits[i], ur_soft_limits[i]);
   }
 
   ur_hw_ptr.reset(new ur::URRobotHW(nh, ur_joint_names, ur_limits, ur_soft_limits));
@@ -135,6 +153,8 @@ int main(int argc, char** argv)
   idcs_soft_limits.max_position = idcs_limits.max_position;
   idcs_soft_limits.k_position = 4.0;
   getSoftJointLimits(idcs_joint_name, nh_priv, idcs_soft_limits);
+  std::cout << "Limits for joint " << idcs_joint_name.c_str() << std::endl;
+  printLimits(idcs_limits, idcs_soft_limits);
 
   idcs_hw_ptr.reset(new IDCSRobotHW(nh, nh_priv, idcs_joint_name, idcs_limits, idcs_soft_limits));
 
