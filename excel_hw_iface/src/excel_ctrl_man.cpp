@@ -49,9 +49,10 @@ void signal_handler(int sig)
 
 void update_loop_task(void *arg)
 {
-  ros::Duration period(1.0/1000.0);
+  ros::Duration idcs_period(1.0/1000.0);
+  ros::Duration ur_period(1.0/125.0);
   uint64_t counter = 0;
-  ros::Time now;
+  ros::Time now = ros::Time::now();
 #ifdef XENOMAI_REALTIME
 	rt_task_set_periodic(NULL, TM_NOW, 1000000); // ns
 #else
@@ -63,14 +64,14 @@ void update_loop_task(void *arg)
 #else
     r.sleep();
 #endif
-    now = ros::Time::now();
-    idcs_hw_ptr->read(now, period);
+    idcs_hw_ptr->read(now, idcs_period);
     if(counter % 8 == 0) // 125 Hz
-      ur_hw_ptr->read(now, period);
-    cm_ptr->update(now, period);
-    idcs_hw_ptr->write(now, period);
+      ur_hw_ptr->read(now, ur_period);
+    cm_ptr->update(now, idcs_period);
+    idcs_hw_ptr->write(now, idcs_period);
     if(counter % 8 == 0) // 125 Hz
-      ur_hw_ptr->write(now, period);
+      ur_hw_ptr->write(now, ur_period);
+    now = now + idcs_period;
   }
 }
 
