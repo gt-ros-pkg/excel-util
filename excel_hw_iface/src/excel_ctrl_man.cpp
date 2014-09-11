@@ -99,8 +99,8 @@ int main(int argc, char** argv)
     ur_joint_names.push_back(v[i]);
 
   urdf::Model urdf_model;
-  if(urdf_model.initParam("robot_description")) {
-    ROS_ERROR("ur_ctrl_man requires a URDF in the robot_description parameter.");
+  if(!urdf_model.initParam("/robot_description")) {
+    ROS_ERROR("excel_ctrl_man requires a URDF in the robot_description parameter.");
     return -1;
   }
 

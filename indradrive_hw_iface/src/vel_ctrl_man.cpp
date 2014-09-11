@@ -78,7 +78,7 @@ int main(int argc, char** argv)
   nh_priv.param<std::string>("joint_name", joint_name, "indradrive_cs_joint");
 
   urdf::Model urdf_model;
-  if(urdf_model.initParam("robot_description")) {
+  if(!urdf_model.initParam("robot_description")) {
     ROS_ERROR("vel_ctrl_man requires a URDF in the robot_description parameter.");
     return -1;
   }
