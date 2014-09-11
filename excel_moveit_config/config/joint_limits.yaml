@@ -25,7 +25,7 @@ joint_limits:
     max_velocity: 1.0
 
     has_acceleration_limits: true
-    max_acceleration: 5
+    max_acceleration: 20
 
     k_position: 10.0
     soft_lower_limit: -6.0
@@ -41,7 +41,7 @@ joint_limits:
     max_velocity: 1.0
 
     has_acceleration_limits: true
-    max_acceleration: 5
+    max_acceleration: 20
 
     k_position: 10.0
     soft_lower_limit: -6.0
@@ -57,7 +57,7 @@ joint_limits:
     max_velocity: 1.0
 
     has_acceleration_limits: true
-    max_acceleration: 5
+    max_acceleration: 20
 
     k_position: 10.0
     soft_lower_limit: -6.0
@@ -73,7 +73,7 @@ joint_limits:
     max_velocity: 1.0
 
     has_acceleration_limits: true
-    max_acceleration: 5
+    max_acceleration: 20
 
     k_position: 10.0
     soft_lower_limit: -6.0
@@ -89,7 +89,7 @@ joint_limits:
     max_velocity: 1.0
 
     has_acceleration_limits: true
-    max_acceleration: 5
+    max_acceleration: 20
 
     k_position: 10.0
     soft_lower_limit: -6.0
@@ -105,7 +105,7 @@ joint_limits:
     max_velocity: 1.0
 
     has_acceleration_limits: true
-    max_acceleration: 5
+    max_acceleration: 20
 
     k_position: 10.0
     soft_lower_limit: -6.0
