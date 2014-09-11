@@ -47,7 +47,7 @@ void update_loop_task(void *arg)
 {
   ros::Duration period(1.0/1000.0);
   ros::Rate r(1000.0);
-  ros::Time now;
+  ros::Time now = ros::Time::now();
 #ifdef XENOMAI_REALTIME
 	rt_task_set_periodic(NULL, TM_NOW, 1000000); // ns
 #else
@@ -58,10 +58,10 @@ void update_loop_task(void *arg)
 #else
     r.sleep();
 #endif
-    now = ros::Time::now();
     idcs_hw_ptr->read(now, period);
     cm_ptr->update(now, period);
     idcs_hw_ptr->write(now, period);
+    now = now + period;
   }
 }
 
