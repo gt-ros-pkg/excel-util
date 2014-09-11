@@ -6,8 +6,6 @@ import rospy
 # Brings in the SimpleActionClient
 import actionlib
 
-# Brings in the messages used by the fibonacci action, including the
-# goal message and the result message.
 import actionlib_tutorials.msg
 import control_msgs.msg
 import robotiq_c_model_control
@@ -15,8 +13,8 @@ from robotiq_c_model_control.msg import _CModel_robot_output as outputMsg
 
 def gripper_client(position, force):
     # Creates the SimpleActionClient, passing the type of the action
-    # (FibonacciAction) to the constructor.
-    client = actionlib.SimpleActionClient('gripper_action', control_msgs.msg.GripperCommandAction)
+
+    client = actionlib.SimpleActionClient('gripper_controller/gripper_action', control_msgs.msg.GripperCommandAction)
 
     # Waits until the action server has started up and started
     # listening for goals.
@@ -34,7 +32,7 @@ def gripper_client(position, force):
     client.wait_for_result()
 
     # Prints out the result of executing the action
-    return client.get_result()  # A FibonacciResult
+    return client.get_result() 
 
 if __name__ == '__main__':
     try:
@@ -44,6 +42,6 @@ if __name__ == '__main__':
         position = rospy.get_param('~position')
         force = rospy.get_param('~force')
         result = gripper_client(position, force)
-        #print "Result:" #+ result.sequence
+        
     except rospy.ROSInterruptException:
         print "program interrupted before completion"
