@@ -9,6 +9,9 @@
    <!-- common stuff -->
    <xacro:include filename="$(find ur_description)/urdf/gazebo.urdf.xacro" />
 
+   <!-- include ur10 -->
+   <xacro:include filename="$(find ur_description)/urdf/ur10.urdf.xacro" />
+
    <!-- include table&rail -->
    <xacro:include filename="$(find excel_description)/urdf/table_rail.urdf.xacro" />
 
