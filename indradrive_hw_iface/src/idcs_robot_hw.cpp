@@ -17,6 +17,8 @@ void IndradriveCSRobotHW::read(ros::Time time, ros::Duration period)
 
 void IndradriveCSRobotHW::write(ros::Time time, ros::Duration period)
 {
+  jnt_limits_iface_.enforceLimits(period);
+
   static double target_pos = pos_fb_;
   const double dt = 0.001;
   target_pos += vel_cmd_*dt;
