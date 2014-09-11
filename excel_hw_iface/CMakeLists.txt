@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   ur_ctrl_client
   ur_controllers
   simple_message
+  joint_limits_interface
   indradrive_hw_iface
   roscpp
   ur_ctrl_client
@@ -54,7 +55,7 @@ catkin_package(
   CATKIN_DEPENDS indradrive_hw_iface ur_ctrl_server ur_ctrl_client
 )
 set(INCLUDE_DIRS ${INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
-set(CTRL_LINK_LIBS ${catkin_LIBRARIES} ${CTRL_LINK_LIBS})
+set(CTRL_LINK_LIBS urdf ${catkin_LIBRARIES} ${CTRL_LINK_LIBS})
 include_directories(${INCLUDE_DIRS})
 
 add_executable(test_excel_ctrl_man src/excel_ctrl_man.cpp)

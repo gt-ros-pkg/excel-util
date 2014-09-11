@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
   controller_interface
   hardware_interface
   controller_manager
+  joint_limits_interface
   roscpp
   std_msgs
   urdf

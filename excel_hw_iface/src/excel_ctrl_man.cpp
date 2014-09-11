@@ -1,7 +1,12 @@
 
 #include <ros/ros.h>
+#include <urdf/model.h>
 #include <controller_manager/controller_manager.h>
 #include <ur_ctrl_client/ur_robot_hw.h>
+
+#include <joint_limits_interface/joint_limits.h>
+#include <joint_limits_interface/joint_limits_urdf.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
 
 #ifdef XENOMAI_REALTIME
 
@@ -88,14 +93,50 @@ int main(int argc, char** argv)
     ROS_ERROR("Excel robot requires a list of the 7 joint names");
     return -1;
   }
-  std::string indradrive_joint_name = v[0];
+  std::string idcs_joint_name = v[0];
   std::vector<std::string> ur_joint_names;
   for(int i=1;i<7;i++)
     ur_joint_names.push_back(v[i]);
 
-  ur_hw_ptr.reset(new ur::URRobotHW(nh, ur_joint_names));
+  urdf::Model urdf_model;
+  if(urdf_model.initParam("robot_description")) {
+    ROS_ERROR("ur_ctrl_man requires a URDF in the robot_description parameter.");
+    return -1;
+  }
 
-  idcs_hw_ptr.reset(new IDCSRobotHW(nh, nh_priv, indradrive_joint_name));
+  joint_limits_interface::JointLimits ur_limits[6];
+  joint_limits_interface::SoftJointLimits ur_soft_limits[6];
+  for(int i=0;i<6;i++) {
+    boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_model.getJoint(ur_joint_names[i]);
+    bool urdf_found_limits = getJointLimits(urdf_joint, ur_limits[i]);
+    bool param_srv_found_limits = getJointLimits(ur_joint_names[i], nh_priv, ur_limits[i]);
+    if(!urdf_found_limits && !param_srv_found_limits) {
+      ROS_ERROR("Couldn't find limits for joint %s", ur_joint_names[i].c_str());
+      return -1;
+    }
+    ur_soft_limits[i].min_position = ur_limits[i].min_position;
+    ur_soft_limits[i].max_position = ur_limits[i].max_position;
+    ur_soft_limits[i].k_position = 10.0;
+    getSoftJointLimits(ur_joint_names[i], nh_priv, ur_soft_limits[i]);
+  }
+
+  ur_hw_ptr.reset(new ur::URRobotHW(nh, ur_joint_names, ur_limits, ur_soft_limits));
+
+  joint_limits_interface::JointLimits idcs_limits;
+  joint_limits_interface::SoftJointLimits idcs_soft_limits;
+  boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_model.getJoint(idcs_joint_name);
+  bool urdf_found_limits = getJointLimits(urdf_joint, idcs_limits);
+  bool param_srv_found_limits = getJointLimits(idcs_joint_name, nh_priv, idcs_limits);
+  if(!urdf_found_limits && !param_srv_found_limits) {
+    ROS_ERROR("Couldn't find limits for joint %s", idcs_joint_name.c_str());
+    return -1;
+  }
+  idcs_soft_limits.min_position = idcs_limits.min_position;
+  idcs_soft_limits.max_position = idcs_limits.max_position;
+  idcs_soft_limits.k_position = 4.0;
+  getSoftJointLimits(idcs_joint_name, nh_priv, idcs_soft_limits);
+
+  idcs_hw_ptr.reset(new IDCSRobotHW(nh, nh_priv, idcs_joint_name, idcs_limits, idcs_soft_limits));
 
   excel_hw.registerInterfaceManager(idcs_hw_ptr.get());
   excel_hw.registerInterfaceManager(ur_hw_ptr.get());

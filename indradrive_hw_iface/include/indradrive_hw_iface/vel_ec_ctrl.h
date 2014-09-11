@@ -13,8 +13,8 @@ namespace indradrive {
 class VelocityEthercatController : public EthercatController
 {
 public:
-  VelocityEthercatController(
-      ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name);
+  VelocityEthercatController(ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name,
+                             JointLimits& limits, SoftJointLimits& soft_limits);
 
 protected:
   virtual int configureIDNs();

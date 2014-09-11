@@ -86,8 +86,9 @@ class EthercatController : public IndradriveCSRobotHW
 {
 public:
   EthercatController(
-    ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name) :
-    IndradriveCSRobotHW(nh, nh_priv, joint_name),
+    ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name,
+    JointLimits& limits, SoftJointLimits& soft_limits) :
+    IndradriveCSRobotHW(nh, nh_priv, joint_name, limits, soft_limits),
     master_(NULL),
     domain_(NULL),
     domain_pd_(NULL),
