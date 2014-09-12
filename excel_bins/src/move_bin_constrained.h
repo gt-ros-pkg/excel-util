@@ -79,6 +79,12 @@ public:
 	 * Detaches the bin from the robot
 	 *------------------------------------------------------------------*/
 	void detach_bin();
+	
+	/*--------------------------------------------------------------------
+	 * optimal_goal_angle()
+	 * Finds out if the robot needs to rotate clockwise or anti-clockwise
+	 *------------------------------------------------------------------*/
+	double optimal_goal_angle(double goal_angle, double current_angle);
 
 	double bin_height;
 

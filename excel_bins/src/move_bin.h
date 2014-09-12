@@ -68,6 +68,12 @@ public:
    *------------------------------------------------------------------*/
   void detach_bin();
   
+  /*--------------------------------------------------------------------
+   * optimal_goal_angle()
+   * Finds out if the robot needs to rotate clockwise or anti-clockwise
+   *------------------------------------------------------------------*/
+  double optimal_goal_angle(double goal_angle, double current_angle);
+  
   ros::ServiceClient service_client;
   moveit_msgs::GetPositionIK::Request service_request;
   moveit_msgs::GetPositionIK::Response service_response;

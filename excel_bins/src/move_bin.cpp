@@ -86,6 +86,9 @@ int MoveBin::move_on_top(int bin_number)
 		service_request.ik_request.pose_stamped.pose.orientation.w = quat.w();
 		service_client.call(service_request, service_response);
 
+		// Fixing shoulder_pan given by the IK
+		service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
+
 		group.setJointValueTarget(service_response.solution.joint_state);
 		group.move();
 		return 1;
@@ -168,6 +171,12 @@ void MoveBin::ascent()
 void MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 {
 	ROS_INFO("Carrying bin to target");
+
+	planning_scene_monitor->requestPlanningSceneState();
+	full_planning_scene = planning_scene_monitor->getPlanningScene();
+	full_planning_scene->getPlanningSceneMsg(planning_scene);
+	collision_objects = planning_scene.world.collision_objects;
+
 	tf::Quaternion quat_goal = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0,M_PI/2,M_PI);
 	service_request.ik_request.pose_stamped.pose.position.x = x_target;
 	service_request.ik_request.pose_stamped.pose.position.y = y_target;
@@ -176,6 +185,10 @@ void MoveBin::carry_bin_to(double x_target, double y_target, double angle_target
 	service_request.ik_request.pose_stamped.pose.orientation.z = quat_goal.z();
 	service_request.ik_request.pose_stamped.pose.orientation.w = quat_goal.w();
 	service_client.call(service_request, service_response);
+
+
+	// Fixing shoulder_pan given by the IK
+	service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
 
 	group.setJointValueTarget(service_response.solution.joint_state);;
 	group.move();
@@ -201,6 +214,39 @@ void MoveBin::detach_bin()
 	}
 }
 
+/*--------------------------------------------------------------------
+ * optimal_goal_angle()
+ * Finds out if the robot needs to rotate clockwise or anti-clockwise
+ *------------------------------------------------------------------*/
+double MoveBin::optimal_goal_angle(double goal_angle, double current_angle)
+{
+	std::cout<< "Current angle is : "<<current_angle<<std::endl;
+	std::cout<< "Goal angle is : "<<goal_angle<<std::endl;
+
+
+	while( std::abs(std::max(current_angle,goal_angle) - std::min(current_angle,goal_angle))>M_PI){
+		std::cout<<"This is not the shortest path"<<std::endl;
+		if (goal_angle>current_angle){
+			goal_angle -= 2*M_PI;
+		}
+		else{
+			goal_angle += 2*M_PI;
+		}
+
+	}
+
+	if(goal_angle>2*M_PI){
+		std::cout<<"Your goal_angle would be too high"<<std::endl<<"Sorry, going the other way"<<std::endl;
+		goal_angle -= 2*M_PI;
+	}
+	if(goal_angle<-2*M_PI){
+		std::cout<<"Your goal_angle would be too small"<<std::endl<<"Sorry, going the other way"<<std::endl;
+		goal_angle += 2*M_PI;
+	}
+	std::cout<<"Final angle is : "<< goal_angle<< std::endl;
+	return goal_angle;
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "move_bin");
@@ -208,7 +254,9 @@ int main(int argc, char **argv)
 
 	MoveBin movebin;
 
-	while(ros::ok()){
+	int run_prg = 1;
+
+	while(run_prg){
 		int nb;
 		double x ,y, o;
 		std::cout<< "Which bin number would you like to move ?" << std::endl;
@@ -236,7 +284,12 @@ int main(int argc, char **argv)
 		movebin.descent();
 		movebin.detach_bin();
 		movebin.ascent();
+
+		std::cout<< "Keep moveing bins ? (0/1)" << std::endl;
+		std::cin >> run_prg;
+
 	}
 
 	ros::shutdown();
+	return 0;
 }
