@@ -42,18 +42,18 @@
       publish_rate: 1
 
   </rosparam>
-  <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
+  <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
             param="vel_forward_ctrl/joint_names" />
-  <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
+  <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
             param="vel_jogging_ctrl/joints" />
-  <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_names.yaml"
+  <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
             param="vel_trajectory_ctrl/joints" />
 
-  <rosparam command="load" file="$(find excel_hw_iface)/launch/joint_gains.yaml"
+  <rosparam command="load" file="$(find excel_hw_iface)/config/joint_gains.yaml"
             param="vel_trajectory_ctrl/gains" />
-  <rosparam command="load" file="$(find excel_hw_iface)/launch/trajectory_ctrl_constraints.yaml"
+  <rosparam command="load" file="$(find excel_hw_iface)/config/trajectory_ctrl_constraints.yaml"
             param="vel_trajectory_ctrl" />
-  <rosparam command="load" file="$(find excel_hw_iface)/launch/vel_jogging_ctrl_params.yaml"
+  <rosparam command="load" file="$(find excel_hw_iface)/config/vel_jogging_ctrl_params.yaml"
             param="vel_jogging_ctrl" />
 
 </launch>

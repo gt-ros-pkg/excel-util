@@ -14,7 +14,7 @@ from excel_hw_iface.excel_interface import ExcelInterface
 def main():
     rospy.init_node("test_traj_ctrl")
 
-    excel = ExcelInterface()
+    excel = ExcelInterface(timeout=0.)
     act_cli = excel.vel_jnt_traj_act_cli
     if not act_cli.wait_for_server(rospy.Duration.from_sec(2.)):
         rospy.logerr("Can't find action server")
@@ -44,7 +44,7 @@ def main():
         points[2].time_from_start = rospy.Duration.from_sec(4*DELTA_T)
 
     if True:
-        DELTA_T = 1.3
+        DELTA_T = 2.3
         DELTA_Q = [-0.4, -0.3, -0.3, 0.4, -0.5, -0.6, -0.8]
 
         points[0].positions = (q_cur + DELTA_Q).tolist()
@@ -56,16 +56,17 @@ def main():
         points[2].positions = q_cur.tolist()
         points[2].time_from_start = rospy.Duration.from_sec(4*DELTA_T)
 
-    fjt = FollowJointTrajectoryGoal()
-    fjt.trajectory.header.stamp = rospy.Time()
-    fjt.trajectory.joint_names = excel.joint_names
-    fjt.trajectory.points = points
+    while not rospy.is_shutdown():
+        fjt = FollowJointTrajectoryGoal()
+        fjt.trajectory.header.stamp = rospy.Time()
+        fjt.trajectory.joint_names = excel.joint_names
+        fjt.trajectory.points = points
 
-    act_cli.send_goal(fjt)
-    rospy.loginfo("Starting trajectory")
-    rospy.sleep(1.5)
-    act_cli.wait_for_result()
-    rospy.loginfo("Trajectory complete")
+        act_cli.send_goal(fjt)
+        rospy.loginfo("Starting trajectory")
+        rospy.sleep(1.5)
+        act_cli.wait_for_result()
+        rospy.loginfo("Trajectory complete")
 
 if __name__ == "__main__":
     main()

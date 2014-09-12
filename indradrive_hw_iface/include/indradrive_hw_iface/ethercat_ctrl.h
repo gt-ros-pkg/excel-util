@@ -15,7 +15,7 @@
 #include <sys/mman.h>
 #include <malloc.h>
 
-#include <indradrive_hw_iface/cs_robot_hw.h>
+#include <indradrive_hw_iface/idcs_robot_hw.h>
 
 extern "C"
 {
@@ -86,8 +86,9 @@ class EthercatController : public IndradriveCSRobotHW
 {
 public:
   EthercatController(
-    ros::NodeHandle& nh, std::string& joint_name) :
-    IndradriveCSRobotHW(nh, joint_name),
+    ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name,
+    JointLimits& limits, SoftJointLimits& soft_limits) :
+    IndradriveCSRobotHW(nh, nh_priv, joint_name, limits, soft_limits),
     master_(NULL),
     domain_(NULL),
     domain_pd_(NULL),
@@ -103,8 +104,8 @@ public:
     cycletime.tv_sec = 0; cycletime.tv_nsec = PERIOD_NS;
   }
   virtual int init();
-  virtual void read();
-  virtual void write();
+  virtual void read(ros::Time time, ros::Duration period);
+  virtual void write(ros::Time time, ros::Duration period);
 
   ~EthercatController();
 
@@ -131,7 +132,7 @@ protected:
 
   unsigned int sync_ref_counter;
   struct timespec cycletime;
-  struct timespec wakeupTime, time;
+  struct timespec wakeupTime, curTime;
 #ifdef MEASURE_TIMING
   struct timespec startTime, endTime, lastStartTime;
   uint32_t period_ns, exec_ns, latency_ns,

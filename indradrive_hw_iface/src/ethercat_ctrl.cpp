@@ -202,7 +202,7 @@ EthercatController::~EthercatController()
   ecrt_master_deactivate(master_);
 }
 
-void EthercatController::read()
+void EthercatController::read(ros::Time time, ros::Duration period)
 {
   wakeupTime = timespec_add(wakeupTime, cycletime);
   clock_nanosleep(CLOCK_TO_USE, TIMER_ABSTIME, &wakeupTime, NULL);
@@ -245,8 +245,9 @@ void EthercatController::read()
   readTelegram(); 
 }
 
-void EthercatController::write()
+void EthercatController::write(ros::Time time, ros::Duration period)
 {
+  jnt_limits_iface_.enforceLimits(period);
   // internally process the telegram data
   writeTelegram();
 
@@ -268,8 +269,8 @@ void EthercatController::write()
   }
 #endif
 
-  clock_gettime(CLOCK_TO_USE, &time);
-  ecrt_master_application_time(master_, TIMESPEC2NS(time));
+  clock_gettime(CLOCK_TO_USE, &curTime);
+  ecrt_master_application_time(master_, TIMESPEC2NS(curTime));
 
   if (sync_ref_counter) {
     sync_ref_counter--;

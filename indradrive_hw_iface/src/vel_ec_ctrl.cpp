@@ -3,8 +3,9 @@
 namespace indradrive {
 
 VelocityEthercatController::VelocityEthercatController(
-    ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name) :
-  EthercatController(nh, joint_name),
+    ros::NodeHandle& nh, ros::NodeHandle& nh_priv, std::string& joint_name,
+    JointLimits& limits, SoftJointLimits& soft_limits) :
+  EthercatController(nh, nh_priv, joint_name, limits, soft_limits),
   drv_stat_pdo_(new PDOConfiguration("Drive status", "S-0-0135", 0, 16, false)),
   pos_fb_pdo_(new PDOConfiguration("Position feedback", "S-0-0051", 0, 32, true)),
   vel_fb_pdo_(new PDOConfiguration("Velocity feedback", "S-0-0040", 0, 32, true)),

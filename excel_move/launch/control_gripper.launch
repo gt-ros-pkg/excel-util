@@ -1,0 +1,11 @@
+<launch>
+
+  <arg name="position" default="0" />
+  <arg name="force" default="255" />
+
+  <node name="gripper_controller" pkg="excel_move" type="gripper_action_client.py" output="screen">
+	<param name="position" value="$(arg position)" />
+  	<param name="force" value="$(arg force)" />
+  </node>
+
+</launch>
