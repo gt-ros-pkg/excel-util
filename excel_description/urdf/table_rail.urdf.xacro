@@ -26,7 +26,7 @@
 
    <xacro:macro name="table_rail" params="prefix">
 
-      <link name="${prefix}table_link">
+      <link name="table_link">
          <visual>
             <geometry>
                <mesh filename="package://excel_description/meshes/visual/tables+rail.dae"/>
@@ -41,30 +41,38 @@
          </collision>
       </link>
 
-      <joint name="${prefix}table_rail_joint" type="prismatic">
-         <parent link="${prefix}table_link" />
-         <child link="${prefix}rail_link" />
+      <joint name="table_rail_joint" type="prismatic">
+         <parent link="table_link" />
+         <child link="rail_link" />
          <origin rpy="0.0 0.0 ${pi}" xyz="${table_collision_offset}" />
          <axis xyz="1 0 0" />
          <limit effort="10.0" lower="${rail_lower_limit}" upper="${rail_upper_limit}" velocity="${pi}" />
          <dynamics damping="10" friction="0.1" />
       </joint>
 
-      <link name="${prefix}rail_link">
+      <link name="rail_link">
          <inertial>
             <mass value="${rail_mass}" />
             <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
          </inertial>
       </link>
 
-      <joint name="${prefix}rail_base_joint" type="fixed">
-         <parent link="${prefix}rail_link" />
-         <child link="${prefix}base_link" />
+      <joint name="rail_base_joint" type="fixed">
+         <parent link="rail_link" />
+         <child link="base_link" />
          <origin rpy="0.0 0.0 ${pi}" xyz="0.0 0.0 0.034" />
       </joint>
 
-      <xacro:table_rail_transmission prefix="${prefix}" />
-      <xacro:table_rail_gazebo prefix="${prefix}" />
+      <transmission name="rail_base_trans" type="pr2_mechanism_model/SimpleTransmission">
+         <actuator name="rail_base_motor" />
+         <joint name="rail_base_joint" />
+         <mechanicalReduction>1</mechanicalReduction>
+      </transmission>
+
+      <gazebo reference="table_link">
+         <material value="Gazebo/Blue " />
+         <turnGravityOff>false</turnGravityOff>
+      </gazebo>
 
    </xacro:macro>
 </robot>

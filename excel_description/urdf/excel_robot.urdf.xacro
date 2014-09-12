@@ -32,12 +32,12 @@
   />
 
    <!-- table&rail -->
-   <xacro:table_rail prefix="" />
+   <xacro:table_rail/>
 
    <!-- gripper -->
    <xacro:gripper prefix="" />
 
    <!-- cameras -->
-   <xacro:cameras prefix="" />
+   <xacro:cameras/>
 
 </robot>
