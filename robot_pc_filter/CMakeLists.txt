@@ -105,8 +105,16 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(pc_cylinder_removal 
+add_executable(pc_cylinder_test 
   src/pc_cylinder_test.cpp
+)
+target_link_libraries(pc_cylinder_removal
+  ${PCL_INCLUDE_DIRS}
+  ${catkin_LIBRARIES}
+)
+
+add_executable(pc_cylinder_removal 
+  src/pc_cylinder_removal.cpp
 )
 target_link_libraries(pc_cylinder_removal
   ${PCL_INCLUDE_DIRS}
