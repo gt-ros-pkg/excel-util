@@ -108,7 +108,7 @@ include_directories(
 add_executable(pc_cylinder_test 
   src/pc_cylinder_test.cpp
 )
-target_link_libraries(pc_cylinder_removal
+target_link_libraries(pc_cylinder_test
   ${PCL_INCLUDE_DIRS}
   ${catkin_LIBRARIES}
 )
