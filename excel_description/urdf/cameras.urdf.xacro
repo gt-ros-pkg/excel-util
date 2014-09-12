@@ -4,6 +4,8 @@
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
+   <xacro:include filename="$(find excel_description)/urdf/kinect_frames.urdf.xacro" />
+
    <property name="pi" value="3.14159265" />
 
    <xacro:macro name="cameras">
@@ -35,6 +37,8 @@
          <origin rpy="0.022 0.520 0.108" xyz="-1.100 1.604 2.345" />
       </joint>
 
+      <xacro:kinect_frames camera="kinect_front"/>
+
       <link name="kinect_back_link">
       </link>
 
@@ -44,6 +48,8 @@
          <origin rpy="0.019 0.604 -2.650" xyz="3.869 3.650 2.315" />
       </joint>
 
+      <xacro:kinect_frames camera="kinect_back"/>
+
       <link name="gripper_camera_link">
       </link>
 
@@ -52,7 +58,6 @@
          <child link="gripper_camera_link" />
          <origin rpy="0.0 0.0 0.0" xyz="0.1 0.1 0.1" />
       </joint>
-
 
    </xacro:macro>
 </robot>
