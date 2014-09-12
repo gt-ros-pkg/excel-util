@@ -1,60 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Author: Jimmy Da Silva
-  Contributers: Kelsey Hawkins, Ajit Krisshna N L, Muhammad Asif Rana 
-
+  Authors: Jimmy Da Silva, Kelsey Hawkins
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
+   <xacro:include filename="$(find excel_description)/urdf/kinect_frames.urdf.xacro" />
+
    <property name="pi" value="3.14159265" />
 
-   <xacro:macro name="cameras" params="prefix">
+   <xacro:macro name="cameras">
 
-      <link name="${prefix}45_camera_link">
+      <link name="overhead_hum_ws_frame">
       </link>
 
-      <joint name="${prefix}45_camera_joint" type="fixed">
-         <parent link="${prefix}table_link" />
-         <child link="${prefix}45_camera_link" />
-         <origin rpy="3.1358844265653847 -0.04203340790110574 -0.013879785230443352" xyz="0.569 1.521 2.597" />
+      <joint name="overhead_hum_ws_cam_joint" type="fixed">
+         <parent link="table_link" />
+         <child link="overhead_hum_ws_frame" />
+         <origin rpy="3.136 -0.042 -0.014" xyz="0.569 1.521 2.597" />
       </joint>
 
-      <link name="${prefix}35_camera_link">
+      <link name="overhead_rob_ws_frame">
       </link>
 
-      <joint name="${prefix}35_camera_joint" type="fixed">
-         <parent link="${prefix}table_link" />
-         <child link="${prefix}35_camera_link" />
-         <origin rpy="3.107697904738654 -0.03808611429915326 -0.005354382539543283" xyz="1.625 0.149 2.643" />
+      <joint name="overhead_rob_ws_cam_joint" type="fixed">
+         <parent link="table_link" />
+         <child link="overhead_rob_ws_frame" />
+         <origin rpy="3.108 -0.038 -0.005" xyz="1.625 0.149 2.643" />
       </joint>
 
-      <link name="${prefix}kinect_front_link">
+      <link name="kinect_front_link">
       </link>
 
-      <joint name="${prefix}kinect_front_joint" type="fixed">
-         <parent link="${prefix}table_link" />
-         <child link="${prefix}kinect_front_link" />
-         <origin rpy="-2.0911526920812413 0.018717144155139063 -1.4733313495598332" xyz="-1.096 1.559 2.344" />
+      <joint name="kinect_front_joint" type="fixed">
+         <parent link="table_link" />
+         <child link="kinect_front_link" />
+         <origin rpy="0.022 0.520 0.108" xyz="-1.100 1.604 2.345" />
       </joint>
 
-      <link name="${prefix}kinect_back_link">
+      <xacro:kinect_frames camera="kinect_front"/>
+
+      <link name="kinect_back_link">
       </link>
 
-      <joint name="${prefix}kinect_back_joint" type="fixed">
-         <parent link="${prefix}table_link" />
-         <child link="${prefix}kinect_back_link" />
-         <origin rpy="-2.1746265277559695 0.01568256219680734 2.0515498028502073" xyz="3.848 3.690 2.314" />
+      <joint name="kinect_back_joint" type="fixed">
+         <parent link="table_link" />
+         <child link="kinect_back_link" />
+         <origin rpy="0.019 0.604 -2.650" xyz="3.869 3.650 2.315" />
       </joint>
 
-      <link name="${prefix}gripper_camera_link">
+      <xacro:kinect_frames camera="kinect_back"/>
+
+      <link name="gripper_camera_link">
       </link>
 
-      <joint name="${prefix}gripper_camera_joint" type="fixed">
-         <parent link="${prefix}ee_link" />
-         <child link="${prefix}gripper_camera_link" />
+      <joint name="gripper_camera_joint" type="fixed">
+         <parent link="ee_link" />
+         <child link="gripper_camera_link" />
          <origin rpy="0.0 0.0 0.0" xyz="0.1 0.1 0.1" />
       </joint>
-
 
    </xacro:macro>
 </robot>

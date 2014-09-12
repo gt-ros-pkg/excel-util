@@ -1,7 +1,7 @@
 <launch>
   <arg name="camera_serial" default="14180964" />
 
-  <include file="$(find excel_calibration)/launch/overhead_hum_ws_calibration_tf.launch"/>
+  <!--<include file="$(find excel_calibration)/launch/overhead_hum_ws_calibration_tf.launch"/>-->
 
   <group ns="overhead_hum_ws_cam">
     <node pkg="nodelet" type="nodelet" name="camera_nodelet_manager" args="manager" />
@@ -18,14 +18,6 @@
 
     <node pkg="nodelet" type="nodelet" name="image_proc_debayer"
           args="load image_proc/debayer camera_nodelet_manager">
-    </node>
-
-    <node pkg="nodelet" type="nodelet" name="image_proc_decimate"
-          args="load image_proc/crop_decimate camera_nodelet_manager">
-      <remap from="camera/image_raw" to="/overhead_hum_ws_cam/image_raw" />
-      <remap from="camera/camera_info" to="/overhead_hum_ws_cam/camera_info" />
-      <remap from="camera_out/image_raw" to="/overhead_hum_ws_cam/cropped/image_raw" />
-      <remap from="camera_out/camera_info" to="/overhead_hum_ws_cam/cropped/camera_info" />
     </node>
 
     <node pkg="nodelet" type="nodelet" name="image_proc_rectify"

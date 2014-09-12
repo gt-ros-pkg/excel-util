@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Authors: Kelsey Hawkins
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <property name="half_pi" value="1.5707963267948966" />
+  <property name="optical_rotate" value="${-half_pi} 0 ${-half_pi}" />
+
+  <xacro:macro name="kinect_frames" params="camera">
+
+    <link name="${camera}_depth_frame">
+    </link>
+
+    <joint name="${camera}_depth_frame_joint" type="fixed">
+      <parent link="${camera}_link" />
+      <child link="${camera}_depth_frame" />
+      <origin xyz="0 -0.02 0" rpy="0 0 0" />
+    </joint>
+
+    <link name="${camera}_rgb_frame">
+    </link>
+
+    <joint name="${camera}_rgb_frame_joint" type="fixed">
+      <parent link="${camera}_link" />
+      <child link="${camera}_rgb_frame" />
+      <origin xyz="0 -0.045 0" rpy="0 0 0" />
+    </joint>
+
+    <link name="${camera}_depth_optical_frame">
+    </link>
+
+    <joint name="${camera}_depth_optical_frame_joint" type="fixed">
+      <parent link="${camera}_depth_frame" />
+      <child link="${camera}_depth_optical_frame" />
+      <origin xyz="0 0 0" rpy="${optical_rotate}" />
+    </joint>
+
+    <link name="${camera}_rgb_optical_frame">
+    </link>
+
+    <joint name="${camera}_rgb_optical_frame_joint" type="fixed">
+      <parent link="${camera}_rgb_frame" />
+      <child link="${camera}_rgb_optical_frame" />
+      <origin xyz="0 0 0" rpy="${optical_rotate}" />
+    </joint>
+
+  </xacro:macro>
+</robot>

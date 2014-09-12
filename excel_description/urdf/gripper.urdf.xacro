@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Author: Jimmy Da Silva
-  Contributers: Kelsey Hawkins, Ajit Krisshna N L, Muhammad Asif Rana 
-
+  Courtesy of JHU: https://github.com/jhu-lcsr/robotiq
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
    <property name="pi" value="3.14159265" />

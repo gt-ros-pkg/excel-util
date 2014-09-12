@@ -22,7 +22,7 @@
    <xacro:include filename="$(find excel_description)/urdf/cameras.urdf.xacro" />
 
    <!-- ur10 -->
-  <xacro:ur10_robot prefix="" 
+  <xacro:ur10_robot prefix="" cylinders_collision="true"
                     j1_lwr_lmt="${-2.0*pi}" j1_upr_lmt="${2.0*pi}" j1_vel_lmt="2.16"
                     j2_lwr_lmt="${-2.0*pi}" j2_upr_lmt="${2.0*pi}" j2_vel_lmt="2.16"
                     j3_lwr_lmt="${-2.0*pi}" j3_upr_lmt="${2.0*pi}" j3_vel_lmt="3.15"
@@ -32,12 +32,12 @@
   />
 
    <!-- table&rail -->
-   <xacro:table_rail prefix="" />
+   <xacro:table_rail/>
 
    <!-- gripper -->
    <xacro:gripper prefix="" />
 
    <!-- cameras -->
-   <xacro:cameras prefix="" />
+   <xacro:cameras/>
 
 </robot>

@@ -1,6 +1,6 @@
 <launch>
-  <include file="$(find excel_calibration)/launch/kinect_front_calibration_tf.launch"/>
-  <arg name="publish_tf" default="true" />
+  <!--<include file="$(find excel_calibration)/launch/kinect_front_calibration_tf.launch"/>-->
+  <arg name="publish_tf" default="false" />
   <include file="$(find openni2_launch)/launch/openni2.launch">
     <arg name="camera" value="kinect_front" />
     <arg name="device_id" value="3@1" />
