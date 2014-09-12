@@ -6,10 +6,6 @@
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-   <xacro:include filename="$(find excel_description)/urdf/table_rail.transmission.xacro" />
-   <xacro:include filename="$(find excel_description)/urdf/table_rail.gazebo.xacro" />
-   <!--<xacro:include filename="$(find ur_description)/urdf/materials.urdf.xacro" />-->
-
    <property name="pi" value="3.14159265" />
    <property name="scale" value="0.001 0.001 0.001" />
 
@@ -24,7 +20,7 @@
    <property name="table_collision_offset" value="0.135 0.81 0.935" />-->
    <property name="table_collision_offset" value="3.620 0.81 0.935" />
 
-   <xacro:macro name="table_rail" params="prefix">
+   <xacro:macro name="table_rail">
 
       <link name="table_link">
          <visual>
