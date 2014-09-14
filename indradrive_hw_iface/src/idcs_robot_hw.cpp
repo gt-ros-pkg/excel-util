@@ -19,14 +19,12 @@ void IndradriveCSRobotHW::write(ros::Time time, ros::Duration period)
 {
   jnt_limits_iface_.enforceLimits(period);
 
-  static double target_pos = pos_fb_;
-  const double dt = 0.001;
-  target_pos += vel_cmd_*dt;
-
-  double pos_last = pos_fb_;
-  double u = 100.0*(target_pos - pos_fb_);
-  pos_fb_ += u*dt;
-  vel_fb_ = (pos_last - pos_fb_)/dt;
+  static double cur_acc = 0.0;
+  static const double dt = 0.001;
+  static const double gain = 1000.0;
+  cur_acc = gain*(vel_cmd_ - vel_fb_);
+  vel_fb_ += cur_acc*dt;
+  pos_fb_ += vel_fb_*dt;
 }
 
 IndradriveCSRobotHW::~IndradriveCSRobotHW()
