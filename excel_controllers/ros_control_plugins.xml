@@ -1,0 +1,25 @@
+<library path="lib/libexcel_controllers">
+
+  <class name="vel_fwd_pva_fwd_controllers/JoggingCommandController"
+         type="vel_fwd_pva_fwd_controllers::JoggingCommandController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      The JoggingCommandController allows individual joints to be jogged at specified velocities,
+      following a trapezoidal trajectory.
+      This variant uses both a velocity forwarding and position-velocity-acceleration forwarding
+      control interface.
+    </description>
+  </class>
+
+  <class name="vel_fwd_pva_fwd_controllers/JointTrajectoryController"
+         type="vel_fwd_pva_fwd_controllers::JointTrajectoryController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      The JointTrajectoryController executes joint-space trajectories on a set of joints.
+      This variant represents trajectory segments as quintic splines.
+      This variant uses both a velocity forwarding and position-velocity-acceleration forwarding
+      control interface.
+    </description>
+  </class>
+
+</library>
