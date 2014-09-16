@@ -1,21 +1,23 @@
 <launch>
-	<arg name="marker_size" default="5.7" />
+	<arg name="marker_size" default="5.8" />
 	<arg name="max_new_marker_error" default="0.08" />
 	<arg name="max_track_error" default="0.2" />
 	<arg name="cam_image_topic" default="/overhead_hum_ws_cam/image_color" />
     	<arg name="cam_info_topic" default="/overhead_hum_ws_cam/camera_info" />	
 	<arg name="output_frame" default="/table_link" />
-	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
+	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" >
+		<remap from="ar_pose_marker" to="ar_pose_marker1"/>
+	</node>
 	
-
-	<arg name="marker_size2" default="5.7" />
+        <arg name="marker_size2" default="5.8" />
 	<arg name="max_new_marker_error2" default="0.08" />
 	<arg name="max_track_error2" default="0.2" />
 	<arg name="cam_image_topic2" default="/overhead_rob_ws_cam/image_color" />
     	<arg name="cam_info_topic2" default="/overhead_rob_ws_cam/camera_info" />	
 	<arg name="output_frame2" default="/table_link" />
-	<node name="ar_track_alvar2" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size2) $(arg max_new_marker_error2) $(arg max_track_error2) $(arg cam_image_topic2) $(arg cam_info_topic2) $(arg output_frame2)" />
+	<node name="ar_track_alvar2" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size2) $(arg max_new_marker_error2) $(arg max_track_error2) $(arg cam_image_topic2) $(arg cam_info_topic2) $(arg output_frame2)" >
+		<remap from="ar_pose_marker" to="ar_pose_marker2"/> 
+	</node>
 
-
-
+	<node name="ar_pose_sync" pkg="excel_cameras" type="ar_pose_sync_node" />
 </launch>
