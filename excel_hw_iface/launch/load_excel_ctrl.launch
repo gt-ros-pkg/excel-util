@@ -22,10 +22,24 @@
       type: vel_pid_controllers/JointTrajectoryController
       mode: vel
 
+    vel_pva_trajectory_ctrl:
+      type: vel_fwd_pva_fwd_controllers/JointTrajectoryController
+      mode: pva
+      heartbeat_timeout: 0.3
+      adapter_namespaces: [vel_fwd, pva_fwd]
+      joint_adapters: [vel_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd]
+
     vel_jogging_ctrl:
       type: vel_fwd_controllers/JoggingCommandController
       mode: vel
       heartbeat_timeout: 0.3
+
+    vel_pva_jogging_ctrl:
+      type: vel_fwd_pva_fwd_controllers/JoggingCommandController
+      mode: pva
+      heartbeat_timeout: 0.3
+      adapter_namespaces: [vel_fwd, pva_fwd]
+      joint_adapters: [vel_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd]
       
     config_fwd_ctrl:
       type: ur_controllers/ConfigForwardController
@@ -47,13 +61,21 @@
   <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
             param="vel_jogging_ctrl/joints" />
   <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
+            param="vel_pva_jogging_ctrl/joints" />
+  <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
             param="vel_trajectory_ctrl/joints" />
+  <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
+            param="vel_pva_trajectory_ctrl/joints" />
 
   <rosparam command="load" file="$(find excel_hw_iface)/config/joint_gains.yaml"
             param="vel_trajectory_ctrl/gains" />
   <rosparam command="load" file="$(find excel_hw_iface)/config/trajectory_ctrl_constraints.yaml"
             param="vel_trajectory_ctrl" />
+  <rosparam command="load" file="$(find excel_hw_iface)/config/trajectory_ctrl_constraints.yaml"
+            param="vel_pva_trajectory_ctrl" />
   <rosparam command="load" file="$(find excel_hw_iface)/config/vel_jogging_ctrl_params.yaml"
             param="vel_jogging_ctrl" />
+  <rosparam command="load" file="$(find excel_hw_iface)/config/vel_jogging_ctrl_params.yaml"
+            param="vel_pva_jogging_ctrl" />
 
 </launch>
