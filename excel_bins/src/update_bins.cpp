@@ -76,7 +76,7 @@ void bins_callback(const excel_bins::Bins::ConstPtr& msg)
 				if ((diff_coeff<0.001) && (abs(yaw2-yaw1)<0.001)){
 					collision_object.operation = collision_object.APPEND;
 				}else{
-					std::cout << current_bin.name <<" to pose :\n" << "x = "<<mesh_pose.position.x<<" ; y = "<<mesh_pose.position.y<<" ; z = "<<mesh_pose.position.z<< std::endl;
+					//std::cout << current_bin.name <<" to pose :\n" << "x = "<<mesh_pose.position.x<<" ; y = "<<mesh_pose.position.y<<" ; z = "<<mesh_pose.position.z<< std::endl;
 				}
 			}
 		}
@@ -102,7 +102,7 @@ void bins_callback(const excel_bins::Bins::ConstPtr& msg)
 	    it = std::find(bins_updated.begin(), bins_updated.end(), *i);
 	    if (it == bins_updated.end()){
 	    	collision_object.id = *i;
-	    	std::cout<< "Removing "<<*i <<std::endl;
+	    	//std::cout<< "Removing "<<*i <<std::endl;
 	    	// detach object operation //
 	    	collision_object.operation = collision_object.REMOVE;
 			

@@ -40,6 +40,8 @@ class ARTagManagerInterface(object):
         self.lock = RLock()
         self.slots_pub = rospy.Publisher("/bin_slots", PoseArray, latch=True)
         self.publish_poses(self.slots_pub, [bin_slots[slot] for slot in bin_slots])
+        
+        self.real_bin_poses = {}
 
     def publish_poses(self, pub, poses):
         pose_arr = PoseArray()
@@ -172,3 +174,61 @@ class ARTagManagerInterface(object):
         rand_bin = bins[np.random.randint(len(bins))]
         rand_bin_loc = self.get_bin_pose(rand_bin)
         return rand_bin, rand_bin_loc
+    
+    #### NEW FONCTIONS RELATED TO BINS AND NOT TAGS
+    
+    def get_real_bin_poses(self):
+        with self.lock:
+            real_bin_data = {}
+            for bin_id in self.real_bin_poses:
+                pos,rot  = self.clean_ar_pose(self.real_bin_poses[bin_id])
+                real_bin_data[bin_id] = [[pos[0],pos[1],pos[2]],[rot[0],rot[1],rot[2]]]
+            return real_bin_data
+        
+    def get_real_filled_slots(self, slots_to_check=None, invert_set=False):
+        if slots_to_check is None:
+            slots_to_check = self.bin_slots.keys()
+        slot_states, _ = self.get_real_bin_slot_states()
+        slot_ids = self.get_slot_ids()
+        bins = []
+        for ind, slot_state in enumerate(slot_states):
+            if slot_state != -1:
+                slot_in_set = slot_ids[ind] in slots_to_check
+                if np.logical_xor(not slot_in_set, not invert_set):
+                    bins.append(slot_state)
+        return sorted(bins)
+
+    def get_real_empty_slots(self, slots_to_check=None, invert_set=False):
+        if slots_to_check is None:
+            slots_to_check = self.bin_slots.keys()
+        slot_states, _ = self.get_real_bin_slot_states()
+        slot_ids = self.get_slot_ids()
+        empty_slots = []
+        for ind, slot_state in enumerate(slot_states):
+            if slot_state == -1:
+                slot_in_set = slot_ids[ind] in slots_to_check
+                if np.logical_xor(not slot_in_set, not invert_set):
+                    empty_slots.append(slot_ids[ind])
+        return empty_slots
+    
+    def get_real_bin_slot_states(self):
+        bin_poses = self.get_real_bin_poses()
+        bin_ids = sorted(bin_poses.keys())
+        bin_pos_data = np.array([bin_poses[bin_id][0] for bin_id in bin_ids])
+        if len(bin_pos_data) != 0:
+            dists, inds = self.slot_tree.query(bin_pos_data, k=1, 
+                                               distance_upper_bound=self.ar_unification_thresh)
+        else:
+            dists, inds = [], []
+
+        slot_states = [-1] * len(self.slot_tree.data)
+        missing_bins = []
+        for i, ind in enumerate(inds):
+            bin_id = bin_ids[i]
+            if ind == len(slot_states):
+                missing_bins.append(bin_id)
+                continue
+            slot_states[ind] = bin_id
+        return slot_states, missing_bins
+     
+        
