@@ -59,6 +59,18 @@
             </geometry>
             <origin rpy="${pi} 0 ${pi / 2.0}" xyz="0 0 0" />
          </visual>
+         <collision>
+            <geometry>
+              <box size="0.03 0.16 0.055" />
+            </geometry>
+            <origin xyz="0.015 -0.01 0.005" rpy="0 0 0" />
+         </collision>
+         <collision>
+            <geometry>
+              <box size="0.045 0.05 0.038" />
+            </geometry>
+            <origin xyz="0.053 0.0 -0.01" rpy="0 0 0" />
+         </collision>
       </link>
 
       <joint name="${prefix}robotiq_85_left_knuckle_joint" type="fixed">
@@ -217,6 +229,12 @@
             </geometry>
             <origin rpy="0 ${pi/2.0} 0" xyz="0 -.090381 .051505" />
          </visual>
+         <collision>
+            <geometry>
+              <box size="0.038 0.12 0.05" />
+            </geometry>
+            <origin xyz="0.01 0.00 0" rpy="0 0 0" />
+         </collision>
       </link>
 
       <joint name="${prefix}robotiq_85_right_finger_tip_joint" type="fixed">
@@ -240,6 +258,12 @@
             </geometry>
             <origin rpy="0 ${-pi/2.0} 0" xyz="0 -.090381 .051505" />
          </visual>
+         <collision>
+            <geometry>
+              <box size="0.038 0.12 0.05" />
+            </geometry>
+            <origin xyz="-0.01 0.00 0" rpy="0 0 0" />
+         </collision>
       </link>
 
    </xacro:macro>

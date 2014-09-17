@@ -1,8 +1,20 @@
 controller_list:
-  - name: /vel_trajectory_ctrl
+  - name: /vel_pva_trajectory_ctrl
     action_ns: follow_joint_trajectory
     type: FollowJointTrajectory
     default: true
+    joints:
+      - table_rail_joint
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+  - name: /vel_trajectory_ctrl
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: false
     joints:
       - table_rail_joint
       - shoulder_pan_joint
