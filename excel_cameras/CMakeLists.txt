@@ -97,6 +97,19 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+## Declare a cpp library
+add_library(ar_pose_sync src/ar_pose_sync.cpp)
+
+## Declare a cpp executable
+add_executable(ar_pose_sync_node src/ar_pose_sync.cpp)
+
+## Add cmake target dependencies of the executable/library
+## as an example, message headers may need to be generated before nodes
+# add_dependencies(excel_bins_node excel_bins_generate_messages_cpp)
+
+## Specify libraries to link a library or executable target against
+target_link_libraries(ar_pose_sync_node ${catkin_LIBRARIES})
+
 
 
 #############

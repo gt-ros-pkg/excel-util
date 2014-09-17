@@ -118,7 +118,7 @@ void bins_callback(const excel_bins::Bins::ConstPtr& msg)
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "update_bins");
-	ros::WallDuration sleep_t(0.5);
+	ros::WallDuration sleep_t(1.0);
 	usleep(1000*1000);
 	ros::NodeHandle nh_;
 	ros::AsyncSpinner spinner(1);
@@ -153,7 +153,6 @@ int main(int argc, char **argv)
 		full_planning_scene->getPlanningSceneMsg(planning_sc);
 		sleep_t.sleep();
 	}
-	//ros::spin();
 
 	ros::shutdown();
 }
