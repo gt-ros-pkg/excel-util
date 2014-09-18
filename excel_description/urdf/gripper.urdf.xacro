@@ -73,7 +73,7 @@
          </collision>
       </link>
 
-      <joint name="${prefix}robotiq_85_left_knuckle_joint" type="fixed">
+      <joint name="${prefix}robotiq_85_left_knuckle_joint" type="revolute">
          <parent link="${prefix}robotiq_85_base_link" />
          <child link="${prefix}robotiq_85_left_knuckle_link" />
          <axis xyz="1 0 0" />
@@ -95,7 +95,7 @@
          </visual>
       </link>
 
-      <joint name="${prefix}robotiq_85_right_knuckle_joint" type="fixed">
+      <joint name="${prefix}robotiq_85_right_knuckle_joint" type="revolute">
          <parent link="${prefix}robotiq_85_base_link" />
          <child link="${prefix}robotiq_85_right_knuckle_link" />
          <axis xyz="1 0 0" />
@@ -118,7 +118,7 @@
          </visual>
       </link>
 
-      <joint name="${prefix}robotiq_85_left_finger_joint" type="fixed">
+      <joint name="${prefix}robotiq_85_left_finger_joint" type="revolute">
          <parent link="${prefix}robotiq_85_left_knuckle_link" />
          <child link="${prefix}robotiq_85_left_finger_link" />
          <axis xyz="1 0 0" />
@@ -140,7 +140,7 @@
          </visual>
       </link>
 
-      <joint name="${prefix}robotiq_85_right_finger_joint" type="fixed">
+      <joint name="${prefix}robotiq_85_right_finger_joint" type="revolute">
          <parent link="${prefix}robotiq_85_right_knuckle_link" />
          <child link="${prefix}robotiq_85_right_finger_link" />
          <axis xyz="1 0 0" />
@@ -162,7 +162,7 @@
          </visual>
       </link>
 
-      <joint name="${prefix}robotiq_85_left_inner_knuckle_joint" type="fixed">
+      <joint name="${prefix}robotiq_85_left_inner_knuckle_joint" type="revolute">
          <parent link="${prefix}robotiq_85_base_link" />
          <child link="${prefix}robotiq_85_left_inner_knuckle_link" />
          <axis xyz="1 0 0" />
@@ -185,7 +185,7 @@
          </visual>
       </link>
 
-      <joint name="${prefix}robotiq_85_right_inner_knuckle_joint" type="fixed">
+      <joint name="${prefix}robotiq_85_right_inner_knuckle_joint" type="revolute">
          <parent link="${prefix}robotiq_85_base_link" />
          <child link="${prefix}robotiq_85_right_inner_knuckle_link" />
          <axis xyz="1 0 0" />
@@ -208,7 +208,7 @@
          </visual>
       </link>
 
-      <joint name="${prefix}robotiq_85_left_finger_tip_joint" type="fixed">
+      <joint name="${prefix}robotiq_85_left_finger_tip_joint" type="revolute">
          <parent link="${prefix}robotiq_85_left_inner_knuckle_link" />
          <child link="${prefix}robotiq_85_left_finger_tip_link" />
          <axis xyz="1 0 0" />
@@ -237,7 +237,7 @@
          </collision>
       </link>
 
-      <joint name="${prefix}robotiq_85_right_finger_tip_joint" type="fixed">
+      <joint name="${prefix}robotiq_85_right_finger_tip_joint" type="revolute">
          <parent link="${prefix}robotiq_85_right_inner_knuckle_link" />
          <child link="${prefix}robotiq_85_right_finger_tip_link" />
          <axis xyz="1 0 0" />

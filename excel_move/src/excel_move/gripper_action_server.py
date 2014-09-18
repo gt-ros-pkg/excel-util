@@ -31,7 +31,7 @@ class GripperAction(object):
     command.rACT = 1
     command.rGTO = 1
     command.rSP = 255
-    command.rPR = gripper_command_msg.command.position
+    command.rPR = min(int(gripper_command_msg.command.position*255/0.7853),255)
     command.rFR = gripper_command_msg.command.max_effort
     
     self._feedback.position = gripper_command_msg.command.position

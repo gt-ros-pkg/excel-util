@@ -85,7 +85,8 @@ public:
   std::vector<moveit_msgs::CollisionObject> collision_objects;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor;	
   boost::shared_ptr<tf::TransformListener> tf;
-  move_group_interface::MoveGroup group;
+  move_group_interface::MoveGroup group, gripper_group;
+  moveit::planning_interface::MoveGroup::Plan gripper_open_plan, gripper_close_plan;
   double bin_height;
   ros::AsyncSpinner spinner;
 };

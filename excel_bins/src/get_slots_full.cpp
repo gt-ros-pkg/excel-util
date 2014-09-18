@@ -10,7 +10,7 @@ std_msgs::Int8MultiArray missing_bins;
  * MoveBin()
  * Constructor.
  *------------------------------------------------------------------*/
-MoveBin::MoveBin() : group("excel") ,spinner(1)
+MoveBin::MoveBin() : group("excel"), gripper_group("gripper") ,spinner(1)
 {
 	spinner.start();
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
@@ -49,6 +49,21 @@ MoveBin::MoveBin() : group("excel") ,spinner(1)
 	{
 		sleep_t.sleep();
 	}
+	
+	// Precompute gripper closing
+	robot_state::RobotStatePtr start = gripper_group.getCurrentState();
+	double end = 0.0;
+	start->setJointPositions("robotiq_85_left_knuckle_joint", &end);
+	gripper_group.setStartState(*start);
+	gripper_group.setNamedTarget("closed");
+	gripper_group.plan(gripper_close_plan);
+
+	// Precompute gripper opening
+	end = 0.78;
+	start->setJointPositions("robotiq_85_left_knuckle_joint", &end);
+	gripper_group.setStartState(*start);
+	gripper_group.setNamedTarget("opening");
+	gripper_group.plan(gripper_open_plan);
 }
 
 /*--------------------------------------------------------------------
@@ -132,6 +147,9 @@ void MoveBin::descent()
  *------------------------------------------------------------------*/
 int MoveBin::attach_bin(int bin_number)
 {
+	gripper_group.execute(gripper_close_plan);
+	sleep(1.0);
+	
 	std::ostringstream os;
 	os << bin_number;
 	std::string bin_name = "bin#" + os.str(); 
@@ -220,6 +238,9 @@ void MoveBin::carry_bin_to(double x_target, double y_target, double angle_target
  *------------------------------------------------------------------*/
 void MoveBin::detach_bin()
 {
+	gripper_group.execute(gripper_open_plan);
+	sleep(1.0);
+	
 	planning_scene_monitor->requestPlanningSceneState();
 	full_planning_scene = planning_scene_monitor->getPlanningScene();
 	full_planning_scene->getPlanningSceneMsg(planning_scene);
