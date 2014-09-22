@@ -56,7 +56,16 @@
       <joint name="gripper_camera_joint" type="fixed">
          <parent link="ee_link" />
          <child link="gripper_camera_link" />
-         <origin rpy="0.0 0.0 0.0" xyz="0.1 0.1 0.1" />
+         <origin rpy="0.0 0.0 0.0" xyz="0.015 -0.02 0.06" />
+      </joint>
+
+      <link name="gripper_camera_focal_link">
+      </link>
+
+      <joint name="gripper_camera_focal_joint" type="fixed">
+         <parent link="gripper_camera_link" />
+         <child link="gripper_camera_focal_link" />
+         <origin rpy="0.0 0.0 0.0" xyz="0.0 1.0 0.0" />
       </joint>
 
    </xacro:macro>
