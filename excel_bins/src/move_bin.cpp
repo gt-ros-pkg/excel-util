@@ -4,7 +4,7 @@
  * MoveBin()
  * Constructor.
  *------------------------------------------------------------------*/
-MoveBin::MoveBin() : group("excel"), gripper_group("gripper") ,spinner(1)
+MoveBin::MoveBin() : group("excel"), gripper_group("gripper"), ac("gripper_controller/gripper_action", true) ,spinner(1)
 {
 	spinner.start();
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
@@ -14,6 +14,7 @@ MoveBin::MoveBin() : group("excel"), gripper_group("gripper") ,spinner(1)
 	ros::NodeHandle nh_, nh_param_("~");
 	ros::WallDuration sleep_t(0.5);
 	group.setPlanningTime(8.0);
+	group.allowReplanning(false);
 
 	service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
 	while(!service_client.exists())
@@ -43,7 +44,7 @@ MoveBin::MoveBin() : group("excel"), gripper_group("gripper") ,spinner(1)
 	{
 		sleep_t.sleep();
 	}
-
+/*
 	// Precompute gripper closing
 	robot_state::RobotStatePtr start = gripper_group.getCurrentState();
 	double end = 0.0;
@@ -58,6 +59,7 @@ MoveBin::MoveBin() : group("excel"), gripper_group("gripper") ,spinner(1)
 	gripper_group.setStartState(*start);
 	gripper_group.setNamedTarget("opening");
 	gripper_group.plan(gripper_open_plan);
+	*/
 }
 
 /*--------------------------------------------------------------------
@@ -134,8 +136,17 @@ void MoveBin::descent()
  *------------------------------------------------------------------*/
 int MoveBin::attach_bin(int bin_number)
 {
-	gripper_group.execute(gripper_close_plan);
-	sleep(1.0);
+	//gripper_group.execute(gripper_close_plan);
+	//sleep(1.0);
+	
+	ac.waitForServer();
+	// send a goal to the action
+	control_msgs::GripperCommandGoal goal;
+	goal.command.position = 255;
+	goal.command.max_effort = 100;
+	ac.sendGoal(goal);
+	
+	bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
 	
 	std::ostringstream os;
 	os << bin_number;
@@ -218,8 +229,17 @@ void MoveBin::carry_bin_to(double x_target, double y_target, double angle_target
  *------------------------------------------------------------------*/
 void MoveBin::detach_bin()
 {
-	gripper_group.execute(gripper_open_plan);
-	sleep(1.0);
+	//gripper_group.execute(gripper_open_plan);
+	//sleep(1.0);
+	
+	ac.waitForServer();
+	// send a goal to the action
+	control_msgs::GripperCommandGoal goal;
+	goal.command.position = 0;
+	goal.command.max_effort = 100;
+	ac.sendGoal(goal);
+	
+	bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
 	
 	planning_scene_monitor->requestPlanningSceneState();
 	full_planning_scene = planning_scene_monitor->getPlanningScene();
