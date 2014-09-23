@@ -23,9 +23,3 @@ controller_list:
       - wrist_1_joint
       - wrist_2_joint
       - wrist_3_joint
-  - name: /gripper_controller
-    action_ns: gripper_action
-    type: GripperCommand
-    default: true
-    joints:
-      - robotiq_85_left_knuckle_joint
