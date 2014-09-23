@@ -142,7 +142,7 @@ int MoveBin::attach_bin(int bin_number)
 	ac.waitForServer();
 	// send a goal to the action
 	control_msgs::GripperCommandGoal goal;
-	goal.command.position = 255;
+	goal.command.position = 0.0;
 	goal.command.max_effort = 100;
 	ac.sendGoal(goal);
 	
@@ -235,7 +235,7 @@ void MoveBin::detach_bin()
 	ac.waitForServer();
 	// send a goal to the action
 	control_msgs::GripperCommandGoal goal;
-	goal.command.position = 0;
+	goal.command.position = 0.04;
 	goal.command.max_effort = 100;
 	ac.sendGoal(goal);
 	

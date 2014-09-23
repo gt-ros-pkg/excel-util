@@ -48,13 +48,13 @@ class ARTagManager(ARTagManagerInterface):
                 self.ar_poses[marker.id].append([cur_time, marker.pose])
                 new_tags_id.append(marker.id)
         
-            # remove old_marker
-            bins_ids = self.get_available_bins()
-            diff_list = list(set(bins_ids) - set(new_tags_id))
-            for bid in diff_list:
-                if bid+10 in diff_list:
-                    self.ar_poses[bid].popleft()
-                    self.ar_poses[bid+10].popleft()
+            # # remove old_marker
+            # bins_ids = self.get_available_bins()
+            # diff_list = list(set(bins_ids) - set(new_tags_id))
+            # for bid in diff_list:
+            #     if bid+10 in diff_list:
+            #         self.ar_poses[bid].popleft()
+            #         self.ar_poses[bid+10].popleft()
         
 	        # republish cleaned markers
             if cur_time - self.last_clean_pub > self.clean_period:
