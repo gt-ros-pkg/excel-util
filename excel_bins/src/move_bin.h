@@ -20,6 +20,9 @@
 #include "geometric_shapes/mesh_operations.h"
 #include "geometric_shapes/shape_operations.h"
 #include <shape_msgs/Mesh.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+#include <control_msgs/GripperCommandAction.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.875  
@@ -86,9 +89,10 @@ public:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor;	
   boost::shared_ptr<tf::TransformListener> tf;
   move_group_interface::MoveGroup group, gripper_group;
-  moveit::planning_interface::MoveGroup::Plan gripper_open_plan, gripper_close_plan;
+  //moveit::planning_interface::MoveGroup::Plan gripper_open_plan, gripper_close_plan;
   double bin_height;
   ros::AsyncSpinner spinner;
+  actionlib::SimpleActionClient<control_msgs::GripperCommandAction> ac;
 };
 
 #endif
