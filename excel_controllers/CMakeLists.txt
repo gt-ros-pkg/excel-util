@@ -6,7 +6,7 @@ project(excel_controllers)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   controller_interface
-  excel_hw_iface
+  # excel_hw_iface
   hardware_interface
   joint_trajectory_controller
   jogging_command_controller
