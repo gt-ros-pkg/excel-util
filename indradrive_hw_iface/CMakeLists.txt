@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   urdf
+  cmake_modules
 )
 
 catkin_python_setup()
@@ -31,14 +32,16 @@ set(EXPORT_LIBRARIES idcs_test_vel_ctrl)
 
 if( NOT (ECAT_LIBRARY MATCHES "ECAT_LIBRARY-NOTFOUND") )
   set(INCLUDE_DIRS ${INCLUDE_DIRS} /opt/etherlab/include)
-  set(DEPENDS_LIBRARIES ${ECAT_LIBRARY})
+  # set(DEPENDS_LIBRARIES ${ECAT_LIBRARY})
   set(EXPORT_LIBRARIES ${EXPORT_LIBRARIES} idcs_hw_vel_ctrl)
   set(CTRL_LINK_LIBS ${CTRL_LINK_LIBS} ${ECAT_LIBRARY} rt m)
 
   if( NOT (XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND" ) )
     message( "Xenomai found, also installing xeno realtime binaries" )
+
+    # find_package(Xenomai REQUIRED)
     set(INCLUDE_DIRS ${INCLUDE_DIRS} /usr/xenomai/include)
-    set(DEPENDS_LIBRARIES ${DEPENDS_LIBRARIES} xenomai native rtdm)
+    # set(DEPENDS_LIBRARIES ${DEPENDS_LIBRARIES} xenomai native rtdm)
     set(CTRL_LINK_LIBS ${CTRL_LINK_LIBS} xenomai native rtdm)
     link_directories(/usr/xenomai/lib)
   else()
