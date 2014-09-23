@@ -32,67 +32,69 @@
 class MoveBin
 {
 public:
-  // Constructor.
-  MoveBin();
-  
-  /*--------------------------------------------------------------------
-   * move_on_top()
-   * Moves to the specified bin number location
-   *------------------------------------------------------------------*/
-  int move_on_top(int bin_number); 
+	// Constructor.
+	MoveBin();
 
-  /*--------------------------------------------------------------------
-   * descent()
-   * Descent to gripping height
-   *------------------------------------------------------------------*/
-  void descent();  
+	/*--------------------------------------------------------------------
+	 * move_on_top()
+	 * Moves to the specified bin number location
+	 *------------------------------------------------------------------*/
+	int move_on_top(int bin_number); 
 
-  /*--------------------------------------------------------------------
-   * attach_bin()
-   * Attaches the specified bin number to the robot
-   *------------------------------------------------------------------*/
-  int attach_bin(int bin_number);  
+	/*--------------------------------------------------------------------
+	 * descent()
+	 * Descent to gripping height
+	 *------------------------------------------------------------------*/
+	int descent();  
 
-  /*--------------------------------------------------------------------
-   * ascent()
-   * Ascent to moving height
-   *------------------------------------------------------------------*/
-  void ascent();
- 
-  /*--------------------------------------------------------------------
-   * carry_bin_to()
-   * Moves to target location keeping the grasping orientation
-   *------------------------------------------------------------------*/
-  void carry_bin_to(double x_target, double y_target, double angle_target);
- 
-  /*--------------------------------------------------------------------
-   * detach_bin()
-   * Detaches the bin from the robot
-   *------------------------------------------------------------------*/
-  void detach_bin();
-  
-  /*--------------------------------------------------------------------
-   * optimal_goal_angle()
-   * Finds out if the robot needs to rotate clockwise or anti-clockwise
-   *------------------------------------------------------------------*/
-  double optimal_goal_angle(double goal_angle, double current_angle);
-  
-  ros::ServiceClient service_client;
-  moveit_msgs::GetPositionIK::Request service_request;
-  moveit_msgs::GetPositionIK::Response service_response;
-  
-  ros::Publisher attached_object_publisher;
-  ros::Publisher planning_scene_diff_publisher;
-  planning_scene::PlanningScenePtr full_planning_scene;
-  moveit_msgs::PlanningScene planning_scene;
-  std::vector<moveit_msgs::CollisionObject> collision_objects;
-  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor;	
-  boost::shared_ptr<tf::TransformListener> tf;
-  move_group_interface::MoveGroup group, gripper_group;
-  //moveit::planning_interface::MoveGroup::Plan gripper_open_plan, gripper_close_plan;
-  double bin_height;
-  ros::AsyncSpinner spinner;
-  actionlib::SimpleActionClient<control_msgs::GripperCommandAction> ac;
+	/*--------------------------------------------------------------------
+	 * attach_bin()
+	 * Attaches the specified bin number to the robot
+	 *------------------------------------------------------------------*/
+	int attach_bin(int bin_number);  
+
+	/*--------------------------------------------------------------------
+	 * ascent()
+	 * Ascent to moving height
+	 *------------------------------------------------------------------*/
+	int ascent();
+
+	/*--------------------------------------------------------------------
+	 * carry_bin_to()
+	 * Moves to target location keeping the grasping orientation
+	 *------------------------------------------------------------------*/
+	int carry_bin_to(double x_target, double y_target, double angle_target);
+
+	/*--------------------------------------------------------------------
+	 * detach_bin()
+	 * Detaches the bin from the robot
+	 *------------------------------------------------------------------*/
+	int detach_bin();
+
+	/*--------------------------------------------------------------------
+	 * optimal_goal_angle()
+	 * Finds out if the robot needs to rotate clockwise or anti-clockwise
+	 *------------------------------------------------------------------*/
+	double optimal_goal_angle(double goal_angle, double current_angle);
+
+	ros::ServiceClient service_client;
+	moveit_msgs::GetPositionIK::Request service_request;
+	moveit_msgs::GetPositionIK::Response service_response;
+
+	ros::Publisher attached_object_publisher;
+	ros::Publisher planning_scene_diff_publisher;
+	planning_scene::PlanningScenePtr full_planning_scene;
+	moveit_msgs::PlanningScene planning_scene;
+	std::vector<moveit_msgs::CollisionObject> collision_objects;
+	planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor;	
+	boost::shared_ptr<tf::TransformListener> tf;
+	move_group_interface::MoveGroup group;
+	double bin_height;
+	ros::AsyncSpinner spinner;
+	actionlib::SimpleActionClient<control_msgs::GripperCommandAction> ac;
+	bool sim;
+	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
+	moveit::planning_interface::MoveGroup::Plan my_plan;
 };
 
 #endif

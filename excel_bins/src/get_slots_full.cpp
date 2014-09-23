@@ -10,8 +10,10 @@ std_msgs::Int8MultiArray missing_bins;
  * MoveBin()
  * Constructor.
  *------------------------------------------------------------------*/
-MoveBin::MoveBin() : group("excel"), gripper_group("gripper"),ac("gripper_controller/gripper_action", true) ,spinner(1)
+MoveBin::MoveBin() : group("excel"), ac("gripper_controller/gripper_action", true) ,spinner(1)
 {
+	sim = true;
+
 	spinner.start();
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
 	planning_scene_monitor::PlanningSceneMonitorPtr plg_scn_mon(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf));
@@ -50,22 +52,23 @@ MoveBin::MoveBin() : group("excel"), gripper_group("gripper"),ac("gripper_contro
 	{
 		sleep_t.sleep();
 	}
-/*
-	// Precompute gripper closing
-	robot_state::RobotStatePtr start = gripper_group.getCurrentState();
-	double end = 0.0;
-	start->setJointPositions("robotiq_85_left_knuckle_joint", &end);
-	gripper_group.setStartState(*start);
-	gripper_group.setNamedTarget("closed");
-	gripper_group.plan(gripper_close_plan);
 
-	// Precompute gripper opening
-	end = 0.78;
-	start->setJointPositions("robotiq_85_left_knuckle_joint", &end);
-	gripper_group.setStartState(*start);
-	gripper_group.setNamedTarget("opening");
-	gripper_group.plan(gripper_open_plan);
-	*/
+	// Define joint_constraints for the IK service
+	rail_constraint.joint_name = "table_rail_joint";
+	rail_constraint.position = 2.00;
+	rail_constraint.tolerance_above = 1.3;
+	rail_constraint.tolerance_below = 1.6;
+	rail_constraint.weight = 1;
+	shoulder_constraint.joint_name = "shoulder_lift_joint";
+	shoulder_constraint.position = -M_PI/2;
+	shoulder_constraint.tolerance_above = M_PI/4;
+	shoulder_constraint.tolerance_below = M_PI/2;
+	shoulder_constraint.weight = 1;
+	elbow_constraint.joint_name = "elbow_joint";
+	elbow_constraint.position = M_PI/2;
+	elbow_constraint.tolerance_above = M_PI/4;
+	elbow_constraint.tolerance_below = M_PI/4;
+	elbow_constraint.weight = 1;
 }
 
 /*--------------------------------------------------------------------
@@ -107,21 +110,30 @@ int MoveBin::move_on_top(int bin_number)
 		service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
 		service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
 		service_request.ik_request.pose_stamped.pose.orientation.w = quat.w();
-		moveit_msgs::JointConstraint rail_constraint;
-		rail_constraint.joint_name = "table_rail_joint";
-		rail_constraint.position = 2.00;
-		rail_constraint.tolerance_above = 1.3;
-		rail_constraint.tolerance_below = 1.6;
-		rail_constraint.weight = 1;
+		service_request.ik_request.constraints.joint_constraints.clear();
 		service_request.ik_request.constraints.joint_constraints.push_back(rail_constraint);
+		service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+		service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+		
 		service_client.call(service_request, service_response);
-
+		if(service_response.error_code.val !=1){
+			ROS_ERROR("IK couldn't find a solution");
+			return 0;
+		}
+		
 		// Fixing shoulder_pan given by the IK
 		service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
 
 		group.setJointValueTarget(service_response.solution.joint_state);
-		group.move();
-		return 1;
+		group.setStartState(full_planning_scene->getCurrentState());
+		if(group.plan(my_plan)){
+			group.execute(my_plan);
+			return 1;
+		}
+		else{
+			ROS_ERROR("Motion planning failed");
+			return 0;
+		}
 	}else{
 		// std::string error_msg = ""+bin_name + " is not in the scene. Aborting !";
 		ROS_ERROR("This bin is not in the scene.");
@@ -134,13 +146,46 @@ int MoveBin::move_on_top(int bin_number)
  * descent()
  * Descent to gripping height
  *------------------------------------------------------------------*/
-void MoveBin::descent()
+int MoveBin::descent()
 {
 	ROS_INFO("Descent");
+	
+	planning_scene_monitor->requestPlanningSceneState();
+	full_planning_scene = planning_scene_monitor->getPlanningScene();
+	full_planning_scene->getPlanningSceneMsg(planning_scene);
+	collision_objects = planning_scene.world.collision_objects;
+	
 	service_request.ik_request.pose_stamped.pose.position.z = TABLE_HEIGHT+GRIPPING_OFFSET+bin_height ;
+	
+	service_request.ik_request.constraints.joint_constraints.clear();
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+	moveit_msgs::JointConstraint rail_fixed_constraint;
+	rail_fixed_constraint.joint_name = "table_rail_joint";
+	const double *rail_current_pose = full_planning_scene->getCurrentState().getJointPositions("table_rail_joint");
+	rail_fixed_constraint.position = *rail_current_pose;
+	std::cout << rail_fixed_constraint.position << std::endl;
+	rail_fixed_constraint.tolerance_above = 0.2;
+	rail_fixed_constraint.tolerance_below = 0.2;
+	rail_fixed_constraint.weight = 1;
+	service_request.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
+	
 	service_client.call(service_request, service_response);
+	if(service_response.error_code.val !=1){
+		ROS_ERROR("IK couldn't find a solution");
+		return 0;
+	}
+	
+	group.setStartState(full_planning_scene->getCurrentState());
 	group.setJointValueTarget(service_response.solution.joint_state);
-	group.move();
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		return 1;
+	}
+	else{
+		ROS_ERROR("Motion planning failed");
+		return 0;
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -148,18 +193,16 @@ void MoveBin::descent()
  * Attaches the specified bin number to the robot
  *------------------------------------------------------------------*/
 int MoveBin::attach_bin(int bin_number)
-{
-	//gripper_group.execute(gripper_open_plan);
-	//sleep(1.0);
-	
-	ac.waitForServer();
-	// send a goal to the action
-	control_msgs::GripperCommandGoal goal;
-	goal.command.position = 0.0;
-	goal.command.max_effort = 100;
-	ac.sendGoal(goal);
-
-	bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+{	
+	if(!sim){
+		ac.waitForServer();
+		// send a goal to the action
+		control_msgs::GripperCommandGoal goal;
+		goal.command.position = 0.0;
+		goal.command.max_effort = 100;
+		ac.sendGoal(goal);
+		bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+	}
 
 	std::ostringstream os;
 	os << bin_number;
@@ -197,20 +240,53 @@ int MoveBin::attach_bin(int bin_number)
  * ascent()
  * Ascent to moving height
  *------------------------------------------------------------------*/
-void MoveBin::ascent()
+int MoveBin::ascent()
 {
 	ROS_INFO("Ascent");
+	
+	planning_scene_monitor->requestPlanningSceneState();
+	full_planning_scene = planning_scene_monitor->getPlanningScene();
+	full_planning_scene->getPlanningSceneMsg(planning_scene);
+	collision_objects = planning_scene.world.collision_objects;
+	
+	
+	service_request.ik_request.constraints.joint_constraints.clear();
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+	moveit_msgs::JointConstraint rail_fixed_constraint;
+	rail_fixed_constraint.joint_name = "table_rail_joint";
+	const double *rail_current_pose = full_planning_scene->getCurrentState().getJointPositions("table_rail_joint");
+	rail_fixed_constraint.position = *rail_current_pose;
+	std::cout << rail_fixed_constraint.position << std::endl;
+	rail_fixed_constraint.tolerance_above = 0.2;
+	rail_fixed_constraint.tolerance_below = 0.2;
+	rail_fixed_constraint.weight = 1;
+	service_request.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
+	
 	service_request.ik_request.pose_stamped.pose.position.z =  TABLE_HEIGHT+GRIPPING_OFFSET+bin_height+DZ;
 	service_client.call(service_request, service_response);
+	if(service_response.error_code.val !=1){
+		ROS_ERROR("IK couldn't find a solution");
+		return 0;
+	}
+
 	group.setJointValueTarget(service_response.solution.joint_state);
-	group.move();
+	group.setStartState(full_planning_scene->getCurrentState());
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		return 1;
+	}
+	else{
+		ROS_ERROR("Motion planning failed");
+		return 0;
+	}
 }
 
 /*--------------------------------------------------------------------
  * carry_bin_to()
  * Moves to target location keeping the grasping orientation
  *------------------------------------------------------------------*/
-void MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
+int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 {
 	ROS_INFO("Carrying bin to target");
 
@@ -226,40 +302,46 @@ void MoveBin::carry_bin_to(double x_target, double y_target, double angle_target
 	service_request.ik_request.pose_stamped.pose.orientation.y = quat_goal.y();
 	service_request.ik_request.pose_stamped.pose.orientation.z = quat_goal.z();
 	service_request.ik_request.pose_stamped.pose.orientation.w = quat_goal.w();
-	moveit_msgs::JointConstraint rail_constraint;
-	rail_constraint.joint_name = "table_rail_joint";
-	rail_constraint.position = 2.00;
-	rail_constraint.tolerance_above = 1.3;
-	rail_constraint.tolerance_below = 1.6;
-	rail_constraint.weight = 1;
+	service_request.ik_request.constraints.joint_constraints.clear();
 	service_request.ik_request.constraints.joint_constraints.push_back(rail_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
 	service_client.call(service_request, service_response);
-
+	if(service_response.error_code.val !=1){
+		ROS_ERROR("IK couldn't find a solution");
+		return 0;
+	}
 
 	// Fixing shoulder_pan given by the IK
 	service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
 
-	group.setJointValueTarget(service_response.solution.joint_state);;
-	group.move();
+	group.setJointValueTarget(service_response.solution.joint_state);
+	group.setStartState(full_planning_scene->getCurrentState());
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		return 1;
+	}
+	else{
+		ROS_ERROR("Motion planning failed");
+		return 0;
+	}
 }
 
 /*--------------------------------------------------------------------
  * detach_bin()
  * Detaches the bin from the robot
  *------------------------------------------------------------------*/
-void MoveBin::detach_bin()
+int MoveBin::detach_bin()
 {
-	//gripper_group.execute(gripper_open_plan);
-	//sleep(1.0);
-	
-	ac.waitForServer();
-	// send a goal to the action
-	control_msgs::GripperCommandGoal goal;
-	goal.command.position = 0.04;
-	goal.command.max_effort = 100;
-	ac.sendGoal(goal);
-
-	bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+	if(!sim){
+		ac.waitForServer();
+		// send a goal to the action
+		control_msgs::GripperCommandGoal goal;
+		goal.command.position = 0.04;
+		goal.command.max_effort = 100;
+		ac.sendGoal(goal);
+		bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+	}
 
 	planning_scene_monitor->requestPlanningSceneState();
 	full_planning_scene = planning_scene_monitor->getPlanningScene();
@@ -270,10 +352,13 @@ void MoveBin::detach_bin()
 		planning_scene.robot_state.attached_collision_objects.clear();
 		planning_scene.world.collision_objects.push_back(attached_object.object);
 		planning_scene_diff_publisher.publish(planning_scene);
+		return 1;
 	}else{
 		ROS_ERROR("There was no bin attached to the robot");
+		return 0;
 	}
 }
+
 
 /*--------------------------------------------------------------------
  * optimal_goal_angle()
