@@ -95,6 +95,7 @@ public:
 	bool sim;
 	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
 	moveit::planning_interface::MoveGroup::Plan my_plan;
+	double rail_max, rail_min, rail_tolerance;
 };
 
 #endif

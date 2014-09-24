@@ -34,7 +34,7 @@ MoveBin::MoveBin() : group("excel"), ac("gripper_controller/gripper_action", tru
 	service_request.ik_request.group_name = "excel";
 	service_request.ik_request.pose_stamped.header.frame_id = "table_link";
 	service_request.ik_request.avoid_collisions = true;
-	service_request.ik_request.attempts = 10;
+	service_request.ik_request.attempts = 30;
 
 	// Loading planning_scene_monitor //
 	planning_scene_monitor->startSceneMonitor();
@@ -61,14 +61,18 @@ MoveBin::MoveBin() : group("excel"), ac("gripper_controller/gripper_action", tru
 	rail_constraint.weight = 1;
 	shoulder_constraint.joint_name = "shoulder_lift_joint";
 	shoulder_constraint.position = -M_PI/2;
-	shoulder_constraint.tolerance_above = M_PI/4;
-	shoulder_constraint.tolerance_below = M_PI/2;
+	shoulder_constraint.tolerance_above = M_PI/3;
+	shoulder_constraint.tolerance_below = M_PI/3;
 	shoulder_constraint.weight = 1;
 	elbow_constraint.joint_name = "elbow_joint";
 	elbow_constraint.position = M_PI/2;
-	elbow_constraint.tolerance_above = M_PI/4;
-	elbow_constraint.tolerance_below = M_PI/4;
+	elbow_constraint.tolerance_above = M_PI/3;
+	elbow_constraint.tolerance_below = M_PI/3;
 	elbow_constraint.weight = 1;
+
+	rail_max = 3.29;
+	rail_min = 0.41;
+	rail_tolerance = 0.3;
 }
 
 /*--------------------------------------------------------------------
@@ -110,19 +114,31 @@ int MoveBin::move_on_top(int bin_number)
 		service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
 		service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
 		service_request.ik_request.pose_stamped.pose.orientation.w = quat.w();
+
+		moveit_msgs::JointConstraint special_rail_constraint;
+		special_rail_constraint.joint_name = "table_rail_joint";
+		special_rail_constraint.position = rail_max - object_pick_pose.position.x;
+		special_rail_constraint.tolerance_above = std::max(std::min(rail_max - object_pick_pose.position.x + rail_tolerance, rail_max) - (rail_max - object_pick_pose.position.x),0.0);
+		special_rail_constraint.tolerance_below = std::max((rail_max - object_pick_pose.position.x) - std::max(rail_max - object_pick_pose.position.x - rail_tolerance, rail_min),0.0);
+		special_rail_constraint.weight = 1;
+
+		std::cout<<"object_x: "<<object_pick_pose.position.x<<" ;rail_max: "<<rail_max<<std::endl;
+		std::cout << "pos: " << special_rail_constraint.position<< " ; tol_up: " <<special_rail_constraint.tolerance_above<< " ;tol_down: "<<special_rail_constraint.tolerance_below<< std::endl;
+
 		service_request.ik_request.constraints.joint_constraints.clear();
-		service_request.ik_request.constraints.joint_constraints.push_back(rail_constraint);
-		service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
-		service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
-		
+		service_request.ik_request.constraints.joint_constraints.push_back(special_rail_constraint);
+		//service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+		//service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+
 		service_client.call(service_request, service_response);
 		if(service_response.error_code.val !=1){
 			ROS_ERROR("IK couldn't find a solution");
 			return 0;
 		}
-		
-		// Fixing shoulder_pan given by the IK
+
+		// Fixing shoulder_pan and wrist_3 given by the IK
 		service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
+		service_response.solution.joint_state.position[7] = this->optimal_goal_angle(service_response.solution.joint_state.position[7],planning_scene.robot_state.joint_state.position[7]);
 
 		group.setJointValueTarget(service_response.solution.joint_state);
 		group.setStartState(full_planning_scene->getCurrentState());
@@ -149,33 +165,50 @@ int MoveBin::move_on_top(int bin_number)
 int MoveBin::descent()
 {
 	ROS_INFO("Descent");
-	
+
 	planning_scene_monitor->requestPlanningSceneState();
 	full_planning_scene = planning_scene_monitor->getPlanningScene();
 	full_planning_scene->getPlanningSceneMsg(planning_scene);
 	collision_objects = planning_scene.world.collision_objects;
-	
+
 	service_request.ik_request.pose_stamped.pose.position.z = TABLE_HEIGHT+GRIPPING_OFFSET+bin_height ;
-	
+
 	service_request.ik_request.constraints.joint_constraints.clear();
-	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
-	service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
-	moveit_msgs::JointConstraint rail_fixed_constraint;
+	//service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	//service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+	moveit_msgs::JointConstraint rail_fixed_constraint, shoulder_pan_fixed_constraint, wrist_3_fixed_constraint;
 	rail_fixed_constraint.joint_name = "table_rail_joint";
+	shoulder_pan_fixed_constraint.joint_name = "shoulder_pan_joint";
+	wrist_3_fixed_constraint.joint_name = "wrist_3_joint";
 	const double *rail_current_pose = full_planning_scene->getCurrentState().getJointPositions("table_rail_joint");
+	const double *shoulder_pan_current_pose = full_planning_scene->getCurrentState().getJointPositions("shoulder_pan_joint");
+	const double *wrist_3_current_pose = full_planning_scene->getCurrentState().getJointPositions("wrist_3_joint");
 	rail_fixed_constraint.position = *rail_current_pose;
-	std::cout << rail_fixed_constraint.position << std::endl;
+	shoulder_pan_fixed_constraint.position = *shoulder_pan_current_pose;
+	wrist_3_fixed_constraint.position = *wrist_3_current_pose;
+
 	rail_fixed_constraint.tolerance_above = 0.2;
 	rail_fixed_constraint.tolerance_below = 0.2;
 	rail_fixed_constraint.weight = 1;
+	shoulder_pan_fixed_constraint.tolerance_above = 0.2;
+	shoulder_pan_fixed_constraint.tolerance_below = 0.2;
+	shoulder_pan_fixed_constraint.weight = 1;
+	wrist_3_fixed_constraint.tolerance_above = 0.2;
+	wrist_3_fixed_constraint.tolerance_below = 0.2;
+	wrist_3_fixed_constraint.weight = 1;
 	service_request.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
-	
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(wrist_3_fixed_constraint);
+
 	service_client.call(service_request, service_response);
 	if(service_response.error_code.val !=1){
 		ROS_ERROR("IK couldn't find a solution");
 		return 0;
 	}
-	
+
+	// Fixing wrist_3 given by the IK
+	service_response.solution.joint_state.position[7] = this->optimal_goal_angle(service_response.solution.joint_state.position[7],planning_scene.robot_state.joint_state.position[7]);
+
 	group.setStartState(full_planning_scene->getCurrentState());
 	group.setJointValueTarget(service_response.solution.joint_state);
 	if(group.plan(my_plan)){
@@ -243,32 +276,49 @@ int MoveBin::attach_bin(int bin_number)
 int MoveBin::ascent()
 {
 	ROS_INFO("Ascent");
-	
+
 	planning_scene_monitor->requestPlanningSceneState();
 	full_planning_scene = planning_scene_monitor->getPlanningScene();
 	full_planning_scene->getPlanningSceneMsg(planning_scene);
 	collision_objects = planning_scene.world.collision_objects;
-	
-	
+
+
 	service_request.ik_request.constraints.joint_constraints.clear();
-	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
-	service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
-	moveit_msgs::JointConstraint rail_fixed_constraint;
+	//service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	//service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+	moveit_msgs::JointConstraint rail_fixed_constraint, shoulder_pan_fixed_constraint, wrist_3_fixed_constraint;
 	rail_fixed_constraint.joint_name = "table_rail_joint";
+	shoulder_pan_fixed_constraint.joint_name = "shoulder_pan_joint";
+	wrist_3_fixed_constraint.joint_name = "wrist_3_joint";
 	const double *rail_current_pose = full_planning_scene->getCurrentState().getJointPositions("table_rail_joint");
+	const double *shoulder_pan_current_pose = full_planning_scene->getCurrentState().getJointPositions("shoulder_pan_joint");
+	const double *wrist_3_current_pose = full_planning_scene->getCurrentState().getJointPositions("wrist_3_joint");
 	rail_fixed_constraint.position = *rail_current_pose;
-	std::cout << rail_fixed_constraint.position << std::endl;
+	shoulder_pan_fixed_constraint.position = *shoulder_pan_current_pose;
+	wrist_3_fixed_constraint.position = *wrist_3_current_pose;
+
 	rail_fixed_constraint.tolerance_above = 0.2;
 	rail_fixed_constraint.tolerance_below = 0.2;
 	rail_fixed_constraint.weight = 1;
+	shoulder_pan_fixed_constraint.tolerance_above = 0.2;
+	shoulder_pan_fixed_constraint.tolerance_below = 0.2;
+	shoulder_pan_fixed_constraint.weight = 1;
+	wrist_3_fixed_constraint.tolerance_above = 0.2;
+	wrist_3_fixed_constraint.tolerance_below = 0.2;
+	wrist_3_fixed_constraint.weight = 1;
 	service_request.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
-	
-	service_request.ik_request.pose_stamped.pose.position.z =  TABLE_HEIGHT+GRIPPING_OFFSET+bin_height+DZ;
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(wrist_3_fixed_constraint);
+
+	service_request.ik_request.pose_stamped.pose.position.z = TABLE_HEIGHT+GRIPPING_OFFSET+bin_height+DZ;
 	service_client.call(service_request, service_response);
 	if(service_response.error_code.val !=1){
 		ROS_ERROR("IK couldn't find a solution");
 		return 0;
 	}
+
+	// Fixing wrist_3 given by the IK
+	service_response.solution.joint_state.position[7] = this->optimal_goal_angle(service_response.solution.joint_state.position[7],planning_scene.robot_state.joint_state.position[7]);
 
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
@@ -302,18 +352,27 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 	service_request.ik_request.pose_stamped.pose.orientation.y = quat_goal.y();
 	service_request.ik_request.pose_stamped.pose.orientation.z = quat_goal.z();
 	service_request.ik_request.pose_stamped.pose.orientation.w = quat_goal.w();
+
+	moveit_msgs::JointConstraint special_rail_constraint;
+	special_rail_constraint.joint_name = "table_rail_joint";
+	special_rail_constraint.position = rail_max - x_target;
+	special_rail_constraint.tolerance_above = std::max(std::min(rail_max - x_target + rail_tolerance, rail_max) - (rail_max - x_target),0.0);
+	special_rail_constraint.tolerance_below = std::max((rail_max - x_target) - std::max(rail_max - x_target - rail_tolerance, rail_min),0.0);
+	special_rail_constraint.weight = 1;
+
 	service_request.ik_request.constraints.joint_constraints.clear();
-	service_request.ik_request.constraints.joint_constraints.push_back(rail_constraint);
-	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
-	service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(special_rail_constraint);
+	//service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	//service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
 	service_client.call(service_request, service_response);
 	if(service_response.error_code.val !=1){
 		ROS_ERROR("IK couldn't find a solution");
 		return 0;
 	}
 
-	// Fixing shoulder_pan given by the IK
+	// Fixing shoulder_pan and wrist_3 given by the IK
 	service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
+	service_response.solution.joint_state.position[7] = this->optimal_goal_angle(service_response.solution.joint_state.position[7],planning_scene.robot_state.joint_state.position[7]);
 
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
@@ -358,7 +417,6 @@ int MoveBin::detach_bin()
 		return 0;
 	}
 }
-
 
 /*--------------------------------------------------------------------
  * optimal_goal_angle()
