@@ -138,7 +138,7 @@ int MoveBin::move_on_top(int bin_number)
 
 		// Fixing shoulder_pan and wrist_3 given by the IK
 		service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
-		service_response.solution.joint_state.position[7] = this->optimal_goal_angle(service_response.solution.joint_state.position[7],planning_scene.robot_state.joint_state.position[7]);
+		service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
 
 		group.setJointValueTarget(service_response.solution.joint_state);
 		group.setStartState(full_planning_scene->getCurrentState());
@@ -207,7 +207,7 @@ int MoveBin::descent()
 	}
 
 	// Fixing wrist_3 given by the IK
-	service_response.solution.joint_state.position[7] = this->optimal_goal_angle(service_response.solution.joint_state.position[7],planning_scene.robot_state.joint_state.position[7]);
+	service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
 
 	group.setStartState(full_planning_scene->getCurrentState());
 	group.setJointValueTarget(service_response.solution.joint_state);
@@ -318,7 +318,7 @@ int MoveBin::ascent()
 	}
 
 	// Fixing wrist_3 given by the IK
-	service_response.solution.joint_state.position[7] = this->optimal_goal_angle(service_response.solution.joint_state.position[7],planning_scene.robot_state.joint_state.position[7]);
+	service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
 
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
@@ -372,16 +372,37 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 
 	// Fixing shoulder_pan and wrist_3 given by the IK
 	service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
-	service_response.solution.joint_state.position[7] = this->optimal_goal_angle(service_response.solution.joint_state.position[7],planning_scene.robot_state.joint_state.position[7]);
-
+	service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
+	
+	/*
+	tf::Quaternion c_quat = tf::createQuaternionFromRPY(0,M_PI/2,M_PI);
+	moveit_msgs::OrientationConstraint ocm = moveit_msgs::OrientationConstraint();
+	ocm.header.frame_id = "table_link";
+	ocm.orientation.x = c_quat.x();
+	ocm.orientation.y = c_quat.y();
+	ocm.orientation.z = c_quat.z();
+	ocm.orientation.w = c_quat.w();
+	ocm.link_name = "ee_link";
+	ocm.absolute_x_axis_tolerance = M_PI;
+	ocm.absolute_y_axis_tolerance = 0.5;
+	ocm.absolute_z_axis_tolerance = 0.5;
+	ocm.weight = 1.0;
+	moveit_msgs::Constraints constraints;
+	constraints.orientation_constraints.push_back(ocm);
+	constraints.name = "roll_pitch_control";
+	group.setPathConstraints(constraints);
+	*/
+	
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
 	if(group.plan(my_plan)){
 		group.execute(my_plan);
+		//group.clearPathConstraints();
 		return 1;
 	}
 	else{
 		ROS_ERROR("Motion planning failed");
+		//group.clearPathConstraints();
 		return 0;
 	}
 }
@@ -418,18 +439,19 @@ int MoveBin::detach_bin()
 	}
 }
 
+
 /*--------------------------------------------------------------------
  * optimal_goal_angle()
  * Finds out if the robot needs to rotate clockwise or anti-clockwise
  *------------------------------------------------------------------*/
 double MoveBin::optimal_goal_angle(double goal_angle, double current_angle)
 {
-	std::cout<< "Current angle is : "<<current_angle<<std::endl;
-	std::cout<< "Goal angle is : "<<goal_angle<<std::endl;
+	//std::cout<< "Current angle is : "<<current_angle<<std::endl;
+	//std::cout<< "Goal angle is : "<<goal_angle<<std::endl;
 
 
 	while( std::abs(std::max(current_angle,goal_angle) - std::min(current_angle,goal_angle))>M_PI){
-		std::cout<<"This is not the shortest path"<<std::endl;
+		//std::cout<<"This is not the shortest path"<<std::endl;
 		if (goal_angle>current_angle){
 			goal_angle -= 2*M_PI;
 		}
@@ -440,14 +462,14 @@ double MoveBin::optimal_goal_angle(double goal_angle, double current_angle)
 	}
 
 	if(goal_angle>2*M_PI){
-		std::cout<<"Your goal_angle would be too high"<<std::endl<<"Sorry, going the other way"<<std::endl;
+		//std::cout<<"Your goal_angle would be too high"<<std::endl<<"Sorry, going the other way"<<std::endl;
 		goal_angle -= 2*M_PI;
 	}
 	if(goal_angle<-2*M_PI){
-		std::cout<<"Your goal_angle would be too small"<<std::endl<<"Sorry, going the other way"<<std::endl;
+		//std::cout<<"Your goal_angle would be too small"<<std::endl<<"Sorry, going the other way"<<std::endl;
 		goal_angle += 2*M_PI;
 	}
-	std::cout<<"Final angle is : "<< goal_angle<< std::endl;
+	//std::cout<<"Final angle is : "<< goal_angle<< std::endl;
 	return goal_angle;
 }
 
