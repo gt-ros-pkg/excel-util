@@ -4,16 +4,16 @@
  * MoveBin()
  * Constructor.
  *------------------------------------------------------------------*/
-MoveBin::MoveBin() : group("excel"), ac("gripper_controller/gripper_action", true) ,spinner(1)
+MoveBin::MoveBin() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory"), gripper_ac("gripper_controller/gripper_action", true) ,spinner(1)
 {
-	sim = true;
-
 	spinner.start();
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
 	planning_scene_monitor::PlanningSceneMonitorPtr plg_scn_mon(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf));
 	planning_scene_monitor = plg_scn_mon;
 
 	ros::NodeHandle nh_, nh_param_("~");
+	nh_param_.getParam("sim",sim);
+
 	ros::WallDuration sleep_t(0.5);
 	group.setPlanningTime(8.0);
 	group.allowReplanning(false);
@@ -28,7 +28,7 @@ MoveBin::MoveBin() : group("excel"), ac("gripper_controller/gripper_action", tru
 	service_request.ik_request.group_name = "excel";
 	service_request.ik_request.pose_stamped.header.frame_id = "table_link";
 	service_request.ik_request.avoid_collisions = true;
-	service_request.ik_request.attempts = 30;
+	service_request.ik_request.attempts = 10;
 
 	// Loading planning_scene_monitor //
 	planning_scene_monitor->startSceneMonitor();
@@ -137,7 +137,26 @@ int MoveBin::move_on_top(int bin_number)
 		group.setJointValueTarget(service_response.solution.joint_state);
 		group.setStartState(full_planning_scene->getCurrentState());
 		if(group.plan(my_plan)){
-			group.execute(my_plan);
+			if(!sim){
+				excel_ac.waitForServer();
+				
+				// Copy trajectory
+				control_msgs::FollowJointTrajectoryGoal excel_goal;
+				excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
+				
+				// Ask to execute now
+				ros::Time time_zero(0.0);
+				excel_goal.trajectory.header.stamp = time_zero; 
+				
+				// Specify path and goal tolerance
+				//excel_goal.path_tolerance
+				
+				// Send goal and wait for a result
+				excel_ac.sendGoal(excel_goal);
+				bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
+				if (!finished_before_timeout) return 0;				
+			}
+			else group.execute(my_plan);
 			return 1;
 		}
 		else{
@@ -206,7 +225,26 @@ int MoveBin::descent()
 	group.setStartState(full_planning_scene->getCurrentState());
 	group.setJointValueTarget(service_response.solution.joint_state);
 	if(group.plan(my_plan)){
-		group.execute(my_plan);
+		if(!sim){
+			excel_ac.waitForServer();
+			
+			// Copy trajectory
+			control_msgs::FollowJointTrajectoryGoal excel_goal;
+			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
+			
+			// Ask to execute now
+			ros::Time time_zero(0.0);
+			excel_goal.trajectory.header.stamp = time_zero; 
+			
+			// Specify path and goal tolerance
+			//excel_goal.path_tolerance
+			
+			// Send goal and wait for a result
+			excel_ac.sendGoal(excel_goal);
+			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
+			if (!finished_before_timeout) return 0;				
+		}
+		else group.execute(my_plan);
 		return 1;
 	}
 	else{
@@ -222,13 +260,13 @@ int MoveBin::descent()
 int MoveBin::attach_bin(int bin_number)
 {	
 	if(!sim){
-		ac.waitForServer();
+		gripper_ac.waitForServer();
 		// send a goal to the action
 		control_msgs::GripperCommandGoal goal;
 		goal.command.position = 0.0;
 		goal.command.max_effort = 100;
-		ac.sendGoal(goal);
-		bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+		gripper_ac.sendGoal(goal);
+		bool finished_before_timeout = gripper_ac.waitForResult(ros::Duration(30.0));
 	}
 
 	std::ostringstream os;
@@ -317,7 +355,26 @@ int MoveBin::ascent()
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
 	if(group.plan(my_plan)){
-		group.execute(my_plan);
+		if(!sim){
+			excel_ac.waitForServer();
+			
+			// Copy trajectory
+			control_msgs::FollowJointTrajectoryGoal excel_goal;
+			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
+			
+			// Ask to execute now
+			ros::Time time_zero(0.0);
+			excel_goal.trajectory.header.stamp = time_zero; 
+			
+			// Specify path and goal tolerance
+			//excel_goal.path_tolerance
+			
+			// Send goal and wait for a result
+			excel_ac.sendGoal(excel_goal);
+			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
+			if (!finished_before_timeout) return 0;				
+		}
+		else group.execute(my_plan);
 		return 1;
 	}
 	else{
@@ -367,7 +424,7 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 	// Fixing shoulder_pan and wrist_3 given by the IK
 	service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
 	service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
-	
+
 	/*
 	tf::Quaternion c_quat = tf::createQuaternionFromRPY(0,M_PI/2,M_PI);
 	moveit_msgs::OrientationConstraint ocm = moveit_msgs::OrientationConstraint();
@@ -385,12 +442,31 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 	constraints.orientation_constraints.push_back(ocm);
 	constraints.name = "roll_pitch_control";
 	group.setPathConstraints(constraints);
-	*/
-	
+	 */
+
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
 	if(group.plan(my_plan)){
-		group.execute(my_plan);
+		if(!sim){
+			excel_ac.waitForServer();
+			
+			// Copy trajectory
+			control_msgs::FollowJointTrajectoryGoal excel_goal;
+			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
+			
+			// Ask to execute now
+			ros::Time time_zero(0.0);
+			excel_goal.trajectory.header.stamp = time_zero; 
+			
+			// Specify path and goal tolerance
+			//excel_goal.path_tolerance
+			
+			// Send goal and wait for a result
+			excel_ac.sendGoal(excel_goal);
+			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
+			if (!finished_before_timeout) return 0;				
+		}
+		else group.execute(my_plan);
 		//group.clearPathConstraints();
 		return 1;
 	}
@@ -408,13 +484,13 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 int MoveBin::detach_bin()
 {
 	if(!sim){
-		ac.waitForServer();
+		gripper_ac.waitForServer();
 		// send a goal to the action
 		control_msgs::GripperCommandGoal goal;
 		goal.command.position = 0.04;
 		goal.command.max_effort = 100;
-		ac.sendGoal(goal);
-		bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+		gripper_ac.sendGoal(goal);
+		bool finished_before_timeout = gripper_ac.waitForResult(ros::Duration(30.0));
 	}
 
 	planning_scene_monitor->requestPlanningSceneState();
@@ -476,7 +552,7 @@ int main(int argc, char **argv)
 
 	int run_prg = 1;
 
-	while(run_prg){
+	while(run_prg && ros::ok()){
 		int nb;
 		double x ,y, o;
 		std::cout<< "Which bin number would you like to move ?" << std::endl;

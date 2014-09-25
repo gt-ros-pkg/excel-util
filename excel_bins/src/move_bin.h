@@ -10,6 +10,8 @@
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/JointConstraint.h>
 #include <moveit_msgs/GetPositionIK.h>
+#include <moveit_msgs/RobotTrajectory.h>
+#include <moveit_msgs/RobotState.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/move_group_interface/move_group.h>
@@ -23,6 +25,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <control_msgs/GripperCommandAction.h>
+#include <control_msgs/FollowJointTrajectoryAction.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.875  
@@ -91,7 +94,8 @@ public:
 	move_group_interface::MoveGroup group;
 	double bin_height;
 	ros::AsyncSpinner spinner;
-	actionlib::SimpleActionClient<control_msgs::GripperCommandAction> ac;
+	actionlib::SimpleActionClient<control_msgs::GripperCommandAction> gripper_ac;
+	actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> excel_ac;
 	bool sim;
 	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
 	moveit::planning_interface::MoveGroup::Plan my_plan;
