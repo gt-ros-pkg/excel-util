@@ -231,7 +231,7 @@
          </visual>
          <collision>
             <geometry>
-              <box size="0.038 0.12 0.05" />
+              <box size="0.038 0.12 0.035" />
             </geometry>
             <origin xyz="0.01 0.00 0" rpy="0 0 0" />
          </collision>
@@ -260,7 +260,7 @@
          </visual>
          <collision>
             <geometry>
-              <box size="0.038 0.12 0.05" />
+              <box size="0.038 0.12 0.035" />
             </geometry>
             <origin xyz="-0.01 0.00 0" rpy="0 0 0" />
          </collision>
