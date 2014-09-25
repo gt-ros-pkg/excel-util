@@ -487,7 +487,7 @@ int MoveBin::detach_bin()
 		gripper_ac.waitForServer();
 		// send a goal to the action
 		control_msgs::GripperCommandGoal goal;
-		goal.command.position = 0.04;
+		goal.command.position = 0.08;
 		goal.command.max_effort = 100;
 		gripper_ac.sendGoal(goal);
 		bool finished_before_timeout = gripper_ac.waitForResult(ros::Duration(30.0));
