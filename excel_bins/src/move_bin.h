@@ -10,6 +10,7 @@
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/JointConstraint.h>
 #include <moveit_msgs/GetPositionIK.h>
+#include <moveit_msgs/GetPositionFK.h>
 #include <moveit_msgs/RobotTrajectory.h>
 #include <moveit_msgs/RobotState.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
@@ -26,11 +27,12 @@
 #include <actionlib/client/terminal_state.h>
 #include <control_msgs/GripperCommandAction.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
+#include "tf/transform_datatypes.h"
 
 # define M_PI 3.14159265358979323846  /* pi */
-# define TABLE_HEIGHT 0.875  
+# define TABLE_HEIGHT 0.88  
 # define GRIPPING_OFFSET 0.1  
-# define DZ 0.2 
+# define DZ 0.25 
 
 class MoveBin
 {
@@ -80,9 +82,11 @@ public:
 	 *------------------------------------------------------------------*/
 	double optimal_goal_angle(double goal_angle, double current_angle);
 
-	ros::ServiceClient service_client;
+	ros::ServiceClient service_client, fk_client;
 	moveit_msgs::GetPositionIK::Request service_request;
 	moveit_msgs::GetPositionIK::Response service_response;
+	moveit_msgs::GetPositionFK::Request fk_request;
+	moveit_msgs::GetPositionFK::Response fk_response;
 
 	ros::Publisher attached_object_publisher;
 	ros::Publisher planning_scene_diff_publisher;

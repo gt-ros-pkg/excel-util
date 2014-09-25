@@ -19,7 +19,7 @@ class ARTagManager(ARTagManagerInterface):
         super(ARTagManager, self).__init__(bin_slots, available_bins=None)
         camera_pos = [0, 0, 0]
         camera_quat = [0, 0, 0, 0]
-        self.table_height = 0.87
+        self.table_height = 0.88
         self.bin_small_height = 0.13
         self.bin_large_height = 0.18
         self.camera_pose = PoseConv.to_homo_mat(camera_pos, camera_quat)

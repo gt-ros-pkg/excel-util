@@ -24,11 +24,17 @@ MoveBin::MoveBin() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_jo
 		ROS_INFO("Waiting for service");
 		sleep(1.0);
 	}
+	fk_client = nh_.serviceClient<moveit_msgs::GetPositionFK> ("compute_fk");
+	while(!fk_client.exists())
+	{
+		ROS_INFO("Waiting for service");
+		sleep(1.0);
+	}
 
 	service_request.ik_request.group_name = "excel";
 	service_request.ik_request.pose_stamped.header.frame_id = "table_link";
 	service_request.ik_request.avoid_collisions = true;
-	service_request.ik_request.attempts = 10;
+	service_request.ik_request.attempts = 30;
 
 	// Loading planning_scene_monitor //
 	planning_scene_monitor->startSceneMonitor();
@@ -54,9 +60,9 @@ MoveBin::MoveBin() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_jo
 	rail_constraint.tolerance_below = 1.6;
 	rail_constraint.weight = 1;
 	shoulder_constraint.joint_name = "shoulder_lift_joint";
-	shoulder_constraint.position = -M_PI/2;
-	shoulder_constraint.tolerance_above = M_PI/3;
-	shoulder_constraint.tolerance_below = M_PI/3;
+	shoulder_constraint.position = -M_PI/4;
+	shoulder_constraint.tolerance_above = M_PI/4;
+	shoulder_constraint.tolerance_below = M_PI/4;
 	shoulder_constraint.weight = 1;
 	elbow_constraint.joint_name = "elbow_joint";
 	elbow_constraint.position = M_PI/2;
@@ -116,12 +122,9 @@ int MoveBin::move_on_top(int bin_number)
 		special_rail_constraint.tolerance_below = std::max((rail_max - object_pick_pose.position.x) - std::max(rail_max - object_pick_pose.position.x - rail_tolerance, rail_min),0.0);
 		special_rail_constraint.weight = 1;
 
-		std::cout<<"object_x: "<<object_pick_pose.position.x<<" ;rail_max: "<<rail_max<<std::endl;
-		std::cout << "pos: " << special_rail_constraint.position<< " ; tol_up: " <<special_rail_constraint.tolerance_above<< " ;tol_down: "<<special_rail_constraint.tolerance_below<< std::endl;
-
 		service_request.ik_request.constraints.joint_constraints.clear();
 		service_request.ik_request.constraints.joint_constraints.push_back(special_rail_constraint);
-		//service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+		service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
 		//service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
 
 		service_client.call(service_request, service_response);
@@ -139,18 +142,18 @@ int MoveBin::move_on_top(int bin_number)
 		if(group.plan(my_plan)){
 			if(!sim){
 				excel_ac.waitForServer();
-				
+
 				// Copy trajectory
 				control_msgs::FollowJointTrajectoryGoal excel_goal;
 				excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-				
+
 				// Ask to execute now
 				ros::Time time_zero(0.0);
 				excel_goal.trajectory.header.stamp = time_zero; 
-				
+
 				// Specify path and goal tolerance
 				//excel_goal.path_tolerance
-				
+
 				// Send goal and wait for a result
 				excel_ac.sendGoal(excel_goal);
 				bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
@@ -187,7 +190,7 @@ int MoveBin::descent()
 	service_request.ik_request.pose_stamped.pose.position.z = TABLE_HEIGHT+GRIPPING_OFFSET+bin_height ;
 
 	service_request.ik_request.constraints.joint_constraints.clear();
-	//service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
 	//service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
 	moveit_msgs::JointConstraint rail_fixed_constraint, shoulder_pan_fixed_constraint, wrist_3_fixed_constraint;
 	rail_fixed_constraint.joint_name = "table_rail_joint";
@@ -227,18 +230,18 @@ int MoveBin::descent()
 	if(group.plan(my_plan)){
 		if(!sim){
 			excel_ac.waitForServer();
-			
+
 			// Copy trajectory
 			control_msgs::FollowJointTrajectoryGoal excel_goal;
 			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-			
+
 			// Ask to execute now
 			ros::Time time_zero(0.0);
 			excel_goal.trajectory.header.stamp = time_zero; 
-			
+
 			// Specify path and goal tolerance
 			//excel_goal.path_tolerance
-			
+
 			// Send goal and wait for a result
 			excel_ac.sendGoal(excel_goal);
 			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
@@ -316,7 +319,7 @@ int MoveBin::ascent()
 
 
 	service_request.ik_request.constraints.joint_constraints.clear();
-	//service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
 	//service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
 	moveit_msgs::JointConstraint rail_fixed_constraint, shoulder_pan_fixed_constraint, wrist_3_fixed_constraint;
 	rail_fixed_constraint.joint_name = "table_rail_joint";
@@ -357,18 +360,18 @@ int MoveBin::ascent()
 	if(group.plan(my_plan)){
 		if(!sim){
 			excel_ac.waitForServer();
-			
+
 			// Copy trajectory
 			control_msgs::FollowJointTrajectoryGoal excel_goal;
 			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-			
+
 			// Ask to execute now
 			ros::Time time_zero(0.0);
 			excel_goal.trajectory.header.stamp = time_zero; 
-			
+
 			// Specify path and goal tolerance
 			//excel_goal.path_tolerance
-			
+
 			// Send goal and wait for a result
 			excel_ac.sendGoal(excel_goal);
 			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
@@ -378,7 +381,7 @@ int MoveBin::ascent()
 		return 1;
 	}
 	else{
-		ROS_ERROR("Motion planning failed");
+		ROS_ERROR("Motion planattached_object.object.mesh_poses[0].position.z = TABLE_HEIGHT;ning failed");
 		return 0;
 	}
 }
@@ -413,7 +416,7 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 
 	service_request.ik_request.constraints.joint_constraints.clear();
 	service_request.ik_request.constraints.joint_constraints.push_back(special_rail_constraint);
-	//service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
 	//service_request.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
 	service_client.call(service_request, service_response);
 	if(service_response.error_code.val !=1){
@@ -425,42 +428,23 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 	service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
 	service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
 
-	/*
-	tf::Quaternion c_quat = tf::createQuaternionFromRPY(0,M_PI/2,M_PI);
-	moveit_msgs::OrientationConstraint ocm = moveit_msgs::OrientationConstraint();
-	ocm.header.frame_id = "table_link";
-	ocm.orientation.x = c_quat.x();
-	ocm.orientation.y = c_quat.y();
-	ocm.orientation.z = c_quat.z();
-	ocm.orientation.w = c_quat.w();
-	ocm.link_name = "ee_link";
-	ocm.absolute_x_axis_tolerance = M_PI;
-	ocm.absolute_y_axis_tolerance = 0.5;
-	ocm.absolute_z_axis_tolerance = 0.5;
-	ocm.weight = 1.0;
-	moveit_msgs::Constraints constraints;
-	constraints.orientation_constraints.push_back(ocm);
-	constraints.name = "roll_pitch_control";
-	group.setPathConstraints(constraints);
-	 */
-
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
 	if(group.plan(my_plan)){
 		if(!sim){
 			excel_ac.waitForServer();
-			
+
 			// Copy trajectory
 			control_msgs::FollowJointTrajectoryGoal excel_goal;
 			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-			
+
 			// Ask to execute now
 			ros::Time time_zero(0.0);
 			excel_goal.trajectory.header.stamp = time_zero; 
-			
+
 			// Specify path and goal tolerance
 			//excel_goal.path_tolerance
-			
+
 			// Send goal and wait for a result
 			excel_ac.sendGoal(excel_goal);
 			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
@@ -499,6 +483,29 @@ int MoveBin::detach_bin()
 
 	if (planning_scene.robot_state.attached_collision_objects.size()>0){
 		moveit_msgs::AttachedCollisionObject attached_object = planning_scene.robot_state.attached_collision_objects[0];
+		fk_request.header.frame_id = "table_link";
+		fk_request.fk_link_names.clear();
+		fk_request.fk_link_names.push_back("wrist_3_link");
+		fk_request.robot_state = planning_scene.robot_state;
+		fk_client.call(fk_request, fk_response);
+
+		tf::Quaternion co_quat;
+		quaternionMsgToTF(fk_response.pose_stamped[0].pose.orientation, co_quat);
+		double roll, pitch, yaw;
+		tf::Matrix3x3(co_quat).getRPY(roll, pitch, yaw);
+		ROS_INFO_STREAM(roll);
+		ROS_INFO_STREAM(pitch);
+		ROS_INFO_STREAM(yaw);
+		tf::Quaternion quat = tf::createQuaternionFromRPY(0,0,yaw);
+
+		attached_object.object.header.frame_id = "table_link";
+		attached_object.object.mesh_poses[0].position = fk_response.pose_stamped[0].pose.position;
+		attached_object.object.mesh_poses[0].position.z = TABLE_HEIGHT;
+		attached_object.object.mesh_poses[0].orientation.x = quat.x();
+		attached_object.object.mesh_poses[0].orientation.y = quat.y();
+		attached_object.object.mesh_poses[0].orientation.z = quat.z();
+		attached_object.object.mesh_poses[0].orientation.w = quat.w();
+		
 		planning_scene.robot_state.attached_collision_objects.clear();
 		planning_scene.world.collision_objects.push_back(attached_object.object);
 		planning_scene_diff_publisher.publish(planning_scene);
