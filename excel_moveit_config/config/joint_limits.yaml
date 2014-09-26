@@ -22,10 +22,10 @@ joint_limits:
     max_position: 6.28
 
     has_velocity_limits: true
-    max_velocity: 1.0
+    max_velocity: .7
 
     has_acceleration_limits: false
-    max_acceleration: 5
+    max_acceleration: 3
 
     k_position: 10.0
     soft_lower_limit: -6.0

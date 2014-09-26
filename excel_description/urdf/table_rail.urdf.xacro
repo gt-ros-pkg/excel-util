@@ -59,6 +59,12 @@
             </geometry>
             <origin xyz="1.847 0.811 0.905" rpy="0 0 0" />
          </collision>
+         <collision>
+            <geometry>
+              <box size="4.0 2.0 0.2" />
+            </geometry>
+            <origin xyz="2.0 1.0 1.9" rpy="0 0 0" />
+         </collision>
       </link>
 
       <joint name="table_rail_joint" type="prismatic">
