@@ -114,10 +114,30 @@ int Scanning::scan(int pose, int orientation){
 	group.setJointValueTarget(service_response.solution.joint_state);
 
 	if(group.plan(my_plan)){
-		group.execute(my_plan);
-		sleep(1.0);
-	}else ROS_ERROR("Planning failed");
+		if(!sim){
+			excel_ac.waitForServer();
+
+			// Copy trajectory
+			control_msgs::FollowJointTrajectoryGoal excel_goal;
+			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
+
+			// Ask to execute now
+			ros::Time time_zero(0.0);
+			excel_goal.trajectory.header.stamp = time_zero; 
+
+			// Specify path and goal tolerance
+			//excel_goal.path_tolerance
+
+			// Send goal and wait for a result
+			excel_ac.sendGoal(excel_goal);				
+		}
+		else group.execute(my_plan);
+	}
+	else{
+		ROS_ERROR("Motion planning failed");
+	}
 	
+	sleep(1.0);
 	int ok;
 	std::cout << "Do you see pose " << pose<< " at orientation "<< orientation<< " ?"<<std::endl;
 	std::cin >> ok;
