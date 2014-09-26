@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="use_gui" default="true"/>
   <include file="$(find excel_description)/launch/excel_upload.launch" />
-  <!--<param name="use_gui" value="true"/>-->
+  <param name="use_gui" value="$(arg use_gui)"/>
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
   <!--<node name="rviz" pkg="rviz" type="rviz" args="-d $(find urdf_tutorial)/urdf.rviz" />-->
