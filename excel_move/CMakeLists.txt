@@ -30,6 +30,7 @@ add_library(move_to_carthesian_position src/move_to_carthesian_position.cpp)
 add_library(open_gripper src/open_gripper.cpp)
 add_library(close_gripper src/close_gripper.cpp)
 add_library(scan_table src/scan_table.cpp)
+add_library(scanning src/scanning.cpp)
 
 add_executable(moveit_to_known_position_node src/move_to_known_position.cpp)
 add_executable(moveit_joint_node src/move_joint.cpp)
@@ -37,6 +38,7 @@ add_executable(move_to_carthesian_position_node src/move_to_carthesian_position.
 add_executable(open_gripper_node src/open_gripper.cpp)
 add_executable(close_gripper_node src/close_gripper.cpp)
 add_executable(scan_table_node src/scan_table.cpp)
+add_executable(scanning_node src/scanning.cpp)
 
 target_link_libraries(moveit_to_known_position_node ${catkin_LIBRARIES})
 target_link_libraries(moveit_joint_node ${catkin_LIBRARIES})
@@ -44,5 +46,5 @@ target_link_libraries(move_to_carthesian_position_node ${catkin_LIBRARIES})
 target_link_libraries(open_gripper_node ${catkin_LIBRARIES})
 target_link_libraries(close_gripper_node ${catkin_LIBRARIES})
 target_link_libraries(scan_table_node ${catkin_LIBRARIES})
-
+target_link_libraries(scanning_node ${catkin_LIBRARIES})
 

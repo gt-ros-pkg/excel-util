@@ -19,7 +19,7 @@ class ARTagManager(ARTagManagerInterface):
         super(ARTagManager, self).__init__(bin_slots, available_bins=None)
         camera_pos = [0, 0, 0]
         camera_quat = [0, 0, 0, 0]
-        self.table_height = 0.87
+        self.table_height = 0.88
         self.bin_small_height = 0.13
         self.bin_large_height = 0.18
         self.camera_pose = PoseConv.to_homo_mat(camera_pos, camera_quat)
@@ -75,10 +75,10 @@ class ARTagManager(ARTagManagerInterface):
                         #print [bid,bid+10]
                         
                         if not bin_data[bid][:2]:
-                            print "empty"
+                            # print "empty"
                             break;
                         if not bin_data[bid+10][:2]:
-                            print "empty"
+                            # print "empty"
                             break;
                         
                         # Get the average position
@@ -122,14 +122,14 @@ class ARTagManager(ARTagManagerInterface):
                 self.bins_pub.publish(msg_bins)
                 
                 empty_ids = self.get_real_empty_slots()
-                print empty_ids
+                # print empty_ids
                 empty_slots = []
                 empty_slot = Bin()
                 for slot_id in empty_ids:
-                    print slot_id
+                    # print slot_id
                     slot = self.bin_slots[slot_id]
                     empty_slot.name = "slot"
-                    print slot[0][2] 
+                    # print slot[0][2] 
                     if slot[0][2]>1.00:
                         empty_slot.size = "large"
                     else:
@@ -171,23 +171,26 @@ def main():
     ar_tag_man = ARTagManager(bin_slots)    
     rospy.sleep(3.0)
     
+    i = 0
     while not rospy.is_shutdown():
         filled = ar_tag_man.get_real_filled_slots()
         empty = ar_tag_man.get_real_empty_slots()
         bin_poses_real = ar_tag_man.get_real_bin_poses()
         real_slot_states = ar_tag_man.get_real_bin_slot_states()
-        print "filled slots"
-        print filled
-        print "empty slots"
-        print empty
-        print "bin poses"
-        print bin_poses_real
-        print "slot states"
-        print real_slot_states
-        print "bin_slots"
-        slot = ar_tag_man.bin_slots[empty[0]]
-        print slot[0][0]
-        print"-------------"
+        if i % 10 == 0:
+            print "filled slots"
+            print filled
+            print "empty slots"
+            print empty
+            print "bin poses"
+            print bin_poses_real
+            print "slot states"
+            print real_slot_states
+            print "bin_slots"
+            slot = ar_tag_man.bin_slots[empty[0]]
+            print slot[0][0]
+            print"-------------"
+        i += 1
         
         r.sleep()
 
