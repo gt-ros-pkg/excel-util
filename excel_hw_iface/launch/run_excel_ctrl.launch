@@ -44,6 +44,11 @@
       <param name="scale_vel_cmd" value="1000000.0"/>
     </node>
 
+    <node name="gripper_node" type="CModelRtuNode.py" pkg="robotiq_c_model_control"
+          output="screen" args="/dev/ttyUSB0" />
+    <node name="gripper_action_server" type="gripper_action_server.py" pkg="excel_move"
+          output="screen" />
+
     <node name="estop_monitor" pkg="excel_hw_iface" type="estop_monitor.py" respawn="true" />
   </group>
   <group if="$(arg is_test)">
