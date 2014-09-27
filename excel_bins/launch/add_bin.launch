@@ -2,7 +2,7 @@
 
   <arg name="x" default="0.5" />
   <arg name="y" default="0.5" />
-  <arg name="z" default="0.875" />
+  <arg name="z" default="0.88" />
   <arg name="angle" default="0" />
   <arg name="size" default="small" />
 

@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 	ros::AsyncSpinner spinner(1);
 	spinner.start();
 
+	moveit::planning_interface::MoveGroup::Plan my_plan;
 	double x_goal = 0.8, y_goal = 1.8, z_goal = 0.88;
 
 	// this connects to a running instance of the move_group node
@@ -44,7 +45,7 @@ int main(int argc, char **argv)
 	shoulder_constraint.tolerance_below = M_PI/4;
 	shoulder_constraint.weight = 1;
 	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
-
+/*
 	ROS_INFO("Planning and moving...");
 	group.setJointValueTarget("shoulder_pan_joint", 2.33);
 	group.setJointValueTarget("shoulder_lift_joint", -1.95);
@@ -53,32 +54,51 @@ int main(int argc, char **argv)
 	group.setJointValueTarget("wrist_2_joint", -1.41);
 	group.setJointValueTarget("wrist_3_joint", 2.22);
 	group.setJointValueTarget("table_rail_joint", 2.50);
-	group.move();
-
+	//group.setStartState(full_planning_scene->getCurrentState());
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		sleep(1.0);
+	}else ROS_ERROR("Step 1 failed");
+*/
 	geometry_msgs::Pose current_pose = group.getCurrentPose().pose;
 	service_request.ik_request.pose_stamped.pose = current_pose;
-
-
-	service_request.ik_request.pose_stamped.pose.position.x -= 0.3;
+	service_request.ik_request.pose_stamped.pose.position.z = 0.88;
+	//service_request.ik_request.pose_stamped.pose.position.x = 0.3;
 	service_client.call(service_request, service_response);
 	group.setJointValueTarget(service_response.solution.joint_state);
-	group.move();
+	//group.setStartState(full_planning_scene->getCurrentState());
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		sleep(1.0);
+	}else ROS_ERROR("Step 2 failed");
 
 	service_request.ik_request.pose_stamped.pose.position.y += 0.1;
 	service_client.call(service_request, service_response);
 	group.setJointValueTarget(service_response.solution.joint_state);
-	group.move();
+	//group.setStartState(full_planning_scene->getCurrentState());
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		sleep(1.0);
+	}else ROS_ERROR("Step 3 failed");
 
 	service_request.ik_request.pose_stamped.pose.position.x += 0.3;
 	service_client.call(service_request, service_response);
 	group.setJointValueTarget(service_response.solution.joint_state);
-	group.move();
+	//group.setStartState(full_planning_scene->getCurrentState());
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		sleep(1.0);
+	}else ROS_ERROR("Step 4 failed");
 
 
 	service_request.ik_request.pose_stamped.pose.position.y -= 0.1;
 	service_client.call(service_request, service_response);
 	group.setJointValueTarget(service_response.solution.joint_state);
-	group.move();
+	//group.setStartState(full_planning_scene->getCurrentState());
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		sleep(1.0);
+	}else ROS_ERROR("Step 5 failed");
 
 
 	group.setEndEffectorLink("ee_link");
@@ -107,7 +127,11 @@ int main(int argc, char **argv)
 	group.setStartStateToCurrentState();
 
 	group.setJointValueTarget(service_response_bis.solution.joint_state);
-	group.move();
+	//group.setStartState(full_planning_scene->getCurrentState());
+	if(group.plan(my_plan)){
+		group.execute(my_plan);
+		sleep(1.0);
+	}else ROS_ERROR("Step 6 failed");
 
 
 	ros::shutdown();
