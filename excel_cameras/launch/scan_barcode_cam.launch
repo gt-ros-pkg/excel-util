@@ -8,7 +8,7 @@
 
     <node pkg="nodelet" type="nodelet" name="camera_nodelet"
           args="load pointgrey_camera_driver/PointGreyCameraNodelet camera_nodelet_manager" >
-      <param name="frame_id" value="overhead_hum_ws_frame" />
+      <param name="frame_id" value="scan_barcode_frame" />
       <param name="serial" value="$(arg camera_serial)" />
       <param name="desired_freq" value="15.0" />
       
@@ -16,9 +16,9 @@
       <!--        value="file://$(find excel_cameras)/calibration_files/overhead_hum_ws.yaml" /> -->
     </node>
 
-    <node pkg="nodelet" type="nodelet" name="image_proc_debayer"
-          args="load image_proc/debayer camera_nodelet_manager">
-    </node>
+    <!-- <node pkg="nodelet" type="nodelet" name="image_proc_debayer" -->
+    <!--       args="load image_proc/debayer camera_nodelet_manager"> -->
+    <!-- </node> -->
 
     <!-- <node pkg="nodelet" type="nodelet" name="image_proc_rectify" -->
     <!--       args="load image_proc/rectify camera_nodelet_manager"> -->
@@ -26,10 +26,10 @@
     <!--   <remap from="image_rect" to="/scan_barcode_cam/image_rect" /> -->
     <!-- </node> -->
 
-    <node pkg="nodelet" type="nodelet" name="image_proc_color_rectify"
-          args="load image_proc/rectify camera_nodelet_manager">
-      <remap from="image_mono" to="/scan_barcode_cam/image_color" />
-      <remap from="image_rect" to="/scan_barcode_cam/image_rect_color" />
-    </node>
+    <!-- <node pkg="nodelet" type="nodelet" name="image_proc_color_rectify" -->
+    <!--       args="load image_proc/rectify camera_nodelet_manager"> -->
+    <!--   <remap from="image_mono" to="/scan_barcode_cam/image_color" /> -->
+    <!--   <remap from="image_rect" to="/scan_barcode_cam/image_rect_color" /> -->
+    <!-- </node> -->
   </group>
 </launch>
