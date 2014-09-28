@@ -139,6 +139,11 @@ int Scanning::scan(int pose, int orientation){
 	
 	sleep(1.0);
 	int ok;
+
+	string tag_name = "ASIF";
+	ok = static_cast<int>(scan_obj.find_tag(tag_name, 5.));
+
+	//TODO: Pass in the tag string and remove the following code
 	std::cout << "Do you see pose " << pose<< " at orientation "<< orientation<< " ?"<<std::endl;
 	std::cin >> ok;
 	
