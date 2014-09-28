@@ -4,7 +4,7 @@
  * Scanning()
  * Constructor.
  *------------------------------------------------------------------*/
-Scanning::Scanning() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1), scan_obj(nh_)
+Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1), scan_obj(nh_)
 {
 	spinner.start();
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
@@ -64,9 +64,13 @@ Scanning::Scanning() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_
 
 	// start with orientation 0 //
 	current_orientation = 0;
+
+	results[0]=false;
+	results[1]=false;
+	results[2]=false;
 }
 
-int Scanning::scan(int pose, int orientation){
+bool Scanning::scan(int pose, int orientation){
 	if (pose==0){
 		service_request.ik_request.pose_stamped.pose.position.x = 0.60;
 		service_request.ik_request.pose_stamped.pose.position.y = 1.94;
@@ -82,6 +86,23 @@ int Scanning::scan(int pose, int orientation){
 		service_request.ik_request.pose_stamped.pose.position.y = 2.00;
 		service_request.ik_request.pose_stamped.pose.position.z = 0.95;
 	}
+
+	std::vector<string> tag_names;
+	tag_names.push_back("ASIF");
+	tag_names.push_back("idrive");
+	tag_names.push_back("park");
+
+	/*
+	switch(pose)
+	  {
+	  case 0: tag_name = "ASIF";
+	    break;
+	  case 1: tag_name = "idrive";
+	    break;
+	  case 2: tag_name = "park";
+	    break;
+	  }
+	*/
 
 	tf::Quaternion quat;
 	if (orientation==0){
@@ -136,18 +157,22 @@ int Scanning::scan(int pose, int orientation){
 	else{
 		ROS_ERROR("Motion planning failed");
 	}
-	
-	sleep(1.0);
-	int ok;
 
-	string tag_name = "ASIF";
-	ok = static_cast<int>(scan_obj.find_tag(tag_name, 5.));
+	std::vector<bool> oks;
+	bool ok;
+	sleep(0.3);
+	oks = scan_obj.find_tag(pose, tag_names, 1.);
+	for(int i=0;i<oks.size();i++){
+	  results[i] = results[i] || oks[i];
+	}
+	ok = oks[pose];
 
-	//TODO: Pass in the tag string and remove the following code
-	std::cout << "Do you see pose " << pose<< " at orientation "<< orientation<< " ?"<<std::endl;
-	std::cin >> ok;
-	
-	if (ok==2) ros::shutdown();
+	cout << "DONE FINDING tag - " << tag_names[pose] << " in position" << orientation<< endl;
+	if (ok){
+	  cout << "TAG FOUND!!" << endl;
+	}
+	else
+	  cout << "TAG NOT FOUND!!" << endl;
 	
 	return ok;
 }
@@ -170,28 +195,28 @@ double Scanning::optimal_goal_angle(double goal_angle, double current_angle)
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "scanning");
+	ros::NodeHandle nh;
+
 	usleep(1000*1000);
 	
-	Scanning scanning;
-	std::cout << "-----------------------------" << std::endl;
-	std::cout << "USE THE NUMBER 2 TO SHUTDOWN" << std::endl;
-	std::cout << "-----------------------------" << std::endl;
-	while(ros::ok()){
-		while(scanning.orientation_try<4){
+	Scanning scanning(nh);
+
+	while(ros::ok()){	  
+	  while(scanning.orientation_try<4 && !scanning.results[0] && ros::ok()){
 			if(scanning.scan(0, scanning.current_orientation)) break;
 			scanning.current_orientation = (scanning.current_orientation +1) % 3;
 			scanning.orientation_try += 1;
 		}
 		scanning.orientation_try = 0;
 
-		while(scanning.orientation_try<4){
+		while(scanning.orientation_try<4 && !scanning.results[1] && ros::ok()){
 			if(scanning.scan(1, scanning.current_orientation)) break;
 			scanning.current_orientation = (scanning.current_orientation +1) % 3;
 			scanning.orientation_try += 1;
 		}
 		scanning.orientation_try = 0;
 
-		while(scanning.orientation_try<4){
+		while(scanning.orientation_try<4 && !scanning.results[2] && ros::ok()){
 			if(scanning.scan(2, scanning.current_orientation)) break;
 			scanning.current_orientation = (scanning.current_orientation +1) % 3;
 			scanning.orientation_try += 1;

@@ -40,10 +40,10 @@ class Scanning
 {
 public:
 	// Constructor.
-	Scanning();
+  Scanning(ros::NodeHandle nh_);
 	
 	double optimal_goal_angle(double goal_angle, double current_angle);
-	int scan(int pose, int orientation);
+	bool scan(int pose, int orientation);
 
 	ros::ServiceClient service_client, fk_client;
 	moveit_msgs::GetPositionIK::Request service_request;
@@ -64,7 +64,8 @@ public:
 	bool sim;
 	int orientation_try, current_orientation;
 	BarcodeScan scan_obj;
-	ros::NodeHandle nh_;
+	bool results[3];
+	/* ros::NodeHandle nh_; */
 };
 
 #endif

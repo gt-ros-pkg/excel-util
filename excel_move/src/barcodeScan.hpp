@@ -12,6 +12,7 @@
 #include <dmtx.h>
 
 #define SCAN_FRAME_RATE 7
+
 /**
    Class to scan for bins. 
 **/
@@ -30,7 +31,7 @@ public:
     currently_process_ = false; // currently processing an image?
   }
 
-  bool find_tag(string tag_name, float timeout=2.);
+  vector<bool> find_tag(int pose_nb,vector<string> tag_names, float timeout=2.);
 
 private:
 
@@ -44,14 +45,19 @@ private:
 
 };
 
-bool BarcodeScan::find_tag(string tag_name, float timeout/*=2.*/)
+vector<bool> BarcodeScan::find_tag(int pose_nb, vector<string> tag_names, float timeout/*=2.*/)
 {
   process_im_ = true;
   bool found_tag = false;
+  vector<bool> found_tags;
+  for(int i=0;i<tag_names.size();i++){
+    found_tags.push_back(false);
+  }
+
   int frames = 0;
-  int total_frames = floor(timeout * SCAN_FRAME_RATE);
+  int total_frames = 1;//floor(timeout * SCAN_FRAME_RATE);
   
-  while(!(frames>total_frames && found_tag)){
+  while(!(frames>total_frames || found_tag)){
     if (currently_process_){
       frames++;
       DmtxImage      *img;
@@ -62,52 +68,60 @@ bool BarcodeScan::find_tag(string tag_name, float timeout/*=2.*/)
       img = dmtxImageCreate(cv_ptr->image.data, cv_ptr->image.cols, cv_ptr->image.rows, 
 			    DmtxPack8bppK);
       assert(img != NULL);
-      ROS_INFO("A %d %d", img->width, img->height);
+      // ROS_INFO("A %d %d", img->width, img->height);
 
       dec = dmtxDecodeCreate(img, 1);
       assert(dec != NULL);
-      ROS_INFO("B");
+      // ROS_INFO("B");
 
       reg = dmtxRegionFindNext(dec, NULL);
     
       while(reg!=NULL){
-	ROS_INFO("C");
+	// ROS_INFO("C");
 	dmtx_msg = dmtxDecodeMatrixRegion(dec, reg, DmtxUndefined);
-	ROS_INFO("D");
+	// ROS_INFO("D");
 	if(dmtx_msg != NULL) {
 	  std::string str_dmtx((char*)reinterpret_cast<char*>(dmtx_msg->output));
-	  if(str_dmtx == tag_name){
-	    found_tag = true;
-	    ROS_INFO("E");
-	    const char* output = reinterpret_cast<const char*>(dmtx_msg->output);
-	    ROS_INFO("Message: %s", output);
-	    dmtxMessageDestroy(&dmtx_msg);
+	  ROS_INFO("%s tag found", str_dmtx.c_str());
+	  
+	  for(int i=0;i<tag_names.size();i++){
+	    if(str_dmtx == tag_names[i]){
+	      found_tags[i] = true;
+	      // ROS_INFO("E");
+	      const char* output = reinterpret_cast<const char*>(dmtx_msg->output);
+	      // ROS_INFO("Message: %s", output);
+	      dmtxMessageDestroy(&dmtx_msg);
 	    
-	    //debug
-	    cout << "Message Found:" << endl;
-	    break;
+	      //debug
+	      cout << "Message Found:" << endl;
+	      break;
+	    }
 	  }
+	  found_tag = found_tags[pose_nb];
 	} else {
-	  ROS_INFO("Message not found");
+	  // ROS_INFO("Message not found");
 	}
 	dmtxRegionDestroy(&reg);
+	reg = dmtxRegionFindNext(dec, NULL);
       }
 
-      ROS_INFO("F");
+      // ROS_INFO("F");
       dmtxDecodeDestroy(&dec);
       dmtxImageDestroy(&img);
-      ROS_INFO("G");
+      // ROS_INFO("G");
     
       currently_process_ = false;
     }
   }
 
   process_im_ = false;
-  return found_tag;
+  return found_tags;
 }
 
 void BarcodeScan::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
+
+  // cout << "Get here?" << endl;
 
   if(process_im_ && !currently_process_){
 
