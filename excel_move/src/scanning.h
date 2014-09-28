@@ -29,6 +29,8 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
 
+#include "barcodeScan.hpp"
+
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
 # define GRIPPING_OFFSET 0.1  
@@ -61,6 +63,8 @@ public:
 	double rail_max, rail_min, rail_tolerance;
 	bool sim;
 	int orientation_try, current_orientation;
+	BarcodeScan scan_obj;
+	ros::NodeHandle nh_;
 };
 
 #endif

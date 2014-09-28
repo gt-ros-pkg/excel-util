@@ -4,14 +4,14 @@
  * Scanning()
  * Constructor.
  *------------------------------------------------------------------*/
-Scanning::Scanning() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1)
+Scanning::Scanning() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1), scan_obj(nh_)
 {
 	spinner.start();
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
 	planning_scene_monitor::PlanningSceneMonitorPtr plg_scn_mon(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf));
 	planning_scene_monitor = plg_scn_mon;
 
-	ros::NodeHandle nh_, nh_param_("~");
+	ros::NodeHandle nh_param_("~");
 	nh_param_.getParam("sim",sim);
 
 	ros::WallDuration sleep_t(0.5);
