@@ -4,15 +4,21 @@
  * MoveBin()
  * Constructor.
  *------------------------------------------------------------------*/
-MoveBin::MoveBin() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory"), gripper_ac("gripper_controller/gripper_action", true) ,spinner(1)
+MoveBin::MoveBin() : 
+  group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory"), 
+  gripper_ac("gripper_controller/gripper_action", true) ,spinner(1)
 {
 	spinner.start();
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
-	planning_scene_monitor::PlanningSceneMonitorPtr plg_scn_mon(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf));
+	planning_scene_monitor::PlanningSceneMonitorPtr plg_scn_mon(
+      new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf));
 	planning_scene_monitor = plg_scn_mon;
 
 	ros::NodeHandle nh_, nh_param_("~");
+  sim = false;
+  use_gripper = false;
 	nh_param_.getParam("sim",sim);
+	nh_param_.getParam("use_gripper",use_gripper);
 
 	ros::WallDuration sleep_t(0.5);
 	group.setPlanningTime(8.0);
@@ -143,17 +149,13 @@ int MoveBin::move_on_top(int bin_number)
 
 		group.setJointValueTarget(service_response.solution.joint_state);
 		group.setStartState(full_planning_scene->getCurrentState());
-		if(group.plan(my_plan)){
-      if(!sim)
-        return executeTrajectory(my_plan.trajectory_.joint_trajectory);
-      else 
-        group.execute(my_plan);
-      return true;
-		}
-		else{
-			ROS_ERROR("Motion planning failed");
-			return 0;
-		}
+	if(group.plan(my_plan))
+    return executeJointTrajectory(my_plan);
+	else {
+		ROS_ERROR("Motion planning failed");
+		//group.clearPathConstraints();
+		return 0;
+	}
 	}else{
 		// std::string error_msg = ""+bin_name + " is not in the scene. Aborting !";
 		ROS_ERROR("This bin is not in the scene.");
@@ -215,15 +217,11 @@ int MoveBin::descent()
 
 	group.setStartState(full_planning_scene->getCurrentState());
 	group.setJointValueTarget(service_response.solution.joint_state);
-	if(group.plan(my_plan)){
-		if(!sim)
-      return executeTrajectory(my_plan.trajectory_.joint_trajectory);
-		else 
-      group.execute(my_plan);
-		return true;
-	}
-	else{
+	if(group.plan(my_plan))
+    return executeJointTrajectory(my_plan);
+	else {
 		ROS_ERROR("Motion planning failed");
+		//group.clearPathConstraints();
 		return 0;
 	}
 }
@@ -234,14 +232,8 @@ int MoveBin::descent()
  *------------------------------------------------------------------*/
 int MoveBin::attach_bin(int bin_number)
 {	
-	if(!sim){
-		// send a goal to the action
-		control_msgs::GripperCommandGoal goal;
-		goal.command.position = 0.0;
-		goal.command.max_effort = 100;
-		gripper_ac.sendGoal(goal);
-		bool finished_before_timeout = gripper_ac.waitForResult(ros::Duration(30.0));
-	}
+  // close gripper
+  executeGripperAction(true); 
 
 	std::ostringstream os;
 	os << bin_number;
@@ -328,15 +320,11 @@ int MoveBin::ascent()
 
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
-	if(group.plan(my_plan)){
-		if(!sim)
-      return executeTrajectory(my_plan.trajectory_.joint_trajectory);
-		else 
-      group.execute(my_plan);
-		return true;
-	}
-	else{
-		ROS_ERROR("Motion planattached_object.object.mesh_poses[0].position.z = TABLE_HEIGHT;ning failed");
+	if(group.plan(my_plan))
+    return executeJointTrajectory(my_plan);
+	else {
+		ROS_ERROR("Motion planning failed");
+		//group.clearPathConstraints();
 		return 0;
 	}
 }
@@ -385,14 +373,9 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
-	if(group.plan(my_plan)){
-		if(!sim)
-      return executeTrajectory(my_plan.trajectory_.joint_trajectory);
-		else 
-      group.execute(my_plan);
-    return true;
-	}
-	else{
+	if(group.plan(my_plan))
+    return executeJointTrajectory(my_plan);
+	else {
 		ROS_ERROR("Motion planning failed");
 		//group.clearPathConstraints();
 		return 0;
@@ -405,14 +388,8 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
  *------------------------------------------------------------------*/
 int MoveBin::detach_bin()
 {
-	if(!sim){
-		// send a goal to the action
-		control_msgs::GripperCommandGoal goal;
-		goal.command.position = 0.08;
-		goal.command.max_effort = 100;
-		gripper_ac.sendGoal(goal);
-		bool finished_before_timeout = gripper_ac.waitForResult(ros::Duration(30.0));
-	}
+  // open gripper
+  executeGripperAction(false); 
 
 	planning_scene_monitor->requestPlanningSceneState();
 	full_planning_scene = planning_scene_monitor->getPlanningScene();
@@ -453,7 +430,6 @@ int MoveBin::detach_bin()
 	}
 }
 
-
 /*--------------------------------------------------------------------
  * optimal_goal_angle()
  * Finds out if the robot needs to rotate clockwise or anti-clockwise
@@ -487,11 +463,14 @@ double MoveBin::optimal_goal_angle(double goal_angle, double current_angle)
 	return goal_angle;
 }
 
-bool MoveBin::executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj)
+bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan)
 {
+  if(sim)
+    return group.execute(my_plan);
+
   // Copy trajectory
   control_msgs::FollowJointTrajectoryGoal excel_goal;
-  excel_goal.trajectory = joint_traj;
+  excel_goal.trajectory = mg_plan.trajectory_.joint_trajectory;
 
   // Ask to execute now
   ros::Time time_zero(0.0);
@@ -503,6 +482,26 @@ bool MoveBin::executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj)
   // Send goal and wait for a result
   excel_ac.sendGoal(excel_goal);
   return excel_ac.waitForResult(ros::Duration(30.0));
+}
+
+bool MoveBin::executeGripperAction(bool is_close)
+{
+	if(!use_gripper){
+		// send a goal to the action
+		control_msgs::GripperCommandGoal goal;
+		goal.command.position = (is_close) ? 0.0 : 0.08;
+		goal.command.max_effort = 100;
+		gripper_ac.sendGoal(goal);
+		return gripper_ac.waitForResult(ros::Duration(30.0));
+	}
+  else {
+    if(is_close)
+      ROS_INFO("Closing gripper");
+    else
+      ROS_INFO("Opening gripper");
+    ros::Duration(2.0).sleep();
+    return true;
+  }
 }
 
 int main(int argc, char **argv)

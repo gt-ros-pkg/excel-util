@@ -34,6 +34,8 @@
 # define GRIPPING_OFFSET 0.1  
 # define DZ 0.25 
 
+typedef move_group_interface::MoveGroup::Plan MoveGroupPlan;
+
 class MoveBin
 {
 public:
@@ -82,7 +84,8 @@ public:
 	 *------------------------------------------------------------------*/
 	double optimal_goal_angle(double goal_angle, double current_angle);
 
-  bool executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj);
+  bool executeJointTrajectory(MoveGroupPlan& mg_plan);
+  bool executeGripperAction(bool is_close);
 
 	ros::ServiceClient service_client, fk_client;
 	moveit_msgs::GetPositionIK::Request service_request;
@@ -106,6 +109,8 @@ public:
 	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
 	moveit::planning_interface::MoveGroup::Plan my_plan;
 	double rail_max, rail_min, rail_tolerance;
+
+  bool use_gripper;
 };
 
 #endif
