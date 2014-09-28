@@ -82,6 +82,8 @@ public:
 	 *------------------------------------------------------------------*/
 	double optimal_goal_angle(double goal_angle, double current_angle);
 
+  bool executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj);
+
 	ros::ServiceClient service_client, fk_client;
 	moveit_msgs::GetPositionIK::Request service_request;
 	moveit_msgs::GetPositionIK::Response service_response;
