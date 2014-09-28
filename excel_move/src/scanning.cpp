@@ -7,18 +7,26 @@
 Scanning::Scanning() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1), scan_obj(nh_)
 {
 	spinner.start();
+	cout << "Spinner started?" << endl;
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
 	planning_scene_monitor::PlanningSceneMonitorPtr plg_scn_mon(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf));
 	planning_scene_monitor = plg_scn_mon;
 
+	cout << "Before nh_param?" << endl;
 	ros::NodeHandle nh_param_("~");
-	nh_param_.getParam("sim",sim);
+
+	cout << "Failed before param?" << endl;
+	// nh_param_.getParam("sim",sim);
+	sim = false;
+	
+	cout << "Failed at param?" << endl;
 
 	ros::WallDuration sleep_t(0.5);
 	group.setPlanningTime(8.0);
 	group.allowReplanning(false);
 
 	service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
+
 	while(!service_client.exists())
 	{
 		ROS_INFO("Waiting for IK service");
@@ -66,7 +74,7 @@ Scanning::Scanning() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_
 	current_orientation = 0;
 }
 
-int Scanning::scan(int pose, int orientation){
+bool Scanning::scan(int pose, int orientation){
 	if (pose==0){
 		service_request.ik_request.pose_stamped.pose.position.x = 0.60;
 		service_request.ik_request.pose_stamped.pose.position.y = 1.94;
@@ -82,6 +90,18 @@ int Scanning::scan(int pose, int orientation){
 		service_request.ik_request.pose_stamped.pose.position.y = 2.00;
 		service_request.ik_request.pose_stamped.pose.position.z = 0.95;
 	}
+
+	string tag_name;
+	switch(pose)
+	  {
+	  case 0: tag_name = "ASIF";
+	    break;
+	  case 1: tag_name = "idrive";
+	    break;
+	  case 2: tag_name = "park";
+	    break;
+	    
+	  }
 
 	tf::Quaternion quat;
 	if (orientation==0){
@@ -138,16 +158,15 @@ int Scanning::scan(int pose, int orientation){
 	}
 	
 	sleep(1.0);
-	int ok;
+	bool ok;
 
-	string tag_name = "ASIF";
-	ok = static_cast<int>(scan_obj.find_tag(tag_name, 5.));
+	ok = scan_obj.find_tag(tag_name, 1.);
 
-	//TODO: Pass in the tag string and remove the following code
-	std::cout << "Do you see pose " << pose<< " at orientation "<< orientation<< " ?"<<std::endl;
-	std::cin >> ok;
+	// //TODO: Pass in the tag string and remove the following code
+	// std::cout << "Do you see pose " << pose<< " at orientation "<< orientation<< " ?"<<std::endl;
+	// std::cin >> ok;
 	
-	if (ok==2) ros::shutdown();
+	// if (ok==2) ros::shutdown();
 	
 	return ok;
 }
@@ -177,21 +196,21 @@ int main(int argc, char **argv)
 	std::cout << "USE THE NUMBER 2 TO SHUTDOWN" << std::endl;
 	std::cout << "-----------------------------" << std::endl;
 	while(ros::ok()){
-		while(scanning.orientation_try<4){
+		while(scanning.orientation_try<4 && ros::ok()){
 			if(scanning.scan(0, scanning.current_orientation)) break;
 			scanning.current_orientation = (scanning.current_orientation +1) % 3;
 			scanning.orientation_try += 1;
 		}
 		scanning.orientation_try = 0;
 
-		while(scanning.orientation_try<4){
+		while(scanning.orientation_try<4 && ros::ok()){
 			if(scanning.scan(1, scanning.current_orientation)) break;
 			scanning.current_orientation = (scanning.current_orientation +1) % 3;
 			scanning.orientation_try += 1;
 		}
 		scanning.orientation_try = 0;
 
-		while(scanning.orientation_try<4){
+		while(scanning.orientation_try<4 && ros::ok()){
 			if(scanning.scan(2, scanning.current_orientation)) break;
 			scanning.current_orientation = (scanning.current_orientation +1) % 3;
 			scanning.orientation_try += 1;

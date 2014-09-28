@@ -43,7 +43,7 @@ public:
 	Scanning();
 	
 	double optimal_goal_angle(double goal_angle, double current_angle);
-	int scan(int pose, int orientation);
+	bool scan(int pose, int orientation);
 
 	ros::ServiceClient service_client, fk_client;
 	moveit_msgs::GetPositionIK::Request service_request;

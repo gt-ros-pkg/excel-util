@@ -23,11 +23,14 @@ class BarcodeScan
 public:
   BarcodeScan(ros::NodeHandle& nh): nh_(nh), it(nh)
   {
-    
+    cout << "Start constructor" << endl;
+
     sub = it.subscribe("/scan_barcode_cam/image_raw", 1, &BarcodeScan::imageCallback, this);
     
     process_im_ = false; // process images 
     currently_process_ = false; // currently processing an image?
+    
+    cout << "End constructor" << endl;
   }
 
   bool find_tag(string tag_name, float timeout=2.);
