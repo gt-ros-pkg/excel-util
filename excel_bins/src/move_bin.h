@@ -1,6 +1,8 @@
 #ifndef MOVE_BIN_H
 #define MOVE_BIN_H
 
+#include <boost/lexical_cast.hpp>
+
 // ROS/MoveIt includes.
 #include "ros/ros.h"
 #include "ros/time.h"
@@ -42,62 +44,74 @@ public:
   // Constructor.
   MoveBin();
 
-  /*--------------------------------------------------------------------
-   * move_on_top()
-   * Moves to the specified bin number location
-   *------------------------------------------------------------------*/
-  int move_on_top(int bin_number); 
+  ////////////////////////// Outer actions /////////////////////////
+  // The robot tries to plan a trajectory to its home position
+  bool moveToHome() {return false;}
+
+  // From the current joint pose, the robot moves the requested bin from its location
+  // to the target location, and backs away
+  bool moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target);
+  //////////////////////////////////////////////////////////////////
+
+  //////////////// moveBinToTarget composite actions ///////////////
+  // From the current joint pose, the robot moves to the grasp location for the given bin
+  // The robot is not holding a bin during this method
+  bool approachBin(int bin_number);
+
+  // On the assumption that the robot is currently holding a bin, the robot moves the
+  // bin to the target place location, but does not release the bin
+  bool deliverBin(double x_target, double y_target, double angle_target);
+  //////////////////////////////////////////////////////////////////
+
+  ///////////////////////// Traverse actions ///////////////////////
+
+  // Move arm to pose above bin
+  bool moveAboveBin(int bin_number); 
+  void getBinAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geometry_msgs::Pose& pose);
+
+  // Move arm to target (X,Y,R), above a place location
+  bool carryBinTo(double x_target, double y_target, double angle_target);
+  void getCarryBinPose(double x_target, double y_target, double angle_target, 
+                       geometry_msgs::Pose& pose);
+
+  // Move arm across freespace to target pose  
+  bool traverseMove(geometry_msgs::Pose& pose);
+  //////////////////////////////////////////////////////////////////
+
+  ///////////////////////// Vertical actions ///////////////////////
+
+  // Move arm up
+  bool ascent();
+
+  // Move arm down
+  bool descent();  
+
+  // From current pose, move arm vertically to target z
+  bool verticalMove(double target_z);
+  //////////////////////////////////////////////////////////////////
+
+  bool attachBin(int bin_number);  
+
+  bool detachBin();
 
   /*--------------------------------------------------------------------
-   * descent()
-   * Descent to gripping height
-   *------------------------------------------------------------------*/
-  int descent();  
-
-  /*--------------------------------------------------------------------
-   * attach_bin()
-   * Attaches the specified bin number to the robot
-   *------------------------------------------------------------------*/
-  int attach_bin(int bin_number);  
-
-  /*--------------------------------------------------------------------
-   * ascent()
-   * Ascent to moving height
-   *------------------------------------------------------------------*/
-  int ascent();
-
-  /*--------------------------------------------------------------------
-   * carry_bin_to()
-   * Moves to target location keeping the grasping orientation
-   *------------------------------------------------------------------*/
-  int carry_bin_to(double x_target, double y_target, double angle_target);
-
-  /*--------------------------------------------------------------------
-   * detach_bin()
-   * Detaches the bin from the robot
-   *------------------------------------------------------------------*/
-  int detach_bin();
-
-  /*--------------------------------------------------------------------
-   * optimal_goal_angle()
+   * optimalGoalAngle()
    * Finds out if the robot needs to rotate clockwise or anti-clockwise
    *------------------------------------------------------------------*/
-  double optimal_goal_angle(double goal_angle, double current_angle);
+  double optimalGoalAngle(double goal_angle, double current_angle);
+  moveit_msgs::CollisionObjectPtr getBinCollisionObject(int bin_number);
 
   bool executeJointTrajectory(MoveGroupPlan& mg_plan);
   bool executeGripperAction(bool is_close);
 
   ros::ServiceClient service_client, fk_client;
-  moveit_msgs::GetPositionIK::Request service_request;
-  moveit_msgs::GetPositionIK::Response service_response;
-  moveit_msgs::GetPositionFK::Request fk_request;
-  moveit_msgs::GetPositionFK::Response fk_response;
+  moveit_msgs::GetPositionIK::Request ik_srv_req;
+  moveit_msgs::GetPositionIK::Response ik_srv_resp;
 
   ros::Publisher attached_object_publisher;
   ros::Publisher planning_scene_diff_publisher;
   planning_scene::PlanningScenePtr full_planning_scene;
   moveit_msgs::PlanningScene planning_scene;
-  std::vector<moveit_msgs::CollisionObject> collision_objects;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor;	
   boost::shared_ptr<tf::TransformListener> tf;
   move_group_interface::MoveGroup group;
