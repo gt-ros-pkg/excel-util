@@ -4,7 +4,7 @@
  * MoveBin()
  * Constructor.
  *------------------------------------------------------------------*/
-MoveBin::MoveBin() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory"), gripper_ac("gripper_controller/gripper_action", true) ,spinner(1)
+MoveBin::MoveBin(ros::NodeHandle nh) : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory"), gripper_ac("gripper_controller/gripper_action", true) ,nh_(nh),spinner(1)
 {
 	spinner.start();
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
@@ -81,8 +81,8 @@ MoveBin::MoveBin() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_jo
 	}
 
 	robot_stopped = false;
-	ros::Subscriber sub = nh_.subscribe("human/safety/stop", 1, &MoveBin::stop_callback,this);
-	ros::spinOnce();
+	sub = nh_.subscribe("human/safety/stop", 1, &MoveBin::stop_callback,this);
+	human_unsafe = false;
 }
 
 /*--------------------------------------------------------------------
@@ -101,7 +101,7 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 	tf::Quaternion quat_goal = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0,M_PI/2,M_PI);
 	service_request.ik_request.pose_stamped.pose.position.x = x_target;
 	service_request.ik_request.pose_stamped.pose.position.y = y_target;
-	service_request.ik_request.pose_stamped.pose.position.z = TABLE_HEIGHT+GRIPPING_OFFSET+bin_height+DZ;
+	service_request.ik_request.pose_stamped.pose.position.z = 1.4;
 	service_request.ik_request.pose_stamped.pose.orientation.x = quat_goal.x();
 	service_request.ik_request.pose_stamped.pose.orientation.y = quat_goal.y();
 	service_request.ik_request.pose_stamped.pose.orientation.z = quat_goal.z();
@@ -184,15 +184,30 @@ bool MoveBin::executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj)
 	int count = 0;
 	int total_count = 30*10;
 	bool is_successful = false;
-	
-	while ( is_successful && (count<total_count)){
-		excel_ac.waitForResult(ros::Duration(0.1));
-		ros::spinOnce();
-		count++;
-		is_successful = excel_ac.getResult()->error_code!=excel_ac.getResult()->SUCCESSFUL;
-		r.sleep();
-	}
-	
+	//	is_successful = excel_ac.waitForResult(ros::Duration(30.));
+
+	//sleep(30.0);
+	while ( !is_successful ){
+
+	 	ros::spinOnce();
+
+		if (human_unsafe) {
+		  if (!robot_stopped){
+		    this->stop();
+		    robot_stopped = true;
+		    
+		  }
+		}
+		else if (robot_stopped){
+		  robot_stopped = false;
+		  carry_bin_to(last_x,last_y,last_o);
+		}
+		else{
+		  is_successful = excel_ac.getState()== actionlib::SimpleClientGoalState::SUCCEEDED;//excel_ac.getResult()->error_code!=excel_ac.getResult()->SUCCESSFUL;
+		}
+	 	r.sleep();
+	 }
+	// is_successful = excel_ac.getResult()->error_code!=excel_ac.getResult()->SUCCESSFUL;
 	return is_successful;
 }
 
@@ -202,7 +217,8 @@ void MoveBin::stop(){
 		control_msgs::FollowJointTrajectoryGoal excel_goal;
 
 		// Send goal and wait for a result
-		excel_ac.sendGoal(excel_goal);
+		//excel_ac.sendGoal(excel_goal);
+		excel_ac.cancelGoal();
 	}
 	else 
 		group.stop();
@@ -210,23 +226,25 @@ void MoveBin::stop(){
 
 void MoveBin::stop_callback(const std_msgs::Bool::ConstPtr& stop)
 {
-	ROS_INFO("Callback called");
-	if (stop->data) {
-		this->stop();
-		robot_stopped = true;
-		sleep(5.0);
-		ROS_INFO("STOPPING THE ROBOT");
-		robot_stopped = false;
-		carry_bin_to(last_x,last_y,last_o);
-	}
+  human_unsafe = stop->data;
+	// ROS_INFO("Callback called");
+	// if (human_unsafe) {
+	// 	this->stop();
+	// 	robot_stopped = true;
+	// 	// sleep(5.0);
+	// 	ROS_INFO("STOPPING THE ROBOT");
+	// 	robot_stopped = false;
+	// 	carry_bin_to(last_x,last_y,last_o);
+	// }
 }
 
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "move_bin");
+	ros::NodeHandle nh;
 	usleep(1000*1000);
 
-	MoveBin movebin;
+	MoveBin movebin(nh);
 
 	double x1 ,y1, o1, x2 ,y2, o2;
 	/*

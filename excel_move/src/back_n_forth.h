@@ -39,7 +39,7 @@ class MoveBin
 {
 public:
 	// Constructor.
-	MoveBin();
+  MoveBin(ros::NodeHandle nh);
 
 	/*--------------------------------------------------------------------
 	 * move_on_top()
@@ -114,6 +114,8 @@ public:
 	double last_x,last_y,last_o;
 	ros::NodeHandle nh_;
 	bool robot_stopped;
+	ros::Subscriber sub;
+	bool human_unsafe;
 };
 
 #endif
