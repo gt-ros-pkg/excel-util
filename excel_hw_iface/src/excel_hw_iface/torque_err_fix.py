@@ -40,14 +40,16 @@ class TorqueErrorFix(object):
         J = self.kin.jacobian(q)
 
         for i in range(6):
-            self.torque_err_hist[i].append(self.des_i[i]-eff[i])
+            # self.torque_err_hist[i].append(self.des_i[i]-eff[i])
+            self.torque_err_hist[i].append(-eff[i])
             if len(self.torque_err_hist[i]) > HIST_LEN:
                 self.torque_err_hist[i].popleft()
         if len(self.torque_err_hist[i]) != HIST_LEN:
             return
 
         torque_err = np.mat(np.zeros((len(q),1)))
-        for i in range(6):
+        # for i in [0, 1, 2, 3, 4, 5]:
+        for i in [0, 5]:
             torque_err[i] = np.mean(self.torque_err_hist[i])
 
         try:
