@@ -100,10 +100,7 @@ public:
   // release bin and detach the collision model from the arm
   bool detachBin();
 
-  /*--------------------------------------------------------------------
-   * optimalGoalAngle()
-   * Finds out if the robot needs to rotate clockwise or anti-clockwise
-   *------------------------------------------------------------------*/
+  // Finds out if the robot needs to rotate clockwise or anti-clockwise
   double optimalGoalAngle(double goal_angle, double current_angle);
 
   // get the collision object corresponding to the bin_number

@@ -75,9 +75,11 @@ MoveBin::MoveBin() :
   rail_min = 0.41;
   rail_tolerance = 0.3;
 
-  ROS_INFO("Waiting for action server to be available...");
-  excel_ac.waitForServer();
-  ROS_INFO("Action server found.");
+  if(!sim) {
+    ROS_INFO("Waiting for action server to be available...");
+    excel_ac.waitForServer();
+    ROS_INFO("Action server found.");
+  }
 }
 
 bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target)
@@ -174,6 +176,7 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
   // setup IK request
   ik_srv_req.ik_request.group_name = "excel";
   ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
+  ik_srv_req.ik_request.pose_stamped.header.stamp = ros::Time::now();
   ik_srv_req.ik_request.avoid_collisions = true;
   ik_srv_req.ik_request.attempts = 30;
 
@@ -192,6 +195,8 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
     std::max((rail_max - rail_center) - 
              std::max(rail_max - rail_center - rail_tolerance, rail_min), 0.0);
   special_rail_constraint.weight = 1;
+  ROS_INFO("Special rail constraint: %.3f (+%.3f, -%.3f)", special_rail_constraint.position, 
+           special_rail_constraint.tolerance_above, special_rail_constraint.tolerance_below);
   ik_srv_req.ik_request.constraints.joint_constraints.push_back(special_rail_constraint);
   ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
   //ik_srv_req.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
@@ -304,8 +309,8 @@ bool MoveBin::verticalMove(double target_z)
   wrist_3_fixed_constraint.tolerance_above = 0.2;
   wrist_3_fixed_constraint.tolerance_below = 0.2;
   wrist_3_fixed_constraint.weight = 1;
-  ik_srv_req.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
-  ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
+  // ik_srv_req.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
+  // ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
   ik_srv_req.ik_request.constraints.joint_constraints.push_back(wrist_3_fixed_constraint);
 
   ROS_INFO("Calling IK for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
@@ -325,6 +330,9 @@ bool MoveBin::verticalMove(double target_z)
   ROS_INFO("IK returned succesfully");
 
   // Fixing wrist_3 given by the IK
+  ik_srv_resp.solution.joint_state.position[1] = 
+    this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[1], 
+                             planning_scene.robot_state.joint_state.position[1]);
   ik_srv_resp.solution.joint_state.position[6] = this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
 
   group.setStartState(full_planning_scene->getCurrentState());
