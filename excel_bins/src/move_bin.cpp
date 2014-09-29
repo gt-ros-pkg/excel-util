@@ -73,6 +73,10 @@ MoveBin::MoveBin() : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_jo
 	rail_max = 3.29;
 	rail_min = 0.41;
 	rail_tolerance = 0.3;
+
+  ROS_INFO("Waiting for action server to be available...");
+  excel_ac.waitForServer();
+  ROS_INFO("Action server found.");
 }
 
 /*--------------------------------------------------------------------
@@ -140,27 +144,11 @@ int MoveBin::move_on_top(int bin_number)
 		group.setJointValueTarget(service_response.solution.joint_state);
 		group.setStartState(full_planning_scene->getCurrentState());
 		if(group.plan(my_plan)){
-			if(!sim){
-				excel_ac.waitForServer();
-
-				// Copy trajectory
-				control_msgs::FollowJointTrajectoryGoal excel_goal;
-				excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-
-				// Ask to execute now
-				ros::Time time_zero(0.0);
-				excel_goal.trajectory.header.stamp = time_zero; 
-
-				// Specify path and goal tolerance
-				//excel_goal.path_tolerance
-
-				// Send goal and wait for a result
-				excel_ac.sendGoal(excel_goal);
-				bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
-				if (!finished_before_timeout) return 0;				
-			}
-			else group.execute(my_plan);
-			return 1;
+      if(!sim)
+        return executeTrajectory(my_plan.trajectory_.joint_trajectory);
+      else 
+        group.execute(my_plan);
+      return true;
 		}
 		else{
 			ROS_ERROR("Motion planning failed");
@@ -228,27 +216,11 @@ int MoveBin::descent()
 	group.setStartState(full_planning_scene->getCurrentState());
 	group.setJointValueTarget(service_response.solution.joint_state);
 	if(group.plan(my_plan)){
-		if(!sim){
-			excel_ac.waitForServer();
-
-			// Copy trajectory
-			control_msgs::FollowJointTrajectoryGoal excel_goal;
-			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-
-			// Ask to execute now
-			ros::Time time_zero(0.0);
-			excel_goal.trajectory.header.stamp = time_zero; 
-
-			// Specify path and goal tolerance
-			//excel_goal.path_tolerance
-
-			// Send goal and wait for a result
-			excel_ac.sendGoal(excel_goal);
-			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
-			if (!finished_before_timeout) return 0;				
-		}
-		else group.execute(my_plan);
-		return 1;
+		if(!sim)
+      return executeTrajectory(my_plan.trajectory_.joint_trajectory);
+		else 
+      group.execute(my_plan);
+		return true;
 	}
 	else{
 		ROS_ERROR("Motion planning failed");
@@ -263,7 +235,6 @@ int MoveBin::descent()
 int MoveBin::attach_bin(int bin_number)
 {	
 	if(!sim){
-		gripper_ac.waitForServer();
 		// send a goal to the action
 		control_msgs::GripperCommandGoal goal;
 		goal.command.position = 0.0;
@@ -358,27 +329,11 @@ int MoveBin::ascent()
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
 	if(group.plan(my_plan)){
-		if(!sim){
-			excel_ac.waitForServer();
-
-			// Copy trajectory
-			control_msgs::FollowJointTrajectoryGoal excel_goal;
-			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-
-			// Ask to execute now
-			ros::Time time_zero(0.0);
-			excel_goal.trajectory.header.stamp = time_zero; 
-
-			// Specify path and goal tolerance
-			//excel_goal.path_tolerance
-
-			// Send goal and wait for a result
-			excel_ac.sendGoal(excel_goal);
-			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
-			if (!finished_before_timeout) return 0;				
-		}
-		else group.execute(my_plan);
-		return 1;
+		if(!sim)
+      return executeTrajectory(my_plan.trajectory_.joint_trajectory);
+		else 
+      group.execute(my_plan);
+		return true;
 	}
 	else{
 		ROS_ERROR("Motion planattached_object.object.mesh_poses[0].position.z = TABLE_HEIGHT;ning failed");
@@ -431,28 +386,11 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 	group.setJointValueTarget(service_response.solution.joint_state);
 	group.setStartState(full_planning_scene->getCurrentState());
 	if(group.plan(my_plan)){
-		if(!sim){
-			excel_ac.waitForServer();
-
-			// Copy trajectory
-			control_msgs::FollowJointTrajectoryGoal excel_goal;
-			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-
-			// Ask to execute now
-			ros::Time time_zero(0.0);
-			excel_goal.trajectory.header.stamp = time_zero; 
-
-			// Specify path and goal tolerance
-			//excel_goal.path_tolerance
-
-			// Send goal and wait for a result
-			excel_ac.sendGoal(excel_goal);
-			bool finished_before_timeout = excel_ac.waitForResult(ros::Duration(30.0));
-			if (!finished_before_timeout) return 0;				
-		}
-		else group.execute(my_plan);
-		//group.clearPathConstraints();
-		return 1;
+		if(!sim)
+      return executeTrajectory(my_plan.trajectory_.joint_trajectory);
+		else 
+      group.execute(my_plan);
+    return true;
 	}
 	else{
 		ROS_ERROR("Motion planning failed");
@@ -468,7 +406,6 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 int MoveBin::detach_bin()
 {
 	if(!sim){
-		gripper_ac.waitForServer();
 		// send a goal to the action
 		control_msgs::GripperCommandGoal goal;
 		goal.command.position = 0.08;
@@ -548,6 +485,24 @@ double MoveBin::optimal_goal_angle(double goal_angle, double current_angle)
 	}
 	//std::cout<<"Final angle is : "<< goal_angle<< std::endl;
 	return goal_angle;
+}
+
+bool MoveBin::executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj)
+{
+  // Copy trajectory
+  control_msgs::FollowJointTrajectoryGoal excel_goal;
+  excel_goal.trajectory = joint_traj;
+
+  // Ask to execute now
+  ros::Time time_zero(0.0);
+  excel_goal.trajectory.header.stamp = time_zero; 
+
+  // Specify path and goal tolerance
+  //excel_goal.path_tolerance
+
+  // Send goal and wait for a result
+  excel_ac.sendGoal(excel_goal);
+  return excel_ac.waitForResult(ros::Duration(30.0));
 }
 
 int main(int argc, char **argv)
