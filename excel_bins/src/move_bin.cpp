@@ -82,7 +82,9 @@ MoveBin::MoveBin() :
 
 bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target)
 {
-  if(!approachBin(bin_number)) {
+  ROS_INFO("Moving bin %d to target (%.3f, %.3f, %f)", bin_number, x_target, y_target, angle_target);
+  double bin_height;
+  if(!approachBin(bin_number, bin_height)) {
     ROS_ERROR("Failed to approach bin #%d.", bin_number);
     return false;
   }
@@ -91,8 +93,8 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
     return false;
   }
   ///////////////////////////// HOLDING BIN ///////////////////////////////////
-  if(!deliverBin(x_target, y_target, angle_target)) {
-    ROS_ERROR("Failed to deliver bin to target (%.3f, %.3f, %.3f)", 
+  if(!deliverBin(x_target, y_target, angle_target, bin_height)) {
+    ROS_ERROR("Failed to deliver bin to target (%.3f, %.3f, %f)", 
                                         x_target, y_target, angle_target);
     return false;
   }
@@ -101,46 +103,49 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
     return false;
   }
   /////////////////////////////////////////////////////////////////////////////
-  if(!ascent()) {
+  if(!ascent(bin_height)) {
     ROS_ERROR("Failed to ascend after releasing bin.");
     return false;
   }
   return true;
 }
 
-bool MoveBin::approachBin(int bin_number)
+bool MoveBin::approachBin(int bin_number, double& bin_height)
 {
-  if(!moveAboveBin(bin_number)) {
+  ROS_INFO("Approaching bin %d", bin_number);
+  if(!moveAboveBin(bin_number, bin_height)) {
     ROS_ERROR("Failed to move above bin #%d.", bin_number);
     return false;
   }
-  if(!descent()) {
+  if(!descent(bin_height)) {
     ROS_ERROR("Failed to descend after moving above bin.");
     return false;
   }
   return true;
 }
 
-bool MoveBin::deliverBin(double x_target, double y_target, double angle_target)
+bool MoveBin::deliverBin(double x_target, double y_target, double angle_target, double bin_height)
 {
-  if(!ascent()) {
+  ROS_INFO("Delivering to target (%.3f, %.3f, %f)", x_target, y_target, angle_target);
+  if(!ascent(bin_height)) {
     ROS_ERROR("Failed to ascend while grasping bin.");
     return false;
   }
-  if(!carryBinTo(x_target, y_target, angle_target)) {
+  if(!carryBinTo(x_target, y_target, angle_target, bin_height)) {
     ROS_ERROR("Failed to carry bin to target (%.3f, %.3f, %.3f)", 
                                         x_target, y_target, angle_target);
     return false;
   }
-  if(!descent()) {
+  if(!descent(bin_height)) {
     ROS_ERROR("Failed to descend after moving bin above target place.");
     return false;
   }
   return true;
 }
 
-bool MoveBin::moveAboveBin(int bin_number)
+bool MoveBin::moveAboveBin(int bin_number, double& bin_height)
 {
+  ROS_INFO("Moving above bin %d", bin_number);
   moveit_msgs::CollisionObjectPtr bin_coll_obj = getBinCollisionObject(bin_number);
   if (!bin_coll_obj) {
     // bin not found
@@ -149,13 +154,20 @@ bool MoveBin::moveAboveBin(int bin_number)
   }
   
   geometry_msgs::Pose target_pose;
-  getBinAbovePose(bin_coll_obj, target_pose);
+  getBinAbovePose(bin_coll_obj, target_pose, bin_height);
 
   return traverseMove(target_pose);
 }
 
 bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
 {
+  ROS_INFO("Traverse move to position (%.2f, %.2f, %.2f)", 
+                        pose.position.x, pose.position.y, pose.position.z);
+  // update planning scene
+  moveit_msgs::PlanningScene planning_scene;
+  planning_scene::PlanningScenePtr full_planning_scene;
+  getPlanningScene(planning_scene, full_planning_scene);
+
   ////////////// Perform IK to find joint goal //////////////
   moveit_msgs::GetPositionIK::Request ik_srv_req;
 
@@ -185,12 +197,21 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
   //ik_srv_req.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
 
   // call IK server
+  ROS_INFO("Calling IK for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
+      ik_srv_req.ik_request.pose_stamped.pose.position.x,
+      ik_srv_req.ik_request.pose_stamped.pose.position.y,
+      ik_srv_req.ik_request.pose_stamped.pose.position.z,
+      ik_srv_req.ik_request.pose_stamped.pose.orientation.x,
+      ik_srv_req.ik_request.pose_stamped.pose.orientation.y,
+      ik_srv_req.ik_request.pose_stamped.pose.orientation.z,
+      ik_srv_req.ik_request.pose_stamped.pose.orientation.w);
   moveit_msgs::GetPositionIK::Response ik_srv_resp;
   service_client.call(ik_srv_req, ik_srv_resp);
   if(ik_srv_resp.error_code.val !=1){
-    ROS_ERROR("IK couldn't find a solution");
+    ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
     return false;
   }
+  ROS_INFO("IK returned succesfully");
   ///////////////////////////////////////////////////////////
 
   // Fixing shoulder_pan and wrist_3 given by the IK
@@ -213,20 +234,36 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
   }
 }
 
-bool MoveBin::ascent()
+bool MoveBin::ascent(double bin_height)
 {
-  ROS_INFO("Ascent");
+  ROS_INFO("Ascending");
   return verticalMove(TABLE_HEIGHT + GRIPPING_OFFSET + bin_height + DZ);
 }
 
-bool MoveBin::descent()
+bool MoveBin::descent(double bin_height)
 {
-  ROS_INFO("Descent");
+  ROS_INFO("Descending");
   return verticalMove(TABLE_HEIGHT + GRIPPING_OFFSET + bin_height);
 }
 
 bool MoveBin::verticalMove(double target_z)
 {
+  ROS_INFO("Vertical move to target z: %f", target_z);
+
+  // update the planning scene to get the robot's state
+  moveit_msgs::PlanningScene planning_scene;
+  planning_scene::PlanningScenePtr full_planning_scene;
+  getPlanningScene(planning_scene, full_planning_scene);
+
+  ////////////// Perform FK to find end effector pose ////////////
+  moveit_msgs::GetPositionFK::Request fk_request;
+  moveit_msgs::GetPositionFK::Response fk_response;
+  fk_request.header.frame_id = "table_link";
+  fk_request.fk_link_names.push_back("ee_link");
+  fk_request.robot_state = planning_scene.robot_state;
+  fk_client.call(fk_request, fk_response);
+  ////////////////////////////////////////////////////////////////
+
   ////////////// Perform IK to find joint goal //////////////
   moveit_msgs::GetPositionIK::Request ik_srv_req;
 
@@ -236,6 +273,8 @@ bool MoveBin::verticalMove(double target_z)
   ik_srv_req.ik_request.avoid_collisions = true;
   ik_srv_req.ik_request.attempts = 30;
 
+  // the target pose is the current location with a different z position
+  ik_srv_req.ik_request.pose_stamped = fk_response.pose_stamped[0];
   ik_srv_req.ik_request.pose_stamped.pose.position.z = target_z;
 
   ik_srv_req.ik_request.constraints.joint_constraints.clear();
@@ -269,12 +308,21 @@ bool MoveBin::verticalMove(double target_z)
   ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
   ik_srv_req.ik_request.constraints.joint_constraints.push_back(wrist_3_fixed_constraint);
 
+  ROS_INFO("Calling IK for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
+      ik_srv_req.ik_request.pose_stamped.pose.position.x,
+      ik_srv_req.ik_request.pose_stamped.pose.position.y,
+      ik_srv_req.ik_request.pose_stamped.pose.position.z,
+      ik_srv_req.ik_request.pose_stamped.pose.orientation.x,
+      ik_srv_req.ik_request.pose_stamped.pose.orientation.y,
+      ik_srv_req.ik_request.pose_stamped.pose.orientation.z,
+      ik_srv_req.ik_request.pose_stamped.pose.orientation.w);
   moveit_msgs::GetPositionIK::Response ik_srv_resp;
   service_client.call(ik_srv_req, ik_srv_resp);
   if(ik_srv_resp.error_code.val !=1){
-    ROS_ERROR("IK couldn't find a solution");
+    ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
     return 0;
   }
+  ROS_INFO("IK returned succesfully");
 
   // Fixing wrist_3 given by the IK
   ik_srv_resp.solution.joint_state.position[6] = this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
@@ -292,6 +340,7 @@ bool MoveBin::verticalMove(double target_z)
 
 bool MoveBin::attachBin(int bin_number)
 {	
+  ROS_INFO("Attaching bin %d", bin_number);
   // close gripper
   executeGripperAction(true); 
 
@@ -314,12 +363,14 @@ bool MoveBin::attachBin(int bin_number)
 
 bool MoveBin::detachBin()
 {
+  ROS_INFO("Detaching bin");
   // open gripper
   executeGripperAction(false); 
 
-  planning_scene_monitor->requestPlanningSceneState();
-  full_planning_scene = planning_scene_monitor->getPlanningScene();
-  full_planning_scene->getPlanningSceneMsg(planning_scene);
+  // update the planning scene to get the robot's state
+  moveit_msgs::PlanningScene planning_scene;
+  planning_scene::PlanningScenePtr full_planning_scene;
+  getPlanningScene(planning_scene, full_planning_scene);
 
   if (planning_scene.robot_state.attached_collision_objects.size()>0){
     moveit_msgs::AttachedCollisionObject attached_object = planning_scene.robot_state.attached_collision_objects[0];
@@ -393,6 +444,9 @@ double MoveBin::optimalGoalAngle(double goal_angle, double current_angle)
 
 bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan)
 {
+  int num_pts = mg_plan.trajectory_.joint_trajectory.points.size();
+  ROS_INFO("Executing joint trajectory with %d knots and duration %f", num_pts, 
+           mg_plan.trajectory_.joint_trajectory.points[num_pts-1].time_from_start.toSec());
   if(sim)
     return group.execute(my_plan);
 
@@ -409,12 +463,21 @@ bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan)
 
   // Send goal and wait for a result
   excel_ac.sendGoal(excel_goal);
-  return excel_ac.waitForResult(ros::Duration(30.0));
+  if(!excel_ac.waitForResult(ros::Duration(30.0))) {
+    ROS_ERROR("Trajectory timed out");
+    return false;
+  }
+  actionlib::SimpleClientGoalState end_state = excel_ac.getState();
+  return end_state == actionlib::SimpleClientGoalState::SUCCEEDED;
 }
 
 bool MoveBin::executeGripperAction(bool is_close)
 {
-  if(!use_gripper){
+  if(is_close)
+    ROS_INFO("Closing gripper");
+  else
+    ROS_INFO("Opening gripper");
+  if(use_gripper) {
     // send a goal to the action
     control_msgs::GripperCommandGoal goal;
     goal.command.position = (is_close) ? 0.0 : 0.08;
@@ -423,22 +486,27 @@ bool MoveBin::executeGripperAction(bool is_close)
     return gripper_ac.waitForResult(ros::Duration(30.0));
   }
   else {
-    if(is_close)
-      ROS_INFO("Closing gripper");
-    else
-      ROS_INFO("Opening gripper");
     ros::Duration(2.0).sleep();
     return true;
   }
+}
+
+void MoveBin::getPlanningScene(moveit_msgs::PlanningScene& planning_scene, 
+                               planning_scene::PlanningScenePtr& full_planning_scene)
+{
+  planning_scene_monitor->requestPlanningSceneState();
+  full_planning_scene = planning_scene_monitor->getPlanningScene();
+  full_planning_scene->getPlanningSceneMsg(planning_scene);
 }
 
 moveit_msgs::CollisionObjectPtr MoveBin::getBinCollisionObject(int bin_number)
 {
   std::string bin_name = "bin#" + boost::lexical_cast<std::string>(bin_number); 
 
-  planning_scene_monitor->requestPlanningSceneState();
-  full_planning_scene = planning_scene_monitor->getPlanningScene();
-  full_planning_scene->getPlanningSceneMsg(planning_scene);
+  // update the planning scene to get the robot's state
+  moveit_msgs::PlanningScene planning_scene;
+  planning_scene::PlanningScenePtr full_planning_scene;
+  getPlanningScene(planning_scene, full_planning_scene);
 
   for(int i=0;i<planning_scene.world.collision_objects.size();i++) 
     if(planning_scene.world.collision_objects[i].id == bin_name) 
@@ -447,7 +515,8 @@ moveit_msgs::CollisionObjectPtr MoveBin::getBinCollisionObject(int bin_number)
   return moveit_msgs::CollisionObjectPtr();
 }
 
-void MoveBin::getBinAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geometry_msgs::Pose& pose)
+void MoveBin::getBinAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geometry_msgs::Pose& pose, 
+                              double& bin_height)
 {
   pose = bin_coll_obj->mesh_poses[0];
 
@@ -471,21 +540,21 @@ void MoveBin::getBinAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geom
 /*--------------------------------------------------------------------
  * Moves to target location keeping the grasping orientation
  *------------------------------------------------------------------*/
-bool MoveBin::carryBinTo(double x_target, double y_target, double angle_target)
+bool MoveBin::carryBinTo(double x_target, double y_target, double angle_target, double bin_height)
 {
-  ROS_INFO("Carrying bin to target");
+  ROS_INFO("Carrying bin to target (%.3f, %.3f, %f)", x_target, y_target, angle_target);
   geometry_msgs::Pose target_pose;
-  getCarryBinPose(x_target, y_target, angle_target, target_pose);
+  getCarryBinPose(x_target, y_target, angle_target, bin_height, target_pose);
   return traverseMove(target_pose);
 }
 
-void MoveBin::getCarryBinPose(double x_target, double y_target, double angle_target,
+void MoveBin::getCarryBinPose(double x_target, double y_target, double angle_target, double bin_height,
                               geometry_msgs::Pose& pose)
 {
   tf::Quaternion quat_goal = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0, M_PI/2, M_PI);
   pose.position.x = x_target;
   pose.position.y = y_target;
-  pose.position.z = 1000000.0; assert(false);
+  pose.position.z = TABLE_HEIGHT + GRIPPING_OFFSET + bin_height + DZ;
   pose.orientation.x = quat_goal.x();
   pose.orientation.y = quat_goal.y();
   pose.orientation.z = quat_goal.z();
@@ -514,47 +583,12 @@ int main(int argc, char **argv)
     std::cin >> y;
     std::cout<< "angle :" << std::endl;
     std::cin >> o;
-    if (!movebin.moveAboveBin(nb)){
-      ROS_ERROR("Aborting !");
-      continue;
-    }
-    //getchar();
-    if (!movebin.descent()){
-      ROS_ERROR("Aborting !");
-      continue;
-    }
-    //getchar();
-    if (!movebin.attachBin(nb)){
-      ROS_ERROR("Aborting !");
-      continue;
-    }
-    //getchar();
-    if (!movebin.ascent()){
-      ROS_ERROR("Aborting !");
-      continue;
-    }
-    //getchar();
-    if (!movebin.carryBinTo(x,y,o)){
-      ROS_ERROR("Aborting !");
-      continue;
-    }
-    //getchar();
-    if (!movebin.descent()){
-      ROS_ERROR("Aborting !");
-      continue;
-    }
-    //getchar();
-    if (!movebin.detachBin()){
-      ROS_ERROR("Aborting !");
-      continue;
-    }
-    //getchar();
-    if (!movebin.ascent()){
-      ROS_ERROR("Aborting !");
-      continue;
+
+    if(!movebin.moveBinToTarget(nb, x, y, o)) {
+      ROS_ERROR("Failed to move bin to target.");
     }
 
-    std::cout<< "Keep moveing bins ? (0/1)" << std::endl;
+    std::cout<< "Keep moving bins ? (0/1)" << std::endl;
     std::cin >> run_prg;
   }
   ros::shutdown();

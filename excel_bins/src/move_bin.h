@@ -56,22 +56,26 @@ public:
   //////////////// moveBinToTarget composite actions ///////////////
   // From the current joint pose, the robot moves to the grasp location for the given bin
   // The robot is not holding a bin during this method
-  bool approachBin(int bin_number);
+  bool approachBin(int bin_number, double& bin_height);
 
   // On the assumption that the robot is currently holding a bin, the robot moves the
   // bin to the target place location, but does not release the bin
-  bool deliverBin(double x_target, double y_target, double angle_target);
+  bool deliverBin(double x_target, double y_target, double angle_target, double bin_height);
   //////////////////////////////////////////////////////////////////
 
   ///////////////////////// Traverse actions ///////////////////////
 
   // Move arm to pose above bin
-  bool moveAboveBin(int bin_number); 
-  void getBinAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geometry_msgs::Pose& pose);
+  bool moveAboveBin(int bin_number, double& bin_height); 
+  void getBinAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geometry_msgs::Pose& pose,
+                       double& bin_height);
 
   // Move arm to target (X,Y,R), above a place location
-  bool carryBinTo(double x_target, double y_target, double angle_target);
-  void getCarryBinPose(double x_target, double y_target, double angle_target, 
+  // angle_target is in degrees
+  bool carryBinTo(double x_target, double y_target, double angle_target, double bin_height);
+  // finds the pose above a target bin
+  // angle_target is in degrees
+  void getCarryBinPose(double x_target, double y_target, double angle_target, double bin_height, 
                        geometry_msgs::Pose& pose);
 
   // Move arm across freespace to target pose  
@@ -80,18 +84,20 @@ public:
 
   ///////////////////////// Vertical actions ///////////////////////
 
-  // Move arm up
-  bool ascent();
+  // Move arm vertically up above bins
+  bool ascent(double bin_height);
 
-  // Move arm down
-  bool descent();  
+  // Move arm vertically down to place height
+  bool descent(double bin_height);  
 
   // From current pose, move arm vertically to target z
   bool verticalMove(double target_z);
   //////////////////////////////////////////////////////////////////
 
+  // grasp bin and attach the collision model to the arm
   bool attachBin(int bin_number);  
 
+  // release bin and detach the collision model from the arm
   bool detachBin();
 
   /*--------------------------------------------------------------------
@@ -99,10 +105,16 @@ public:
    * Finds out if the robot needs to rotate clockwise or anti-clockwise
    *------------------------------------------------------------------*/
   double optimalGoalAngle(double goal_angle, double current_angle);
+
+  // get the collision object corresponding to the bin_number
   moveit_msgs::CollisionObjectPtr getBinCollisionObject(int bin_number);
 
+  // execute this joint trajectory
   bool executeJointTrajectory(MoveGroupPlan& mg_plan);
   bool executeGripperAction(bool is_close);
+
+  void getPlanningScene(moveit_msgs::PlanningScene& planning_scene, 
+                        planning_scene::PlanningScenePtr& full_planning_scene);
 
   ros::ServiceClient service_client, fk_client;
   moveit_msgs::GetPositionIK::Request ik_srv_req;
@@ -110,12 +122,9 @@ public:
 
   ros::Publisher attached_object_publisher;
   ros::Publisher planning_scene_diff_publisher;
-  planning_scene::PlanningScenePtr full_planning_scene;
-  moveit_msgs::PlanningScene planning_scene;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor;	
   boost::shared_ptr<tf::TransformListener> tf;
   move_group_interface::MoveGroup group;
-  double bin_height;
   ros::AsyncSpinner spinner;
   actionlib::SimpleActionClient<control_msgs::GripperCommandAction> gripper_ac;
   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> excel_ac;

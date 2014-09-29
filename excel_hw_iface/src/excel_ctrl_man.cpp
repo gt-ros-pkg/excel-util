@@ -52,7 +52,7 @@ void update_loop_task(void *arg)
   ros::Duration idcs_period(1.0/1000.0);
   ros::Duration ur_period(1.0/125.0);
   uint64_t counter = 0;
-  ros::Time now = ros::Time::now();
+  ros::Time now;
 #ifdef XENOMAI_REALTIME
 	rt_task_set_periodic(NULL, TM_NOW, 1000000); // ns
 #else
@@ -61,8 +61,10 @@ void update_loop_task(void *arg)
   while (ros::ok() && !stop_requested) {
 #ifdef XENOMAI_REALTIME
 		rt_task_wait_period(NULL);
+    now = ros::fromNSec(rtdm_clock_read());
 #else
     r.sleep();
+    now = ros::Time::now();
 #endif
     idcs_hw_ptr->read(now, idcs_period);
     if(counter % 8 == 0) // 125 Hz
@@ -71,7 +73,6 @@ void update_loop_task(void *arg)
     idcs_hw_ptr->write(now, idcs_period);
     if(counter % 8 == 0) // 125 Hz
       ur_hw_ptr->write(now, ur_period);
-    now = now + idcs_period;
   }
 }
 
