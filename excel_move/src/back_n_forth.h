@@ -1,5 +1,5 @@
-#ifndef MOVE_BIN_H
-#define MOVE_BIN_H
+#ifndef BACK_N_FORTH_H
+#define BACK_N_FORTH_H
 
 // ROS/MoveIt includes.
 #include "ros/ros.h"
@@ -28,6 +28,7 @@
 #include <control_msgs/GripperCommandAction.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
+#include <std_msgs/Bool.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
@@ -38,7 +39,7 @@ class MoveBin
 {
 public:
 	// Constructor.
-	MoveBin();
+  MoveBin(ros::NodeHandle nh);
 
 	/*--------------------------------------------------------------------
 	 * move_on_top()
@@ -82,7 +83,11 @@ public:
 	 *------------------------------------------------------------------*/
 	double optimal_goal_angle(double goal_angle, double current_angle);
 
-  bool executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj);
+	void stop();
+
+	void stop_callback(const std_msgs::Bool::ConstPtr& stop);
+
+	bool executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj);
 
 	ros::ServiceClient service_client, fk_client;
 	moveit_msgs::GetPositionIK::Request service_request;
@@ -106,6 +111,11 @@ public:
 	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
 	moveit::planning_interface::MoveGroup::Plan my_plan;
 	double rail_max, rail_min, rail_tolerance;
+	double last_x,last_y,last_o;
+	ros::NodeHandle nh_;
+	bool robot_stopped;
+	ros::Subscriber sub;
+	bool human_unsafe;
 };
 
 #endif

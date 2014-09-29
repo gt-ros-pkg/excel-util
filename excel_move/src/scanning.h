@@ -29,6 +29,8 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
 
+#include "barcodeScan.hpp"
+
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
 # define GRIPPING_OFFSET 0.1  
@@ -38,10 +40,10 @@ class Scanning
 {
 public:
 	// Constructor.
-	Scanning();
+  Scanning(ros::NodeHandle nh_);
 	
 	double optimal_goal_angle(double goal_angle, double current_angle);
-	int scan(int pose, int orientation);
+	bool scan(int pose, int orientation);
 
 	ros::ServiceClient service_client, fk_client;
 	moveit_msgs::GetPositionIK::Request service_request;
@@ -61,6 +63,9 @@ public:
 	double rail_max, rail_min, rail_tolerance;
 	bool sim;
 	int orientation_try, current_orientation;
+	BarcodeScan scan_obj;
+	bool results[3];
+	/* ros::NodeHandle nh_; */
 };
 
 #endif
