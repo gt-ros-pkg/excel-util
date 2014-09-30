@@ -235,7 +235,7 @@ bool Scanning::scan(int pose, int orientation){
 	std::vector<bool> oks;
 	bool ok;
 	sleep(0.3);
-	oks = scan_obj.find_tag(pose, tag_names, 1.);
+	oks = scan_obj.find_tag(tag_names);
 	for(int i=0;i<oks.size();i++){
 	  results[i] = results[i] || oks[i];
 	}
@@ -302,7 +302,7 @@ vector<string> Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_
         bool ok = move_robot(cur_pose, cur_orientation);
 	
 	//look for all the tags and return if they were found
-        oks = scan_obj.find_tag(i, all_tags, 1.);
+        oks = scan_obj.find_tag(all_tags);
   
 	//update the global status for looking the tags
         for(int j=0;j<oks.size();j++){

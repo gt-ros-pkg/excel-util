@@ -34,7 +34,7 @@ public:
     cout << "End constructor" << endl;
   }
 
-  vector<bool> find_tag(int pose_nb,vector<string> tag_names, float timeout=2.);
+  vector<bool> find_tag(vector<string> tag_names);
 
 private:
 
@@ -48,10 +48,9 @@ private:
 
 };
 
-vector<bool> BarcodeScan::find_tag(int pose_nb, vector<string> tag_names, float timeout/*=2.*/)
+vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
 {
   process_im_ = true;
-  bool found_tag = false;
   vector<bool> found_tags;
   for(int i=0;i<tag_names.size();i++){
     found_tags.push_back(false);
@@ -60,7 +59,7 @@ vector<bool> BarcodeScan::find_tag(int pose_nb, vector<string> tag_names, float 
   int frames = 0;
   int total_frames = 1;//floor(timeout * SCAN_FRAME_RATE);
   
-  while(!(frames>total_frames || found_tag)){
+  while(!(frames>total_frames )){
     if (currently_process_){
       frames++;
       DmtxImage      *img;
@@ -100,7 +99,6 @@ vector<bool> BarcodeScan::find_tag(int pose_nb, vector<string> tag_names, float 
 	      break;
 	    }
 	  }
-	  found_tag = found_tags[pose_nb];
 	} else {
 	  // ROS_INFO("Message not found");
 	}
