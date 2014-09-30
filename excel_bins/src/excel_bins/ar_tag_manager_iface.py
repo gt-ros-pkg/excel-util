@@ -28,7 +28,7 @@ def load_bin_slots(filename):
 class ARTagManagerInterface(object):
     def __init__(self, bin_slots, available_bins=None):
         # distance from marker to slot which can be considered unified
-        self.ar_unification_thresh = 0.12
+        self.ar_unification_thresh = 0.3
         self.bin_slots = bin_slots
         self.available_bins = available_bins
         if len(bin_slots) > 0:
