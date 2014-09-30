@@ -58,7 +58,23 @@ class ARTagManagerInterface(object):
         with self.lock:
             # cur_time = rospy.get_time()
             self.ar_poses[mid].clear()
-            self.ar_poses[mid].append([cur_time, PoseConv.to_homo_mat(pose)])
+            self.ar_poses[mid].append([cur_time, PoseConv.to_pose_msg(pose)])
+
+    def set_real_bin_location(self, mid, pose, cur_time=0.):
+        self.ar_poses[mid].clear()
+        self.ar_poses[mid+10].clear()
+        self.real_bin_poses[mid] = pose
+
+    # def set_double_bin_location(self, mid, pose, cur_time=0.):
+    #     pos, euler = PoseConv.to_pos_euler(pose)
+    #     euler[2] -= np.pi
+    #     pos, rot = PoseConv.to_pos_rot([pos, euler])
+    #     pos1 = pos + rot*np.mat([-0.09, 0.0, 0.0]).T
+    #     pos2 = pos + rot*np.mat([0.09, 0.0, 0.0]).T
+    #     self.set_bin_location(mid, [pos1, rot])
+    #     self.set_bin_location(mid+10, [pos2, rot])
+    #     cur_time = rospy.get_time()
+    #     self.update_bins(cur_time)
 
     def get_available_bins(self):
         with self.lock:
@@ -91,7 +107,7 @@ class ARTagManagerInterface(object):
                 rot_list.append(rot)
             
             # Making sure we use an odd number of values for median computation
-            if not (len(pos_list)%2):
+            if len(pos_list) > 1 and len(pos_list) % 2 == 0:
                 rot_list.pop()
             
             med_pos, med_rot = np.median(pos_list,0), np.median(rot_list,0)
