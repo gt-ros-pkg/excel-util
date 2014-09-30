@@ -25,6 +25,7 @@
     vel_pva_trajectory_ctrl:
       type: vel_fwd_pva_fwd_controllers/JointTrajectoryController
       mode: pva
+      stop_trajectory_duration: 0.1
       heartbeat_timeout: 0.3
       adapter_namespaces: [vel_fwd, pva_fwd]
       joint_adapters: [vel_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd]
