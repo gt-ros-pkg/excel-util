@@ -164,11 +164,18 @@ class ARTagManager(ARTagManagerInterface):
 def main():
     rospy.init_node('ar_tag_manager')
     r = rospy.Rate(10)
-    bin_slots = load_bin_slots('$(find excel_bins)/src/excel_bins/bin_slots_both1.yaml')
+    bin_slots = load_bin_slots('$(find excel_bins)/src/excel_bins/bin_slots_all.yaml')
     print '\nbin slots:'
     print bin_slots
+
+    # find the slot ids likely to be in the human workspace
+    hum_ws_slots = []
+    for slot_id in bin_slots:
+        # > 0.95 (other side of rail), < 1.5 (human work table)
+        if bin_slots[slot_id][0][1] > 0.95 and bin_slots[slot_id][0][0] < 1.5:
+            hum_ws_slots.append(slot_id)
     
-    ar_tag_man = ARTagManager(bin_slots)    
+    ar_tag_man = ARTagManager(bin_slots)
     rospy.sleep(3.0)
     
     i = 0
@@ -177,6 +184,9 @@ def main():
         empty = ar_tag_man.get_real_empty_slots()
         bin_poses_real = ar_tag_man.get_real_bin_poses()
         real_slot_states = ar_tag_man.get_real_bin_slot_states()
+        empty_hum_slots = ar_tag_man.get_real_empty_slots(hum_ws_slots)
+        filled_hum_slots = ar_tag_man.get_real_filled_slots(hum_ws_slots)
+        empty_rob_slots = ar_tag_man.get_real_empty_slots(hum_ws_slots, invert_set=True)
         if i % 10 == 0:
             print "filled slots"
             print filled
@@ -187,8 +197,13 @@ def main():
             print "slot states"
             print real_slot_states
             print "bin_slots"
-            slot = ar_tag_man.bin_slots[empty[0]]
-            print slot[0][0]
+            print ar_tag_man.bin_slots
+            print "Empty human workspace slots"
+            print empty_hum_slots
+            print "Empty robot workspace slots"
+            print empty_rob_slots
+            print "Bins filled in human workspace slots"
+            print filled_hum_slots
             print"-------------"
         i += 1
         

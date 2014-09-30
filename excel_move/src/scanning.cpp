@@ -7,18 +7,26 @@
 Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1), scan_obj(nh_)
 {
 	spinner.start();
+	cout << "Spinner started?" << endl;
 	boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
 	planning_scene_monitor::PlanningSceneMonitorPtr plg_scn_mon(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf));
 	planning_scene_monitor = plg_scn_mon;
 
+	cout << "Before nh_param?" << endl;
 	ros::NodeHandle nh_param_("~");
-	nh_param_.getParam("sim",sim);
+
+	cout << "Failed before param?" << endl;
+	// nh_param_.getParam("sim",sim);
+	sim = false;
+	
+	cout << "Failed at param?" << endl;
 
 	ros::WallDuration sleep_t(0.5);
 	group.setPlanningTime(8.0);
 	group.allowReplanning(false);
 
 	service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
+
 	while(!service_client.exists())
 	{
 		ROS_INFO("Waiting for IK service");
