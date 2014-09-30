@@ -4,6 +4,9 @@
  * Scanning()
  * Constructor.
  *------------------------------------------------------------------*/
+
+using namespace std;
+
 Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1), scan_obj(nh_)
 {
 	spinner.start();
@@ -78,6 +81,81 @@ Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_traj
 	results[2]=false;
 }
 
+bool Scanning::move_robot(int pose, int orientation)
+{
+  if (pose==0){
+    service_request.ik_request.pose_stamped.pose.position.x = 0.60;
+    service_request.ik_request.pose_stamped.pose.position.y = 1.94;
+    service_request.ik_request.pose_stamped.pose.position.z = 0.95;
+  }
+  if (pose==1){
+    service_request.ik_request.pose_stamped.pose.position.x = 0.52;
+    service_request.ik_request.pose_stamped.pose.position.y = 2.11;
+    service_request.ik_request.pose_stamped.pose.position.z = 0.95;
+  }
+  if (pose==2){
+    service_request.ik_request.pose_stamped.pose.position.x = 0.48;
+    service_request.ik_request.pose_stamped.pose.position.y = 2.00;
+    service_request.ik_request.pose_stamped.pose.position.z = 0.95;
+  }
+  
+  tf::Quaternion quat;
+  if (orientation==0){
+    quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2);
+  }
+  if (orientation==1){
+    quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2-M_PI/5);
+  }
+  if (orientation==2){
+    quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2-M_PI/3);
+  }
+  service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
+  service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
+  service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
+  service_request.ik_request.pose_stamped.pose.orientation.w = quat.w();
+  
+  service_client.call(service_request, service_response);
+  if(service_response.error_code.val !=1){
+    ROS_ERROR("IK couldn't find a solution for step 1");
+  }
+  
+  planning_scene_monitor->requestPlanningSceneState();
+  full_planning_scene = planning_scene_monitor->getPlanningScene();
+  full_planning_scene->getPlanningSceneMsg(planning_scene);
+  
+  // Fixing shoulder_pan & wrist_3 given by the IK
+  service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
+  service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
+  group.setStartState(full_planning_scene->getCurrentState());
+  group.setJointValueTarget(service_response.solution.joint_state);
+  
+  if(group.plan(my_plan)){
+    if(!sim){
+      excel_ac.waitForServer();
+
+      // Copy trajectory
+      control_msgs::FollowJointTrajectoryGoal excel_goal;
+      excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
+      
+      // Ask to execute now
+      ros::Time time_zero(0.0);
+      excel_goal.trajectory.header.stamp = time_zero; 
+      
+      // Specify path and goal tolerance
+      //excel_goal.path_tolerance
+      
+      // Send goal and wait for a result
+      excel_ac.sendGoal(excel_goal);				
+    }
+    else group.execute(my_plan);
+    return true;
+  }
+  else{
+    ROS_ERROR("Motion planning failed");
+    return false;
+  }
+}
+
 bool Scanning::scan(int pose, int orientation){
 	if (pose==0){
 		service_request.ik_request.pose_stamped.pose.position.x = 0.60;
@@ -94,23 +172,11 @@ bool Scanning::scan(int pose, int orientation){
 		service_request.ik_request.pose_stamped.pose.position.y = 2.00;
 		service_request.ik_request.pose_stamped.pose.position.z = 0.95;
 	}
-
+ 
 	std::vector<string> tag_names;
 	tag_names.push_back("ASIF");
 	tag_names.push_back("idrive");
 	tag_names.push_back("park");
-
-	/*
-	switch(pose)
-	  {
-	  case 0: tag_name = "ASIF";
-	    break;
-	  case 1: tag_name = "idrive";
-	    break;
-	  case 2: tag_name = "park";
-	    break;
-	  }
-	*/
 
 	tf::Quaternion quat;
 	if (orientation==0){
@@ -200,6 +266,70 @@ double Scanning::optimal_goal_angle(double goal_angle, double current_angle)
 	return goal_angle;
 }
 
+
+
+vector<string> Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_tags)
+{
+  vector<string> all_tags;
+  all_tags.reserve(good_tags.size()+ bad_tags.size());
+  all_tags.insert(all_tags.end(), good_tags.begin(), good_tags.end());
+  all_tags.insert(all_tags.end(), bad_tags.begin(), bad_tags.end());
+
+  string cur_str;
+  int cur_pose;
+  int cur_orientation = 0;
+  int orientation_tries = 3;
+  vector<bool> glob_oks, oks;
+  vector<string> bad_tags_found;
+
+  glob_oks.resize(all_tags.size());
+  fill(glob_oks.begin(), glob_oks.end(), false);
+
+  for(int i=0; i<good_tags.size(); ++i){
+    //we might have already found this tag while looking for another
+    if (!glob_oks[i]){
+      cur_str = good_tags[i];
+    
+      if (cur_str == "111" || cur_str == "333" )
+        cur_pose = 0;
+      else if(cur_str == "555" || cur_str == "777" )
+        cur_pose = 1;
+      else if(cur_str == "999")
+        cur_pose = 2;
+
+      for(int o=0;o<orientation_tries;o++){
+        //move the robot to try seeing the tag at cur_pose
+        bool ok = move_robot(cur_pose, cur_orientation);
+	
+	//look for all the tags and return if they were found
+        oks = scan_obj.find_tag(i, all_tags, 1.);
+  
+	//update the global status for looking the tags
+        for(int j=0;j<oks.size();j++){
+          glob_oks[j] = glob_oks[j] || oks[j];
+        } 
+
+        //check for bad tags found
+        for(int j=good_tags.size(); j<all_tags.size(); ++j){
+          if (oks[j]){ //returns the bad tag found
+	    bad_tags_found.push_back(all_tags[j]);
+          }
+        }
+	if(bad_tags_found.size()>0){
+	  ROS_ERROR("Found bad parts");
+	  return bad_tags_found;
+	}
+      
+        //if we find the tag we wanted in first place we go seek another
+        if(oks[i]) break;
+        //else we change the orientation to keep looking for this one
+        else cur_orientation = (cur_orientation + 1) % 3;
+      }
+    }
+  }
+  return bad_tags_found;
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "scanning");
@@ -208,7 +338,7 @@ int main(int argc, char **argv)
 	usleep(1000*1000);
 	
 	Scanning scanning(nh);
-
+	/*
 	while(ros::ok()){	  
 	  while(scanning.orientation_try<4 && !scanning.results[0] && ros::ok()){
 			if(scanning.scan(0, scanning.current_orientation)) break;
@@ -231,6 +361,17 @@ int main(int argc, char **argv)
 		}
 		scanning.orientation_try = 0;
 	}
+	*/
+	vector<string> good_tags;
+	good_tags.push_back("111");
+	good_tags.push_back("555");
+
+	vector<string> bad_tags;
+	bad_tags.push_back("333");
+	bad_tags.push_back("777");
+	bad_tags.push_back("999");
+
+	scanning.scan_it(good_tags, bad_tags);
 
 	ros::shutdown();
 	return 0;
