@@ -7,6 +7,7 @@ import actionlib
 import rospy
 from roslaunch.substitution_args import resolve_args
 from ar_tag_manager import ARTagManager
+# from excel_bins.msg import MoveBinGoal
 
 class BinManager(object):
     def __init__(self, ar_man, hum_ws_slots, bin_home_slots={}):
@@ -36,12 +37,9 @@ class BinManager(object):
         print "Delivering bins:", bins_to_deliver
         print "Removing bins:", bins_to_remove
 
-        while len(bins_to_deliver) > 0 and not rospy.is_shutdown():
-            empty_hum_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots)
-            print "Slot states:", self.ar_man.get_real_bin_slot_states()
-            print "Current empty human workspace slots:", empty_hum_ws_slots
-            while len(self.ar_man.get_real_empty_slots(self.hum_ws_slots)) == 0 and not rospy.is_shutdown():
-                print "There are no empty human workspace slots, need to remove a bin"
+        while (len(bins_to_deliver) > 0 or len(bins_to_remove) > 0) and not rospy.is_shutdown():
+
+            if len(bins_to_remove) > 0:
                 bin_to_remove = bins_to_remove[0]
                 remove_to_slot = self.get_remove_to_slot(bin_to_remove)
 
@@ -56,37 +54,21 @@ class BinManager(object):
                 else:
                     print "Bin", bin_to_remove, "still in workspace, this shouldn't happen"
 
-            print "There are now empty slots in the human workspace"
-            empty_hum_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots)
-            bin_to_deliver = bins_to_deliver[0]
-            empty_hum_ws_slot = empty_hum_ws_slots[0]
+            if len(bins_to_deliver) > 0:
+                empty_hum_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots)
+                bin_to_deliver = bins_to_deliver[0]
+                empty_hum_ws_slot = empty_hum_ws_slots[0]
 
-            print "Delivering bin", bin_to_deliver, "to slot", empty_hum_ws_slot
-            if not self.move_bin_to_slot(bin_to_deliver, empty_hum_ws_slot):
-                rospy.logerr("Failed moving bin to slot, press enter to continue")
-                sys.stdin.readline()
+                print "Delivering bin", bin_to_deliver, "to slot", empty_hum_ws_slot
+                if not self.move_bin_to_slot(bin_to_deliver, empty_hum_ws_slot):
+                    rospy.logerr("Failed moving bin to slot, press enter to continue")
+                    sys.stdin.readline()
 
-            # confirm that the bin is in the human workspace
-            if bin_to_deliver in self.ar_man.get_real_filled_slots(self.hum_ws_slots):
-                bins_to_deliver.remove(bin_to_deliver)
-            else:
-                print "Bin", bin_to_deliver, "not in workspace, this shouldn't happen"
-
-        print "All needed bins have been delivered, removing unneeded bins"
-        while len(bins_to_remove) > 0 and not rospy.is_shutdown():
-            bin_to_remove = bins_to_remove[0]
-            remove_to_slot = self.get_remove_to_slot(bin_to_remove)
-
-            print "Removing bin", bin_to_remove, "to slot", remove_to_slot
-            if not self.move_bin_to_slot(bin_to_remove, remove_to_slot):
-                rospy.logerr("Failed moving bin to slot, press enter to continue")
-                sys.stdin.readline()
-
-            # confirm that the bin is no longer in the human workspace
-            if bin_to_remove not in self.ar_man.get_real_filled_slots(self.hum_ws_slots):
-                bins_to_remove.remove(bin_to_remove)
-            else:
-                print "Bin", bin_to_remove, "still in workspace, this shouldn't happen"
+                # confirm that the bin is in the human workspace
+                if bin_to_deliver in self.ar_man.get_real_filled_slots(self.hum_ws_slots):
+                    bins_to_deliver.remove(bin_to_deliver)
+                else:
+                    print "Bin", bin_to_deliver, "not in workspace, this shouldn't happen"
 
         print "Completed bin order:", bin_order
 
@@ -95,14 +77,16 @@ class BinManager(object):
         while bin_id not in self.ar_man.get_real_filled_slots() and not rospy.is_shutdown():
             print "Bin", bin_id, "is not currently in the workspace, will continue once it is"
             r.sleep()
+
+        # slot_pose = self.ar_man.bin_slots[slot_id]
+        # act_goal = MoveBinGoal()
+        # act_goal.bin_id = bin_id
+        # act_goal.x_target = slot_pose[0][0]
+        # act_goal.y_target = slot_pose[0][1]
+        # act_goal.r_target = slot_pose[0][2]
+        # act_goal.size = "large"
+        # print "Sending action goal:", act_goal
         if False:
-            slot_pose = self.ar_man.bin_slots[slot_id]
-            act_goal = BinMoveActionGoal()
-            act_goal.bin_id = bin_id
-            act_goal.x_target = slot_pose[0][0]
-            act_goal.y_target = slot_pose[0][1]
-            act_goal.r_target = slot_pose[0][2]
-            act_goal.size = "large"
             outcome = self.bin_move_ac.send_goal_and_wait(act_goal)
             return outcome == actionlib.GoalStatus.SUCCEEDED
         else:
@@ -138,13 +122,14 @@ def load_bin_orders(filename):
     return bin_orders
 
 def deliver_bin_orders(bin_man, bin_orders):
-    for bin_order in bin_orders:
-        bin_man.deliver_bin_order(bin_order)
-        if False:
-            pass
-        else:
-            print "Order complete, (scanning now), press enter to continue"
-            sys.stdin.readline()
+    while not rospy.is_shutdown():
+        for bin_order in bin_orders:
+            bin_man.deliver_bin_order(bin_order)
+            if False:
+                pass
+            else:
+                print "Order complete, (scanning now), press enter to continue"
+                sys.stdin.readline()
 
 def main():
     rospy.init_node('bin_manager')
