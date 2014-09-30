@@ -1,4 +1,5 @@
 #include <excel_bins/move_bin.h>
+#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 /*--------------------------------------------------------------------
  * MoveBin()
@@ -354,12 +355,28 @@ bool MoveBin::verticalMove(double target_z)
   }
   */
   // ROS_WARN("Motion planning failed");
-  moveit_msgs::RobotTrajectory trajectory;
+
+  // find linear trajectory
+  moveit_msgs::RobotTrajectory lin_traj_msg;
   std::vector<geometry_msgs::Pose> waypoints;
   waypoints.push_back(ik_srv_req.ik_request.pose_stamped.pose);
-  double fraction = group.computeCartesianPath(waypoints, 0.07, 0.0, trajectory, false);
+  double fraction = group.computeCartesianPath(waypoints, 0.07, 0.0, lin_traj_msg, false);
+
+  // create new robot trajectory object
+  robot_trajectory::RobotTrajectory lin_rob_traj(group.getCurrentState()->getRobotModel(), "excel");
+  // copy the trajectory message into the robot trajectory object
+  lin_rob_traj.setRobotTrajectoryMsg(*group.getCurrentState(), lin_traj_msg);
+
+  trajectory_processing::IterativeParabolicTimeParameterization iter_parab_traj_proc;
+  if(!iter_parab_traj_proc.computeTimeStamps(lin_rob_traj)) {
+    ROS_ERROR("Failed smoothing trajectory");
+    return false;
+  }
+  // put the smoothed trajectory back into the message....
+  lin_rob_traj.getRobotTrajectoryMsg(lin_traj_msg);
+
   MoveGroupPlan lin_traj_plan;
-  lin_traj_plan.trajectory_ = trajectory;
+  lin_traj_plan.trajectory_ = lin_traj_msg;
   ROS_INFO("computeCartesianPath fraction = %f", fraction);
   if(fraction < 0.0) {
     ROS_ERROR("Failed computeCartesianPath");

@@ -134,6 +134,8 @@ add_dependencies(move_bin_action_server
   ${excel_bins_EXPORTED_TARGETS}
 )
 
+target_link_libraries(move_bin ${catkin_LIBRARIES})
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(add_bin_node ${catkin_LIBRARIES})
 target_link_libraries(pick_bin_node ${catkin_LIBRARIES})
