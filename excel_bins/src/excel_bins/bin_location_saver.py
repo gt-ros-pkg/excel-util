@@ -164,7 +164,7 @@ class ARTagManager(ARTagManagerInterface):
 
 def save_bin_slots(filename,slots):   
     bin_ids = slots.keys()
-    print slots[2]
+    print "Slots:", slots
     
     yaml_file = open(resolve_args(filename), 'w')
     
@@ -188,10 +188,10 @@ def clean_ar_pose(ar_pose):
 def main():
     rospy.init_node('bin_location_saver')
     r = rospy.Rate(10)
-    bin_slots = load_bin_slots('$(find excel_bins)/src/excel_bins/bin_slots_both1.yaml')
-    print bin_slots
+    # bin_slots = load_bin_slots('$(find excel_bins)/src/excel_bins/bin_slots_both1.yaml')
+    # print bin_slots
     
-    ar_tag_man = ARTagManager(bin_slots)    
+    ar_tag_man = ARTagManager({3 : [[0.]*3, [0.]*3]})    
     rospy.sleep(3.0)
     
     #print ar_tag_man.get_real_bin_poses()
