@@ -108,7 +108,7 @@ public:
 
   // execute this joint trajectory
   bool executeJointTrajectory(MoveGroupPlan& mg_plan);
-  bool executeGripperAction(bool is_close);
+  bool executeGripperAction(bool is_close, bool wait_for_result);
 
   void getPlanningScene(moveit_msgs::PlanningScene& planning_scene, 
                         planning_scene::PlanningScenePtr& full_planning_scene);
@@ -127,7 +127,6 @@ public:
   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> excel_ac;
   bool sim;
   moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
-  moveit::planning_interface::MoveGroup::Plan my_plan;
   double rail_max, rail_min, rail_tolerance;
 
   bool use_gripper;
