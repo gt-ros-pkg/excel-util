@@ -16,13 +16,14 @@ MoveBin::MoveBin() :
 
   ros::NodeHandle nh_, nh_param_("~");
   sim = false;
-  use_gripper = false;
+  use_gripper = true;
   nh_param_.getParam("sim",sim);
   nh_param_.getParam("use_gripper",use_gripper);
 
   ros::WallDuration sleep_t(0.5);
   group.setPlanningTime(8.0);
   group.allowReplanning(false);
+  group.startStateMonitor(1.0);
 
   service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
   while(!service_client.exists())
@@ -71,7 +72,7 @@ MoveBin::MoveBin() :
   elbow_constraint.tolerance_below = M_PI/3;
   elbow_constraint.weight = 1;
 
-  rail_max = 3.29;
+  rail_max = 3.2;
   rail_min = 0.41;
   rail_tolerance = 0.3;
 
@@ -86,6 +87,7 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
 {
   ROS_INFO("Moving bin %d to target (%.3f, %.3f, %f)", bin_number, x_target, y_target, angle_target);
   double bin_height;
+  executeGripperAction(false, false); // open gripper, but don't wait
   if(!approachBin(bin_number, bin_height)) {
     ROS_ERROR("Failed to approach bin #%d.", bin_number);
     return false;
@@ -228,15 +230,17 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
                              planning_scene.robot_state.joint_state.position[6]);
 
   // Plan trajectory
+  group.setStartStateToCurrentState();
   group.setJointValueTarget(ik_srv_resp.solution.joint_state);
-  group.setStartState(full_planning_scene->getCurrentState());
-  if(group.plan(my_plan))
-    return executeJointTrajectory(my_plan);
-  else {
-    ROS_ERROR("Motion planning failed");
-    //group.clearPathConstraints();
-    return false;
+  int num_tries = 4;
+  MoveGroupPlan my_plan;
+  while(ros::ok() && num_tries > 0) {
+    if(group.plan(my_plan))
+      return executeJointTrajectory(my_plan);
+    num_tries--;
   }
+  ROS_ERROR("Motion planning failed");
+  return 0;
 }
 
 bool MoveBin::ascent(double bin_height)
@@ -261,12 +265,14 @@ bool MoveBin::verticalMove(double target_z)
   getPlanningScene(planning_scene, full_planning_scene);
 
   ////////////// Perform FK to find end effector pose ////////////
+  /*
   moveit_msgs::GetPositionFK::Request fk_request;
   moveit_msgs::GetPositionFK::Response fk_response;
   fk_request.header.frame_id = "table_link";
   fk_request.fk_link_names.push_back("ee_link");
   fk_request.robot_state = planning_scene.robot_state;
   fk_client.call(fk_request, fk_response);
+  */
   ////////////////////////////////////////////////////////////////
 
   ////////////// Perform IK to find joint goal //////////////
@@ -275,15 +281,16 @@ bool MoveBin::verticalMove(double target_z)
   // setup IK request
   ik_srv_req.ik_request.group_name = "excel";
   ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
-  ik_srv_req.ik_request.avoid_collisions = true;
-  ik_srv_req.ik_request.attempts = 30;
+  ik_srv_req.ik_request.avoid_collisions = false;
+  ik_srv_req.ik_request.attempts = 100;
 
   // the target pose is the current location with a different z position
-  ik_srv_req.ik_request.pose_stamped = fk_response.pose_stamped[0];
+  ik_srv_req.ik_request.pose_stamped = group.getCurrentPose();
+  // ik_srv_req.ik_request.pose_stamped = fk_response.pose_stamped[0];
   ik_srv_req.ik_request.pose_stamped.pose.position.z = target_z;
 
   ik_srv_req.ik_request.constraints.joint_constraints.clear();
-  ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+  // ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
   //ik_srv_req.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
   moveit_msgs::JointConstraint rail_fixed_constraint, shoulder_pan_fixed_constraint,
                                wrist_3_fixed_constraint;
@@ -309,8 +316,8 @@ bool MoveBin::verticalMove(double target_z)
   wrist_3_fixed_constraint.tolerance_above = 0.2;
   wrist_3_fixed_constraint.tolerance_below = 0.2;
   wrist_3_fixed_constraint.weight = 1;
-  // ik_srv_req.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
-  // ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
+  ik_srv_req.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
+  ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
   ik_srv_req.ik_request.constraints.joint_constraints.push_back(wrist_3_fixed_constraint);
 
   ROS_INFO("Calling IK for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
@@ -335,22 +342,38 @@ bool MoveBin::verticalMove(double target_z)
                              planning_scene.robot_state.joint_state.position[1]);
   ik_srv_resp.solution.joint_state.position[6] = this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
 
-  group.setStartState(full_planning_scene->getCurrentState());
   group.setJointValueTarget(ik_srv_resp.solution.joint_state);
-  if(group.plan(my_plan))
-    return executeJointTrajectory(my_plan);
-  else {
-    ROS_ERROR("Motion planning failed");
-    //group.clearPathConstraints();
-    return 0;
+  group.setStartStateToCurrentState();
+  /*
+  int num_tries = 4;
+  MoveGroupPlan my_plan;
+  while(ros::ok() && num_tries > 0) {
+    if(group.plan(my_plan))
+      return executeJointTrajectory(my_plan);
+    num_tries--;
   }
+  */
+  // ROS_WARN("Motion planning failed");
+  moveit_msgs::RobotTrajectory trajectory;
+  std::vector<geometry_msgs::Pose> waypoints;
+  waypoints.push_back(ik_srv_req.ik_request.pose_stamped.pose);
+  double fraction = group.computeCartesianPath(waypoints, 0.07, 0.0, trajectory, false);
+  MoveGroupPlan lin_traj_plan;
+  lin_traj_plan.trajectory_ = trajectory;
+  ROS_INFO("computeCartesianPath fraction = %f", fraction);
+  if(fraction < 0.0) {
+    ROS_ERROR("Failed computeCartesianPath");
+    return false;
+  }
+
+  return executeJointTrajectory(lin_traj_plan);
 }
 
 bool MoveBin::attachBin(int bin_number)
 {	
   ROS_INFO("Attaching bin %d", bin_number);
   // close gripper
-  executeGripperAction(true); 
+  executeGripperAction(true, true); 
 
   moveit_msgs::CollisionObjectPtr bin_coll_obj = getBinCollisionObject(bin_number);
 
@@ -373,7 +396,7 @@ bool MoveBin::detachBin()
 {
   ROS_INFO("Detaching bin");
   // open gripper
-  executeGripperAction(false); 
+  executeGripperAction(false, true);
 
   // update the planning scene to get the robot's state
   moveit_msgs::PlanningScene planning_scene;
@@ -456,15 +479,14 @@ bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan)
   ROS_INFO("Executing joint trajectory with %d knots and duration %f", num_pts, 
            mg_plan.trajectory_.joint_trajectory.points[num_pts-1].time_from_start.toSec());
   if(sim)
-    return group.execute(my_plan);
+    return group.execute(mg_plan);
 
   // Copy trajectory
   control_msgs::FollowJointTrajectoryGoal excel_goal;
   excel_goal.trajectory = mg_plan.trajectory_.joint_trajectory;
 
   // Ask to execute now
-  ros::Time time_zero(0.0);
-  excel_goal.trajectory.header.stamp = time_zero; 
+  excel_goal.trajectory.header.stamp = ros::Time::now()+ros::Duration(0.15); 
 
   // Specify path and goal tolerance
   //excel_goal.path_tolerance
@@ -479,7 +501,7 @@ bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan)
   return end_state == actionlib::SimpleClientGoalState::SUCCEEDED;
 }
 
-bool MoveBin::executeGripperAction(bool is_close)
+bool MoveBin::executeGripperAction(bool is_close, bool wait_for_result)
 {
   if(is_close)
     ROS_INFO("Closing gripper");
@@ -491,7 +513,10 @@ bool MoveBin::executeGripperAction(bool is_close)
     goal.command.position = (is_close) ? 0.0 : 0.08;
     goal.command.max_effort = 100;
     gripper_ac.sendGoal(goal);
-    return gripper_ac.waitForResult(ros::Duration(30.0));
+    if(wait_for_result)
+      return gripper_ac.waitForResult(ros::Duration(30.0));
+    else
+      return true;
   }
   else {
     ros::Duration(2.0).sleep();

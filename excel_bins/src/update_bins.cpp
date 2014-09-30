@@ -97,6 +97,7 @@ void bins_callback(const excel_bins::Bins::ConstPtr& msg)
 	}
 	
 	// Remove old bins
+  /*
 	for( std::vector<std::string>::const_iterator i = bins_in_scene.begin(); i != bins_in_scene.end(); ++i){	    
 	    std::vector<std::string>::iterator it;
 	    it = std::find(bins_updated.begin(), bins_updated.end(), *i);
@@ -113,6 +114,7 @@ void bins_callback(const excel_bins::Bins::ConstPtr& msg)
 	    	planning_scene_diff_publisher.publish(planning_sc);
 	    }
 	}
+  */
 }
 
 int main(int argc, char **argv)
