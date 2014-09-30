@@ -55,13 +55,15 @@ void update_loop_task(void *arg)
   ros::Time now;
 #ifdef XENOMAI_REALTIME
 	rt_task_set_periodic(NULL, TM_NOW, 1000000); // ns
+  struct timespec tp;
 #else
   ros::Rate r(1000.0);
 #endif
   while (ros::ok() && !stop_requested) {
 #ifdef XENOMAI_REALTIME
 		rt_task_wait_period(NULL);
-    now = ros::fromNSec(rtdm_clock_read());
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+    now = ros::Time(tp.tv_sec, tp.tv_nsec);
 #else
     r.sleep();
     now = ros::Time::now();
