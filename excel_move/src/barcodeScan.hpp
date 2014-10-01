@@ -36,7 +36,7 @@ public:
   }
 
   vector<bool> find_tag(vector<string> tag_names);
-
+  bool compare_tags(string t1, string t2);
 private:
 
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
@@ -93,7 +93,7 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
 	  ROS_INFO("%s tag found", str_dmtx.c_str());
 	  
 	  for(int i=0;i<tag_names.size();i++){
-	    if(str_dmtx == tag_names[i]){
+	    if(compare_tags(str_dmtx, tag_names[i])){
 	      found_tags[i] = true;
 	      // ROS_INFO("E");
 	      const char* output = reinterpret_cast<const char*>(dmtx_msg->output);
@@ -140,4 +140,15 @@ void BarcodeScan::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   return;
 }
 
+bool BarcodeScan::compare_tags(string t1, string t2)
+{
+  int num_diffs_allowed=1; int diffs=0;
+  const char* t1c = t1.c_str();
+  const char* t2c = t2.c_str();
+  
+  for(int i=0; i<t1.size(); ++i){
+    if (t1c[i] == t2c[i]){diffs++;}
+  }
+  return (diffs<=num_diffs_allowed);
+    }
 #endif

@@ -65,7 +65,7 @@ public:
 	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
 	moveit::planning_interface::MoveGroup::Plan my_plan;
 	
-	vector<string> scan_it(vector<string> &good_bins, vector<string> &bad_bins);
+	int scan_it(vector<string> &good_bins, vector<string> &bad_bins);
 	
 	bool move_robot(int pose, int orientation);
 	

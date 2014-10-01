@@ -7,6 +7,11 @@
 
 using namespace std;
 
+#define BAD_TAG -2
+#define MISS_TAG -1
+#define ALL_GOOD 0
+
+
 Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1), scan_obj(nh_)
 {
 	spinner.start();
@@ -176,7 +181,7 @@ double Scanning::optimal_goal_angle(double goal_angle, double current_angle)
 
 
 
-vector<string> Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_tags)
+int Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_tags)
 {
   vector<string> all_tags;
   all_tags.reserve(good_tags.size()+ bad_tags.size());
@@ -245,7 +250,7 @@ vector<string> Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_
         }
 	if(bad_tags_found.size()>0){
 	  ROS_ERROR("Found bad parts");
-	  return bad_tags_found;
+	  return BAD_TAG;
 	}
       
         //if we find the tag we wanted in first place we go seek another
@@ -255,7 +260,14 @@ vector<string> Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_
       }
     }
   }
-  return bad_tags_found;
+
+  
+  for(int i=0; i<good_tags.size(); ++i){
+    //if any of the good tags not found
+    if (!glob_oks[i])
+      return MISS_TAG;
+  }
+  return ALL_GOOD;
 }
 
 int main(int argc, char **argv)
@@ -301,6 +313,8 @@ int main(int argc, char **argv)
 	bad_tags.push_back("999");
 
 	scanning.scan_it(good_tags, bad_tags);
+	
+	
 
 	ros::shutdown();
 	return 0;
