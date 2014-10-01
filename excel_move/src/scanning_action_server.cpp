@@ -1,13 +1,13 @@
 #include <actionlib/server/simple_action_server.h>
 #include <excel_move/ScanningAction.h>
-#include "scanning_template.h"
+#include <excel_move/scanning.h>
 
 class ScanningActionServer
 {
 public:
   ScanningActionServer(ros::NodeHandle& nh, Scanning& scanning) :
     nh_(nh), scanning_(scanning),
-    act_srv_(nh, "", boost::bind(&ScanningActionServer::executeCB, this, _1), false)
+    act_srv_(nh, "scan_parts", boost::bind(&ScanningActionServer::executeCB, this, _1), false)
   {
     act_srv_.start();
   }

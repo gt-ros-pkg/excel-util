@@ -1,4 +1,4 @@
-#include "scanning.h"
+#include <excel_move/scanning.h>
 
 /*--------------------------------------------------------------------
  * Scanning()
@@ -263,7 +263,6 @@ bool Scanning::move_robot(int pose, int orientation)
   }
 }
 
-
 /*--------------------------------------------------------------------
  * optimal_goal_angle()
  * Finds out if the robot needs to rotate clockwise or anti-clockwise
@@ -279,9 +278,7 @@ double Scanning::optimal_goal_angle(double goal_angle, double current_angle)
 	return goal_angle;
 }
 
-
-
-int Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_tags)
+int Scanning::scan_it(const vector<string> &good_tags, const vector<string> &bad_tags)
 {
   vector<string> all_tags;
   all_tags.reserve(good_tags.size()+ bad_tags.size());
@@ -383,29 +380,4 @@ int Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_tags)
       return MISS_TAG;
   }
   return ALL_GOOD;
-}
-
-int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "scanning");
-	ros::NodeHandle nh;
-
-	usleep(1000*1000);
-	
-	Scanning scanning(nh);
-
-	vector<string> good_tags;
-	good_tags.push_back("333");
-	good_tags.push_back("555");
-	good_tags.push_back("999");
-
-	vector<string> bad_tags;
-	bad_tags.push_back("111");
-	bad_tags.push_back("777");
-	//bad_tags.push_back("999");
-
-	cout << scanning.scan_it(good_tags, bad_tags);
-	
-	ros::shutdown();
-	return 0;
 }
