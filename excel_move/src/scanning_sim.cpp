@@ -85,13 +85,13 @@ int Scanning::scan(int pose, int orientation){
 
 	tf::Quaternion quat;
 	if (orientation==0){
-		quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2);
+		quat = tf::createQuaternionFromRPY(-M_PI/2,0.88,-M_PI/2);
 	}
 	if (orientation==1){
-		quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2-M_PI/5);
+		quat = tf::createQuaternionFromRPY(-M_PI/2,0.88,-M_PI/2-M_PI/5);
 	}
 	if (orientation==2){
-		quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2-M_PI/3);
+		quat = tf::createQuaternionFromRPY(-M_PI/2,0.88,-M_PI/2-M_PI/3);
 	}
 	service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
 	service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
