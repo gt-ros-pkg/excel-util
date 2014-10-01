@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   shape_msgs
   xacro
+  actionlib_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -66,15 +67,16 @@ add_message_files(
 # )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  MoveBin.action
+)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
+  actionlib_msgs
+  std_msgs
   geometry_msgs
   excel_bins#   shape_msgs
 )
@@ -92,6 +94,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES excel_bins
 #  CATKIN_DEPENDS geometry_msgs joint_state_publisher moveit_planners_ompl moveit_ros_move_group moveit_ros_visualization robot_state_publisher roscpp rospy shape_msgs xacro
+   CATKIN_DEPENDS actionlib_msgs
 #  DEPENDS system_lib
 )
 
@@ -103,36 +106,50 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-add_library(add_bin src/add_bin.cpp)
-add_library(pick_bin src/pick_bin.cpp)
-add_library(update_bins src/update_bins.cpp)
+# add_library(add_bin src/add_bin.cpp)
+# add_library(pick_bin src/pick_bin.cpp)
+# add_library(update_bins src/update_bins.cpp)
 add_library(move_bin src/move_bin.cpp)
-add_library(move_bin_constrained src/move_bin_constrained.cpp)
-add_library(get_slots_full src/get_slots_full.cpp)
+# add_library(move_bin_constrained src/move_bin_constrained.cpp)
+# add_library(get_slots_full src/get_slots_full.cpp)
 
 ## Declare a cpp executable
 add_executable(add_bin_node src/add_bin.cpp)
 add_executable(pick_bin_node src/pick_bin.cpp)
 add_executable(update_bins_node src/update_bins.cpp)
-add_executable(move_bin_node src/move_bin.cpp)
-add_executable(move_bin_constrained_node src/move_bin_constrained.cpp)
-add_executable(get_slots_full_node src/get_slots_full.cpp)
+add_executable(move_bin_node src/move_bin_node.cpp)
+add_executable(move_bin_action_server src/move_bin_action_server.cpp)
+# add_executable(move_bin_constrained_node src/move_bin_constrained.cpp)
+# add_executable(get_slots_full_node src/get_slots_full.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(excel_bins_node excel_bins_generate_messages_cpp)
+add_dependencies(move_bin_action_server
+  ${excel_bins_EXPORTED_TARGETS}
+)
+
+target_link_libraries(move_bin ${catkin_LIBRARIES})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(add_bin_node ${catkin_LIBRARIES})
 target_link_libraries(pick_bin_node ${catkin_LIBRARIES})
 target_link_libraries(update_bins_node ${catkin_LIBRARIES})
-target_link_libraries(move_bin_node ${catkin_LIBRARIES})
-target_link_libraries(move_bin_constrained_node ${catkin_LIBRARIES})
-target_link_libraries(get_slots_full_node ${catkin_LIBRARIES})
+target_link_libraries(move_bin_node 
+  ${catkin_LIBRARIES}
+  move_bin
+)
+target_link_libraries(move_bin_action_server 
+  ${catkin_LIBRARIES}
+  move_bin
+)
+# target_link_libraries(move_bin_constrained_node ${catkin_LIBRARIES})
+# target_link_libraries(get_slots_full_node ${catkin_LIBRARIES})
 
 #############
 ## Install ##

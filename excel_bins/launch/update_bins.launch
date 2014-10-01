@@ -1,0 +1,4 @@
+<launch>
+  <node name="update_bins_node" pkg="excel_bins" type="update_bins_node" output="screen" 
+        respawn="true"/>
+</launch>
