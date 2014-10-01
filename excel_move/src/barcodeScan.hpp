@@ -147,8 +147,9 @@ bool BarcodeScan::compare_tags(string t1, string t2)
   const char* t2c = t2.c_str();
   
   for(int i=0; i<t1.size(); ++i){
-    if (t1c[i] == t2c[i]){diffs++;}
+    if (t1c[i] != t2c[i]){diffs++;}
   }
   return (diffs<=num_diffs_allowed);
-    }
+}
+
 #endif

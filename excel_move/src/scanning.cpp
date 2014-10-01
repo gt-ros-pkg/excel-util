@@ -56,6 +56,7 @@ Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_traj
 	full_planning_scene->getPlanningSceneMsg(planning_scene);
 
 	// Define joint_constraints for the IK service //
+	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint, shoulder_pan_constraint;
 	rail_constraint.joint_name = "table_rail_joint";
 	rail_constraint.position = 2.0;
 	rail_constraint.tolerance_above = 1.3;
@@ -66,6 +67,12 @@ Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_traj
 	shoulder_constraint.tolerance_above = M_PI/4;
 	shoulder_constraint.tolerance_below = 0;
 	shoulder_constraint.weight = 1;
+	shoulder_pan_constraint.joint_name = "shoulder_pan_joint";
+	shoulder_pan_constraint.position = M_PI/2;
+	shoulder_pan_constraint.tolerance_above = M_PI/2;
+	shoulder_pan_constraint.tolerance_below = M_PI/2;
+	shoulder_pan_constraint.weight = 1;
+	
 
 	// Config the IK service //
 	service_request.ik_request.group_name = "scanning";
@@ -74,6 +81,7 @@ Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_traj
 	service_request.ik_request.attempts = 30;
 	service_request.ik_request.constraints.joint_constraints.push_back(rail_constraint);
 	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+	service_request.ik_request.constraints.joint_constraints.push_back(shoulder_pan_constraint);
 
 	// no try yet //
 	orientation_try = 0;
@@ -88,6 +96,7 @@ Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_traj
 
 bool Scanning::move_robot(int pose, int orientation)
 {
+  //*
   if (pose==0){
     service_request.ik_request.pose_stamped.pose.position.x = 0.60;
     service_request.ik_request.pose_stamped.pose.position.y = 1.94;
@@ -114,6 +123,7 @@ bool Scanning::move_robot(int pose, int orientation)
   if (orientation==2){
     quat = tf::createQuaternionFromRPY(-M_PI/2,0.88,-M_PI/2-M_PI/3);
   }
+
   service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
   service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
   service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
@@ -123,7 +133,97 @@ bool Scanning::move_robot(int pose, int orientation)
   if(service_response.error_code.val !=1){
     ROS_ERROR("IK couldn't find a solution for step 1");
   }
-  
+  /*//*
+  switch(pose){
+  case 0:
+    switch(orientation){
+    case 0:
+      service_response.solution.joint_state.position[0] =1.4722938597257311;
+      service_response.solution.joint_state.position[1] =-1.4939068055414035;
+      service_response.solution.joint_state.position[2] =2.2704874681999083;
+      service_response.solution.joint_state.position[3] =2.4836798;
+      service_response.solution.joint_state.position[4] =-0.9852365136568161;
+      service_response.solution.joint_state.position[5] =-1.1480223149774416 ;
+      service_response.solution.joint_state.position[6] = 2.1463285652;
+      break;
+    case 1:
+      service_response.solution.joint_state.position[0] =1.4214209464426526;
+      service_response.solution.joint_state.position[1] =-1.414006834003409;
+      service_response.solution.joint_state.position[2] =2.058165965989061;
+      service_response.solution.joint_state.position[3] =2.9546652;
+      service_response.solution.joint_state.position[4] =-1.2295772091106065;
+      service_response.solution.joint_state.position[5] =-0.9614776054164196;
+      service_response.solution.joint_state.position[6] =2.5758074824571793;
+      break;
+    case 2:
+      service_response.solution.joint_state.position[0] = 1.1981138408193654;
+      service_response.solution.joint_state.position[1] = -1.222274217396785;
+      service_response.solution.joint_state.position[2] = 1.7838383845224866;
+      service_response.solution.joint_state.position[3] = 3.2784866999999998;
+      service_response.solution.joint_state.position[4] = -1.299124158955174;
+      service_response.solution.joint_state.position[5] = -0.9188939919485541;
+      service_response.solution.joint_state.position[6] = 2.746974446876984;
+    }
+  case 1:
+    switch(orientation){
+    case 0:
+      service_response.solution.joint_state.position[0] =1.0969173775144556;
+      service_response.solution.joint_state.position[1] =-1.1937528231254226;
+      service_response.solution.joint_state.position[2] =2.217076641227553;
+      service_response.solution.joint_state.position[3] =2.4749236999999997;
+      service_response.solution.joint_state.position[4] =-0.8903211551976103;
+      service_response.solution.joint_state.position[5] =-1.1769604790457082;
+      service_response.solution.joint_state.position[6] =2.0972842082007768;
+      break;
+    case 1:
+      service_response.solution.joint_state.position[0] =1.003958576396501;
+      service_response.solution.joint_state.position[1] =-1.1018872006327816;
+      service_response.solution.joint_state.position[2] =2.0358838596079964;
+      service_response.solution.joint_state.position[3] =2.9603166;
+      service_response.solution.joint_state.position[4] =-1.110033127572681;
+      service_response.solution.joint_state.position[5] =-0.9692127418888523;
+      service_response.solution.joint_state.position[6] =2.5504084038141634;
+      break;
+    case 2:
+      service_response.solution.joint_state.position[0] =;
+      service_response.solution.joint_state.position[1] =;
+      service_response.solution.joint_state.position[2] =;
+      service_response.solution.joint_state.position[3] =;
+      service_response.solution.joint_state.position[4] =;
+      service_response.solution.joint_state.position[5] =;
+      service_response.solution.joint_state.position[6] =;
+    }
+  case 2:
+    switch(orientation){
+    case 0:
+      service_response.solution.joint_state.position[0] =;
+      service_response.solution.joint_state.position[1] =;
+      service_response.solution.joint_state.position[2] =;
+      service_response.solution.joint_state.position[3] =;
+      service_response.solution.joint_state.position[4] =;
+      service_response.solution.joint_state.position[5] =;
+      service_response.solution.joint_state.position[6] =;
+      break;
+    case 1:
+      service_response.solution.joint_state.position[0] =;
+      service_response.solution.joint_state.position[1] =;
+      service_response.solution.joint_state.position[2] =;
+      service_response.solution.joint_state.position[3] =;
+      service_response.solution.joint_state.position[4] =;
+      service_response.solution.joint_state.position[5] =;
+      service_response.solution.joint_state.position[6] =;
+      break;
+    case 2:
+      service_response.solution.joint_state.position[0] =;
+      service_response.solution.joint_state.position[1] =;
+      service_response.solution.joint_state.position[2] =;
+      service_response.solution.joint_state.position[3] =;
+      service_response.solution.joint_state.position[4] =;
+      service_response.solution.joint_state.position[5] =;
+      service_response.solution.joint_state.position[6] =;
+    }    
+  }
+  */
   planning_scene_monitor->requestPlanningSceneState();
   full_planning_scene = planning_scene_monitor->getPlanningScene();
   full_planning_scene->getPlanningSceneMsg(planning_scene);
@@ -231,15 +331,30 @@ int Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_tags)
   
 	cout << "Find returns?" << endl;
 	
+	//debug
+	//not found
+	//oks
+	cout << "***************NOT FOUNDS***************" << endl;
+	for(int j=0; j<not_found.size(); j++){
+	  cout << not_found[j] << "-" << oks[j] << endl;
+	}
+
 	//update the global status for looking the tags
         for(int j=0, t=0;j<all_tags.size() && t<not_found.size();j++){
 	  if(!glob_oks[j]){
 	    glob_oks[j] = glob_oks[j] || oks[t];
-	    t++;
 	    if (oks[t])
 	      cout << "Saw Tag = " << not_found[t] << endl;
+	    t++;
 	  }
 	}
+
+	//globals
+	cout << "***************GLOBALS***************" << endl;
+	for(int j=0; j<all_tags.size(); j++){
+	  cout << all_tags[j] << "-" << glob_oks[j] << endl;
+	}
+
 	  cout <<"was pose "<< cur_pose<< " and orientation "<<cur_orientation <<endl;
 	
         //check for bad tags found
@@ -254,7 +369,7 @@ int Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_tags)
 	}
       
         //if we find the tag we wanted in first place we go seek another
-        if(oks[i]) break;
+        if(glob_oks[i]) break;
         //else we change the orientation to keep looking for this one
         else cur_orientation = (cur_orientation + 1) % 3;
       }
@@ -278,44 +393,19 @@ int main(int argc, char **argv)
 	usleep(1000*1000);
 	
 	Scanning scanning(nh);
-	/*
-	while(ros::ok()){	  
-	  while(scanning.orientation_try<4 && !scanning.results[0] && ros::ok()){
-			if(scanning.scan(0, scanning.current_orientation)) break;
-			scanning.current_orientation = (scanning.current_orientation +1) % 3;
-			scanning.orientation_try += 1;
-		}
-		scanning.orientation_try = 0;
 
-		while(scanning.orientation_try<4 && !scanning.results[1] && ros::ok()){
-			if(scanning.scan(1, scanning.current_orientation)) break;
-			scanning.current_orientation = (scanning.current_orientation +1) % 3;
-			scanning.orientation_try += 1;
-		}
-		scanning.orientation_try = 0;
-
-		while(scanning.orientation_try<4 && !scanning.results[2] && ros::ok()){
-			if(scanning.scan(2, scanning.current_orientation)) break;
-			scanning.current_orientation = (scanning.current_orientation +1) % 3;
-			scanning.orientation_try += 1;
-		}
-		scanning.orientation_try = 0;
-	}
-	*/
 	vector<string> good_tags;
-	good_tags.push_back("111");
+	good_tags.push_back("333");
 	good_tags.push_back("555");
-	//good_tags.push_back("999");
+	good_tags.push_back("999");
 
 	vector<string> bad_tags;
-	bad_tags.push_back("333");
+	bad_tags.push_back("111");
 	bad_tags.push_back("777");
-	bad_tags.push_back("999");
+	//bad_tags.push_back("999");
 
-	scanning.scan_it(good_tags, bad_tags);
+	cout << scanning.scan_it(good_tags, bad_tags);
 	
-	
-
 	ros::shutdown();
 	return 0;
 }
