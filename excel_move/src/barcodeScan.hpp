@@ -10,6 +10,7 @@
 #include <string.h>
 #include <assert.h>
 #include <dmtx.h>
+#include <boost/timer.hpp>
 
 #define SCAN_FRAME_RATE 7
 
@@ -50,6 +51,8 @@ private:
 
 vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
 {
+  boost::timer t_get_in, t_total;
+
   process_im_ = true;
   vector<bool> found_tags;
   for(int i=0;i<tag_names.size();i++){
@@ -59,8 +62,11 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
   int frames = 0;
   int total_frames = 1;//floor(timeout * SCAN_FRAME_RATE);
   
-  while(!(frames>total_frames )){
+  while(!(frames>=total_frames )){
     if (currently_process_){
+      cout << "TIME to get in " << t_get_in.elapsed() << endl;
+
+      cout << "Processing Frame" << endl;
       frames++;
       DmtxImage      *img;
       DmtxDecode     *dec;
@@ -91,7 +97,7 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
 	      found_tags[i] = true;
 	      // ROS_INFO("E");
 	      const char* output = reinterpret_cast<const char*>(dmtx_msg->output);
-	      // ROS_INFO("Message: %s", output);
+	      ROS_INFO("Message: %s", output);
 	      dmtxMessageDestroy(&dmtx_msg);
 	    
 	      //debug
@@ -116,15 +122,15 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
   }
 
   process_im_ = false;
+  cout << "TIME total " << t_total.elapsed() << endl;
   return found_tags;
 }
 
 void BarcodeScan::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
 
-  // cout << "Get here?" << endl;
-
   if(process_im_ && !currently_process_){
+    cout << "Get to callback?" << endl;
 
     ROS_INFO("IMG");
     cv_ptr = cv_bridge::toCvCopy(msg, "mono8");

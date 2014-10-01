@@ -145,7 +145,9 @@ bool Scanning::move_robot(int pose, int orientation)
       //excel_goal.path_tolerance
       
       // Send goal and wait for a result
-      excel_ac.sendGoal(excel_goal);				
+      excel_ac.sendGoal(excel_goal);
+      sleep(2);
+      return excel_ac.waitForResult(ros::Duration(15.));
     }
     else group.execute(my_plan);
     return true;
@@ -156,100 +158,6 @@ bool Scanning::move_robot(int pose, int orientation)
   }
 }
 
-bool Scanning::scan(int pose, int orientation){
-	if (pose==0){
-		service_request.ik_request.pose_stamped.pose.position.x = 0.60;
-		service_request.ik_request.pose_stamped.pose.position.y = 1.94;
-		service_request.ik_request.pose_stamped.pose.position.z = 0.95;
-	}
-	if (pose==1){
-		service_request.ik_request.pose_stamped.pose.position.x = 0.52;
-		service_request.ik_request.pose_stamped.pose.position.y = 2.11;
-		service_request.ik_request.pose_stamped.pose.position.z = 0.95;
-	}
-	if (pose==2){
-		service_request.ik_request.pose_stamped.pose.position.x = 0.48;
-		service_request.ik_request.pose_stamped.pose.position.y = 2.00;
-		service_request.ik_request.pose_stamped.pose.position.z = 0.95;
-	}
- 
-	std::vector<string> tag_names;
-	tag_names.push_back("ASIF");
-	tag_names.push_back("idrive");
-	tag_names.push_back("park");
-
-	tf::Quaternion quat;
-	if (orientation==0){
-		quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2);
-	}
-	if (orientation==1){
-		quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2-M_PI/5);
-	}
-	if (orientation==2){
-		quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2-M_PI/3);
-	}
-	service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
-	service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
-	service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
-	service_request.ik_request.pose_stamped.pose.orientation.w = quat.w();
-
-	service_client.call(service_request, service_response);
-	if(service_response.error_code.val !=1){
-		ROS_ERROR("IK couldn't find a solution for step 1");
-	}
-
-	planning_scene_monitor->requestPlanningSceneState();
-	full_planning_scene = planning_scene_monitor->getPlanningScene();
-	full_planning_scene->getPlanningSceneMsg(planning_scene);
-	
-	// Fixing shoulder_pan & wrist_3 given by the IK
-	service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
-	service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
-	group.setStartState(full_planning_scene->getCurrentState());
-	group.setJointValueTarget(service_response.solution.joint_state);
-
-	if(group.plan(my_plan)){
-		if(!sim){
-			excel_ac.waitForServer();
-
-			// Copy trajectory
-			control_msgs::FollowJointTrajectoryGoal excel_goal;
-			excel_goal.trajectory = my_plan.trajectory_.joint_trajectory;
-
-			// Ask to execute now
-			ros::Time time_zero(0.0);
-			excel_goal.trajectory.header.stamp = time_zero; 
-
-			// Specify path and goal tolerance
-			//excel_goal.path_tolerance
-
-			// Send goal and wait for a result
-			excel_ac.sendGoal(excel_goal);				
-		}
-		else group.execute(my_plan);
-	}
-	else{
-		ROS_ERROR("Motion planning failed");
-	}
-
-	std::vector<bool> oks;
-	bool ok;
-	sleep(0.3);
-	oks = scan_obj.find_tag(tag_names);
-	for(int i=0;i<oks.size();i++){
-	  results[i] = results[i] || oks[i];
-	}
-	ok = oks[pose];
-
-	cout << "DONE FINDING tag - " << tag_names[pose] << " in position" << orientation<< endl;
-	if (ok){
-	  cout << "TAG FOUND!!" << endl;
-	}
-	else
-	  cout << "TAG NOT FOUND!!" << endl;
-	
-	return ok;
-}
 
 /*--------------------------------------------------------------------
  * optimal_goal_angle()
@@ -288,8 +196,12 @@ vector<string> Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_
   for(int i=0; i<good_tags.size(); ++i){
     //we might have already found this tag while looking for another
     if (!glob_oks[i]){
+      //debug
+
       cur_str = good_tags[i];
-    
+
+      cout << "Current Tag = " << cur_str << endl;
+
       if (cur_str == "111" || cur_str == "333" )
         cur_pose = 0;
       else if(cur_str == "555" || cur_str == "777" )
@@ -300,15 +212,31 @@ vector<string> Scanning::scan_it(vector<string> &good_tags, vector<string> &bad_
       for(int o=0;o<orientation_tries;o++){
         //move the robot to try seeing the tag at cur_pose
         bool ok = move_robot(cur_pose, cur_orientation);
+
+	cout << "Did you move the robt? " << ok << endl;
 	
 	//look for all the tags and return if they were found
-        oks = scan_obj.find_tag(all_tags);
-  
-	//update the global status for looking the tags
-        for(int j=0;j<oks.size();j++){
-          glob_oks[j] = glob_oks[j] || oks[j];
-        } 
+	vector<string> not_found;
+	for (int t=0; t<all_tags.size(); t++){
+	  if(!glob_oks[t])
+	    not_found.push_back(all_tags[t]);
+	}
 
+        oks = scan_obj.find_tag(not_found);
+  
+	cout << "Find returns?" << endl;
+	
+	//update the global status for looking the tags
+        for(int j=0, t=0;j<all_tags.size() && t<not_found.size();j++){
+	  if(!glob_oks[j]){
+	    glob_oks[j] = glob_oks[j] || oks[t];
+	    t++;
+	    if (oks[t])
+	      cout << "Saw Tag = " << not_found[t] << endl;
+	  }
+	}
+	  cout <<"was pose "<< cur_pose<< " and orientation "<<cur_orientation <<endl;
+	
         //check for bad tags found
         for(int j=good_tags.size(); j<all_tags.size(); ++j){
           if (oks[j]){ //returns the bad tag found
@@ -365,6 +293,7 @@ int main(int argc, char **argv)
 	vector<string> good_tags;
 	good_tags.push_back("111");
 	good_tags.push_back("555");
+	//good_tags.push_back("999");
 
 	vector<string> bad_tags;
 	bad_tags.push_back("333");
