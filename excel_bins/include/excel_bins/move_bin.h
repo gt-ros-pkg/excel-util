@@ -30,6 +30,7 @@
 #include <control_msgs/GripperCommandAction.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
+#include <std_msgs/Bool.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
@@ -106,12 +107,17 @@ public:
   // get the collision object corresponding to the bin_number
   moveit_msgs::CollisionObjectPtr getBinCollisionObject(int bin_number);
 
-  // execute this joint trajectory
-  bool executeJointTrajectory(MoveGroupPlan& mg_plan);
+  // execute a joint trajectory
+  bool executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety);
+  // stop a joint trajectory
+  void stopJointTrajectory();
+
   bool executeGripperAction(bool is_close, bool wait_for_result);
 
   void getPlanningScene(moveit_msgs::PlanningScene& planning_scene, 
                         planning_scene::PlanningScenePtr& full_planning_scene);
+
+  void humanUnsafeCallback(const std_msgs::Bool::ConstPtr& msg);
 
   ros::ServiceClient service_client, fk_client;
   moveit_msgs::GetPositionIK::Request ik_srv_req;
@@ -128,6 +134,10 @@ public:
   bool sim;
   moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
   double rail_max, rail_min, rail_tolerance;
+
+  bool vertical_check_safety_, traverse_check_safety_;
+  bool human_unsafe_;
+  ros::Subscriber hum_unsafe_sub_;
 
   bool use_gripper;
 };
