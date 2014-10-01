@@ -22,6 +22,18 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
   cv_bridge
   image_transport
+  actionlib_msgs
+)
+
+add_action_files(
+  FILES
+  Scanning.action
+)
+
+generate_messages(
+  DEPENDENCIES
+  actionlib_msgs
+  std_msgs
 )
 
 catkin_package(
@@ -58,6 +70,11 @@ add_executable(back_n_forth_node src/back_n_forth.cpp)
 if (DMTX_FOUND)
   add_executable(scanning_node src/scanning.cpp)
 endif()
+add_executable(scanning_action_server src/scanning_action_server.cpp)
+
+add_dependencies(scanning_action_server
+  ${excel_move_EXPORTED_TARGETS}
+)
 
 target_link_libraries(moveit_to_known_position_node ${catkin_LIBRARIES})
 target_link_libraries(moveit_joint_node ${catkin_LIBRARIES})
@@ -73,3 +90,4 @@ if (DMTX_FOUND)
     ${DMTX_LIBRARIES}
     )
 endif()
+target_link_libraries(scanning_action_server ${catkin_LIBRARIES})
