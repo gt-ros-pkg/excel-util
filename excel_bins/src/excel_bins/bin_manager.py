@@ -9,6 +9,7 @@ import rospy
 from roslaunch.substitution_args import resolve_args
 from ar_tag_manager import ARTagManager
 from excel_bins.msg import MoveBinAction, MoveBinGoal
+from excel_move.msg import ScanningAction, ScanningGoal
 from std_msgs.msg import Int32, String
 
 class BinManager(object):
@@ -139,8 +140,9 @@ def load_ws_setup(filename):
     slots = yaml_data['slots']
     bin_home_slots = yaml_data['bin_home_slots']
     hum_ws_slots = yaml_data['hum_ws_slots']
+    bin_barcode_ids = yaml_data['bin_barcode_ids']
     f.close()
-    return slots, bin_home_slots, hum_ws_slots
+    return slots, bin_home_slots, hum_ws_slots, bin_barcode_ids
 
 def load_bin_orders(filename):
     f = file(resolve_args(filename), 'r')
@@ -149,15 +151,28 @@ def load_bin_orders(filename):
     f.close()
     return bin_orders
 
-def deliver_bin_orders(bin_man, bin_orders):
+def deliver_bin_orders(bin_man, bin_orders, bin_barcode_ids):
+    scanning_ac = actionlib.SimpleActionClient('scan_parts', ScanningAction)
+    print "Waiting for action server 'scan_parts' ..."
+    scanning_ac.wait_for_server()
+    print "Found action server."
     display_message_pub = rospy.Publisher('/display/message', String)
 
     while not rospy.is_shutdown():
         for bin_order in bin_orders:
-            display_message_pub.publish("Fetching Part Numbers: {" + ", ".join([str(b) for b in bin_order]) + "}...")
+            display_message_pub.publish("Fetching Part Numbers: {" + 
+                                        ", ".join([str(b) for b in bin_order]) + "}...")
             bin_man.deliver_bin_order(bin_order)
             display_message_pub.publish("Done, Scanning")
             if True:
+                act_goal = ScanningGoal()
+                act_goal.good_bins = [bin_barcode_ids[bid] for bid in bin_order]
+                for bc_id in bin_barcode_ids.values():
+                    if bc_id not in act_goal.good_bins:
+                        act_goal.bad_bins.append(bc_id)
+                outcome = scanning_ac.send_goal_and_wait(act_goal)
+                scanning_result = scanning_ac.get_result().result
+            elif False:
                 rospy.sleep(5.0)
             else:
                 print "Order complete, (scanning now), press enter to continue"
@@ -165,10 +180,12 @@ def deliver_bin_orders(bin_man, bin_orders):
 
 def main():
     rospy.init_node('bin_manager')
-    slots, bin_home_slots, hum_ws_slots = load_ws_setup('$(find excel_bins)/src/excel_bins/bin_workspace_setup.yaml')
+    ws_setup_fn = '$(find excel_bins)/src/excel_bins/bin_workspace_setup.yaml'
+    slots, bin_home_slots, hum_ws_slots, bin_barcode_ids = load_ws_setup(ws_setup_fn)
     print "Slots:", slots
     print "Bin homes:", bin_home_slots
     print "Human workspace slots:", hum_ws_slots
+    print "Bin barcode IDs:", bin_barcode_ids
 
     IS_SIMULATION = False
     
@@ -180,7 +197,7 @@ def main():
 
     bin_orders = load_bin_orders('$(find excel_bins)/src/excel_bins/bin_orders1.yaml')
     print "Bin orders:", bin_orders
-    deliver_bin_orders(bin_man, bin_orders)
+    deliver_bin_orders(bin_man, bin_orders, bin_barcode_ids)
 
 if __name__ == "__main__":
     main()
