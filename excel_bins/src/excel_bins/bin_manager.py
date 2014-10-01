@@ -9,7 +9,7 @@ import rospy
 from roslaunch.substitution_args import resolve_args
 from ar_tag_manager import ARTagManager
 from excel_bins.msg import MoveBinAction, MoveBinGoal
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, String
 
 class BinManager(object):
     def __init__(self, ar_man, hum_ws_slots, bin_home_slots={}, is_sim=False):
@@ -150,11 +150,15 @@ def load_bin_orders(filename):
     return bin_orders
 
 def deliver_bin_orders(bin_man, bin_orders):
+    display_message_pub = rospy.Publisher('/display/message', String)
+
     while not rospy.is_shutdown():
         for bin_order in bin_orders:
+            display_message_pub.publish("Fetching Part Numbers: {" + ", ".join([str(b) for b in bin_order]) + "}...")
             bin_man.deliver_bin_order(bin_order)
-            if False:
-                pass
+            display_message_pub.publish("Done, Scanning")
+            if True:
+                rospy.sleep(5.0)
             else:
                 print "Order complete, (scanning now), press enter to continue"
                 sys.stdin.readline()
