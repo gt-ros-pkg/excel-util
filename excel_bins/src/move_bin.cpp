@@ -306,6 +306,7 @@ bool MoveBin::verticalMove(double target_z)
     */
     ////////////////////////////////////////////////////////////////
 
+#if 0
     ////////////// Perform IK to find joint goal //////////////
     moveit_msgs::GetPositionIK::Request ik_srv_req;
 
@@ -374,6 +375,7 @@ bool MoveBin::verticalMove(double target_z)
     ik_srv_resp.solution.joint_state.position[6] = this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
 
     group.setJointValueTarget(ik_srv_resp.solution.joint_state);
+#endif
     group.setStartStateToCurrentState();
     /*
     int num_tries = 4;
@@ -386,10 +388,21 @@ bool MoveBin::verticalMove(double target_z)
     */
     // ROS_WARN("Motion planning failed");
 
+    geometry_msgs::Pose pose = group.getCurrentPose().pose;
+    pose.position.z = target_z;
+
+    ROS_INFO("Calling cart path for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
+        pose.position.x,
+        pose.position.y,
+        pose.position.z,
+        pose.orientation.x,
+        pose.orientation.y,
+        pose.orientation.z,
+        pose.orientation.w);
     // find linear trajectory
     moveit_msgs::RobotTrajectory lin_traj_msg;
     std::vector<geometry_msgs::Pose> waypoints;
-    waypoints.push_back(ik_srv_req.ik_request.pose_stamped.pose);
+    waypoints.push_back(pose);
     double fraction = group.computeCartesianPath(waypoints, 0.07, 0.0, lin_traj_msg, false);
 
     // create new robot trajectory object
@@ -439,11 +452,11 @@ bool MoveBin::attachBin(int bin_number)
     attached_object.object = *bin_coll_obj;
     attached_object.object.operation = attached_object.object.ADD;
     attached_object_publisher.publish(attached_object);
-    return 1;
+    return true;
   } else {
     // std::string error_msg = ""+bin_name + " is not in the scene. Aborting !";
     ROS_ERROR("This bin is not in the scene.");
-    return 0;
+    return false;
   }
 }
 
@@ -558,6 +571,7 @@ bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety)
     if (check_safety && human_unsafe_) {
       ROS_WARN("Human unsafe condition detected. Stopping trajectory");
       stopJointTrajectory();
+      ros::Duration(0.5).sleep();
       return false;
     }
   }
