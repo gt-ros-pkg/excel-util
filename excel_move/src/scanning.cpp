@@ -89,9 +89,6 @@ Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_traj
 	// start with orientation 0 //
 	current_orientation = 0;
 
-	results[0]=false;
-	results[1]=false;
-	results[2]=false;
 }
 
 bool Scanning::move_robot(int pose, int orientation)
@@ -101,29 +98,29 @@ bool Scanning::move_robot(int pose, int orientation)
     service_request.ik_request.pose_stamped.pose.position.x = 0.60;
     service_request.ik_request.pose_stamped.pose.position.y = 1.94;
     service_request.ik_request.pose_stamped.pose.position.z = 0.95;
-  }
+   }
   if (pose==1){
     service_request.ik_request.pose_stamped.pose.position.x = 0.52;
     service_request.ik_request.pose_stamped.pose.position.y = 2.11;
     service_request.ik_request.pose_stamped.pose.position.z = 0.95;
-  }
+  } 
   if (pose==2){
     service_request.ik_request.pose_stamped.pose.position.x = 0.48;
     service_request.ik_request.pose_stamped.pose.position.y = 2.00;
     service_request.ik_request.pose_stamped.pose.position.z = 0.95;
-  }
+  } 
   
   tf::Quaternion quat;
   if (orientation==0){
-    quat = tf::createQuaternionFromRPY(-M_PI/2,0.88,-M_PI/2);
-  }
-  if (orientation==1){
-    quat = tf::createQuaternionFromRPY(-M_PI/2,0.88,-M_PI/2-M_PI/5);
-  }
+    quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2);
+  } 
+  if  (orientation==1){
+    quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2-M_PI/5);
+  } 
   if (orientation==2){
-    quat = tf::createQuaternionFromRPY(-M_PI/2,0.88,-M_PI/2-M_PI/3);
-  }
-
+    quat = tf::createQuaternionFromRPY(-M_PI/2,0.9,-M_PI/2-M_PI/3);
+   }
+ 
   service_request.ik_request.pose_stamped.pose.orientation.x = quat.x();
   service_request.ik_request.pose_stamped.pose.orientation.y = quat.y();
   service_request.ik_request.pose_stamped.pose.orientation.z = quat.z();
@@ -132,98 +129,8 @@ bool Scanning::move_robot(int pose, int orientation)
   service_client.call(service_request, service_response);
   if(service_response.error_code.val !=1){
     ROS_ERROR("IK couldn't find a solution for step 1");
-  }
-  /*//*
-  switch(pose){
-  case 0:
-    switch(orientation){
-    case 0:
-      service_response.solution.joint_state.position[0] =1.4722938597257311;
-      service_response.solution.joint_state.position[1] =-1.4939068055414035;
-      service_response.solution.joint_state.position[2] =2.2704874681999083;
-      service_response.solution.joint_state.position[3] =2.4836798;
-      service_response.solution.joint_state.position[4] =-0.9852365136568161;
-      service_response.solution.joint_state.position[5] =-1.1480223149774416 ;
-      service_response.solution.joint_state.position[6] = 2.1463285652;
-      break;
-    case 1:
-      service_response.solution.joint_state.position[0] =1.4214209464426526;
-      service_response.solution.joint_state.position[1] =-1.414006834003409;
-      service_response.solution.joint_state.position[2] =2.058165965989061;
-      service_response.solution.joint_state.position[3] =2.9546652;
-      service_response.solution.joint_state.position[4] =-1.2295772091106065;
-      service_response.solution.joint_state.position[5] =-0.9614776054164196;
-      service_response.solution.joint_state.position[6] =2.5758074824571793;
-      break;
-    case 2:
-      service_response.solution.joint_state.position[0] = 1.1981138408193654;
-      service_response.solution.joint_state.position[1] = -1.222274217396785;
-      service_response.solution.joint_state.position[2] = 1.7838383845224866;
-      service_response.solution.joint_state.position[3] = 3.2784866999999998;
-      service_response.solution.joint_state.position[4] = -1.299124158955174;
-      service_response.solution.joint_state.position[5] = -0.9188939919485541;
-      service_response.solution.joint_state.position[6] = 2.746974446876984;
-    }
-  case 1:
-    switch(orientation){
-    case 0:
-      service_response.solution.joint_state.position[0] =1.0969173775144556;
-      service_response.solution.joint_state.position[1] =-1.1937528231254226;
-      service_response.solution.joint_state.position[2] =2.217076641227553;
-      service_response.solution.joint_state.position[3] =2.4749236999999997;
-      service_response.solution.joint_state.position[4] =-0.8903211551976103;
-      service_response.solution.joint_state.position[5] =-1.1769604790457082;
-      service_response.solution.joint_state.position[6] =2.0972842082007768;
-      break;
-    case 1:
-      service_response.solution.joint_state.position[0] =1.003958576396501;
-      service_response.solution.joint_state.position[1] =-1.1018872006327816;
-      service_response.solution.joint_state.position[2] =2.0358838596079964;
-      service_response.solution.joint_state.position[3] =2.9603166;
-      service_response.solution.joint_state.position[4] =-1.110033127572681;
-      service_response.solution.joint_state.position[5] =-0.9692127418888523;
-      service_response.solution.joint_state.position[6] =2.5504084038141634;
-      break;
-    case 2:
-      service_response.solution.joint_state.position[0] =;
-      service_response.solution.joint_state.position[1] =;
-      service_response.solution.joint_state.position[2] =;
-      service_response.solution.joint_state.position[3] =;
-      service_response.solution.joint_state.position[4] =;
-      service_response.solution.joint_state.position[5] =;
-      service_response.solution.joint_state.position[6] =;
-    }
-  case 2:
-    switch(orientation){
-    case 0:
-      service_response.solution.joint_state.position[0] =;
-      service_response.solution.joint_state.position[1] =;
-      service_response.solution.joint_state.position[2] =;
-      service_response.solution.joint_state.position[3] =;
-      service_response.solution.joint_state.position[4] =;
-      service_response.solution.joint_state.position[5] =;
-      service_response.solution.joint_state.position[6] =;
-      break;
-    case 1:
-      service_response.solution.joint_state.position[0] =;
-      service_response.solution.joint_state.position[1] =;
-      service_response.solution.joint_state.position[2] =;
-      service_response.solution.joint_state.position[3] =;
-      service_response.solution.joint_state.position[4] =;
-      service_response.solution.joint_state.position[5] =;
-      service_response.solution.joint_state.position[6] =;
-      break;
-    case 2:
-      service_response.solution.joint_state.position[0] =;
-      service_response.solution.joint_state.position[1] =;
-      service_response.solution.joint_state.position[2] =;
-      service_response.solution.joint_state.position[3] =;
-      service_response.solution.joint_state.position[4] =;
-      service_response.solution.joint_state.position[5] =;
-      service_response.solution.joint_state.position[6] =;
-    }    
-  }
-  */
+  } 
+
   planning_scene_monitor->requestPlanningSceneState();
   full_planning_scene = planning_scene_monitor->getPlanningScene();
   full_planning_scene->getPlanningSceneMsg(planning_scene);
@@ -234,7 +141,7 @@ bool Scanning::move_robot(int pose, int orientation)
   group.setStartState(full_planning_scene->getCurrentState());
   group.setJointValueTarget(service_response.solution.joint_state);
   
-  if(group.plan(my_plan)){
+   if(group.plan(my_plan)){
     if(!sim){
       excel_ac.waitForServer();
 
@@ -253,7 +160,7 @@ bool Scanning::move_robot(int pose, int orientation)
       excel_ac.sendGoal(excel_goal);
       sleep(2);
       return excel_ac.waitForResult(ros::Duration(15.));
-    }
+     }
     else group.execute(my_plan);
     return true;
   }
@@ -261,8 +168,8 @@ bool Scanning::move_robot(int pose, int orientation)
     ROS_ERROR("Motion planning failed");
     return false;
   }
-}
-
+} 
+ 
 /*--------------------------------------------------------------------
  * optimal_goal_angle()
  * Finds out if the robot needs to rotate clockwise or anti-clockwise

@@ -47,7 +47,7 @@ public:
 
   ////////////////////////// Outer actions /////////////////////////
   // The robot tries to plan a trajectory to its home position
-  bool moveToHome() {return false;}
+  bool moveToHome();
 
   // From the current joint pose, the robot moves the requested bin from its location
   // to the target location, and backs away

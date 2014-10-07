@@ -96,9 +96,49 @@ void MoveBin::humanUnsafeCallback(const std_msgs::Bool::ConstPtr& msg)
   human_unsafe_ = msg->data;
 }
 
+bool MoveBin::moveToHome()
+{
+  while (ros::ok()) {
+    // Plan trajectory
+    group.setStartStateToCurrentState();
+    static const double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
+    std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
+    group.setJointValueTarget(joint_vals);
+    int num_tries = 4;
+    MoveGroupPlan my_plan;
+    // try to plan a few times, just to be safe
+    while (ros::ok() && num_tries > 0) {
+      if (group.plan(my_plan))
+        break;
+      num_tries--;
+    }
+
+    if (num_tries > 0) {
+      // found plan, let's try and execute
+      if (executeJointTrajectory(my_plan, true)) {
+        ROS_INFO("Home position joint trajectory execution successful");
+        return true;
+      }
+      else {
+        ROS_WARN("Home position joint trajectory execution failed");
+        ros::Duration(0.5).sleep();
+        continue;
+      }
+    }
+    else {
+      ROS_ERROR("Home position Motion planning failed");
+      continue;
+    }
+  }
+  return true;
+}
+
 bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target)
 {
   ROS_INFO("Moving bin %d to target (%.3f, %.3f, %f)", bin_number, x_target, y_target, angle_target);
+  if(bin_number == -5) {
+    return moveToHome();
+  }
   double bin_height;
   executeGripperAction(false, false); // open gripper, but don't wait
   if(!approachBin(bin_number, bin_height)) {
@@ -263,6 +303,7 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
       }
       else {
         ROS_WARN("Traverse joint trajectory execution failed, going to restart");
+        ros::Duration(0.5).sleep();
         continue;
       }
     }
