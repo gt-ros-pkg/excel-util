@@ -31,6 +31,16 @@ public:
     
     process_im_ = false; // process images 
     currently_process_ = false; // currently processing an image?
+
+    deviation_ = 60.0;
+    timeout_ = 3000.0;
+    min_edge_ = 5.0;
+    max_edge_ = 200.0;
+    nh_.getParam("deviation", deviation_);
+    nh_.getParam("timeout", timeout_);
+    nh_.getParam("min_edge", min_edge_);
+    nh_.getParam("max_edge", max_edge_);
+    ROS_INFO("PARAMS: %f %f %f %f", deviation_, timeout_, min_edge_, max_edge_);
     
     cout << "End constructor" << endl;
   }
@@ -47,6 +57,7 @@ private:
   bool process_im_, currently_process_;
   cv_bridge::CvImagePtr cv_ptr;
 
+  double deviation_, timeout_, min_edge_, max_edge_;
 };
 
 vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
@@ -70,8 +81,11 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
       frames++;
       DmtxImage      *img;
       DmtxDecode     *dec;
+      DmtxTime      dmtx_timeout;
       DmtxRegion     *reg;
       DmtxMessage    *dmtx_msg;
+
+      dmtx_timeout = dmtxTimeAdd(dmtxTimeNow(), timeout_);
     
       img = dmtxImageCreate(cv_ptr->image.data, cv_ptr->image.cols, cv_ptr->image.rows, 
 			    DmtxPack8bppK);
@@ -81,8 +95,11 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
       dec = dmtxDecodeCreate(img, 1);
       assert(dec != NULL);
       // ROS_INFO("B");
+      dmtxDecodeSetProp(dec, DmtxPropSquareDevn, deviation_);
+      dmtxDecodeSetProp(dec, DmtxPropEdgeMin, min_edge_);
+      dmtxDecodeSetProp(dec, DmtxPropEdgeMax, max_edge_);
 
-      reg = dmtxRegionFindNext(dec, NULL);
+      reg = dmtxRegionFindNext(dec, &dmtx_timeout);
     
       while(reg!=NULL){
 	// ROS_INFO("C");
