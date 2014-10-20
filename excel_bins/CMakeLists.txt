@@ -60,11 +60,10 @@ add_message_files(
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  BinLocationEmpty.srv
+)
 
 ## Generate actions in the 'action' folder
 add_action_files(
@@ -77,6 +76,7 @@ generate_messages(
   DEPENDENCIES
   actionlib_msgs
   std_msgs
+  moveit_msgs
   geometry_msgs
   excel_bins#   shape_msgs
 )
@@ -124,6 +124,8 @@ add_executable(pick_bin_node src/pick_bin.cpp)
 add_executable(update_bins_node src/update_bins.cpp)
 add_executable(move_bin_node src/move_bin_node.cpp)
 add_executable(move_bin_action_server src/move_bin_action_server.cpp)
+add_executable(isBinLocationEmpty_node src/isBinLocationEmpty.cpp)
+add_executable(isBinLocationEmpty_client_node src/isBinLocationEmpty_client.cpp)
 # add_executable(move_bin_constrained_node src/move_bin_constrained.cpp)
 # add_executable(get_slots_full_node src/get_slots_full.cpp)
 
@@ -140,6 +142,8 @@ target_link_libraries(move_bin ${catkin_LIBRARIES})
 target_link_libraries(add_bin_node ${catkin_LIBRARIES})
 target_link_libraries(pick_bin_node ${catkin_LIBRARIES})
 target_link_libraries(update_bins_node ${catkin_LIBRARIES})
+target_link_libraries(isBinLocationEmpty_node ${catkin_LIBRARIES})
+target_link_libraries(isBinLocationEmpty_client_node ${catkin_LIBRARIES})
 target_link_libraries(move_bin_node 
   ${catkin_LIBRARIES}
   move_bin
