@@ -35,7 +35,7 @@
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
 # define GRIPPING_OFFSET 0.1  
-# define DZ 0.25 
+# define DZ 0.30 
 
 typedef move_group_interface::MoveGroup::Plan MoveGroupPlan;
 

@@ -158,7 +158,7 @@ bool Scanning::move_robot(int pose, int orientation)
       
       // Send goal and wait for a result
       excel_ac.sendGoal(excel_goal);
-      sleep(2);
+      sleep(0.5);
       return excel_ac.waitForResult(ros::Duration(15.));
      }
     else group.execute(my_plan);
