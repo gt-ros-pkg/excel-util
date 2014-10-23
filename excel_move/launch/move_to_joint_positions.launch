@@ -1,0 +1,9 @@
+<launch>
+
+  <arg name="sim" default="false"  />
+
+  <node name="excel_move_to_joint_positions" pkg="excel_move" type="move_to_joint_positions_node" output="screen">
+  	<param name="sim" value="$(arg sim)" type="bool" />
+  </node>
+
+</launch>
