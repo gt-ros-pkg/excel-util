@@ -60,8 +60,6 @@ add_executable(close_gripper_node src/close_gripper.cpp)
 add_executable(scan_table_node src/scan_table.cpp)
 add_executable(scanning_sim_node src/scanning_sim.cpp)
 add_executable(back_n_forth_node src/back_n_forth.cpp)
-add_executable(collision_check_node src/collision_check.cpp)
-add_executable(move_to_calibrate_node src/move_to_calibrate.cpp)
 add_executable(move_to_joint_positions_node src/move_to_joint_positions.cpp)
 
 if (DMTX_FOUND)
@@ -81,8 +79,6 @@ target_link_libraries(close_gripper_node ${catkin_LIBRARIES})
 target_link_libraries(scan_table_node ${catkin_LIBRARIES})
 target_link_libraries(scanning_sim_node ${catkin_LIBRARIES})
 target_link_libraries(back_n_forth_node ${catkin_LIBRARIES})
-target_link_libraries(collision_check_node ${catkin_LIBRARIES})
-target_link_libraries(move_to_calibrate_node ${catkin_LIBRARIES})
 target_link_libraries(move_to_joint_positions_node ${catkin_LIBRARIES})
 
 
@@ -91,7 +87,6 @@ target_link_libraries(scanning
   ${DMTX_LIBRARIES}
 )
 
-target_link_libraries(move_to_calibrate_node yaml-cpp)
 target_link_libraries(move_to_joint_positions_node yaml-cpp)
 
 if (DMTX_FOUND)

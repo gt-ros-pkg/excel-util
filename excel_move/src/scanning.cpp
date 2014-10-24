@@ -158,7 +158,7 @@ bool Scanning::move_robot(int pose, int orientation)
       
       // Send goal and wait for a result
       excel_ac.sendGoal(excel_goal);
-      sleep(0.5);
+      sleep(2);
       return excel_ac.waitForResult(ros::Duration(15.));
      }
     else group.execute(my_plan);
@@ -202,6 +202,8 @@ int Scanning::scan_it(const vector<string> &good_tags, const vector<string> &bad
   glob_oks.resize(all_tags.size());
   fill(glob_oks.begin(), glob_oks.end(), false);
 
+for(int o=0;o<orientation_tries;o++){
+  cur_orientation = o;
   for(int i=0; i<good_tags.size(); ++i){
     //we might have already found this tag while looking for another
     if (!glob_oks[i]){
@@ -218,7 +220,7 @@ int Scanning::scan_it(const vector<string> &good_tags, const vector<string> &bad
       else if(cur_str == "999")
         cur_pose = 2;
 
-      for(int o=0;o<orientation_tries;o++){
+      
         //move the robot to try seeing the tag at cur_pose
         bool ok = move_robot(cur_pose, cur_orientation);
 
@@ -273,9 +275,9 @@ int Scanning::scan_it(const vector<string> &good_tags, const vector<string> &bad
 	}
       
         //if we find the tag we wanted in first place we go seek another
-        if(glob_oks[i]) break;
+        //if(glob_oks[i]) break;
         //else we change the orientation to keep looking for this one
-        else cur_orientation = (cur_orientation + 1) % 3;
+        //else cur_orientation = (cur_orientation + 1) % 3;
       }
     }
   }
