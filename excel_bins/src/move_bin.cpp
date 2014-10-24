@@ -99,10 +99,20 @@ void MoveBin::humanUnsafeCallback(const std_msgs::Bool::ConstPtr& msg)
 bool MoveBin::moveToHome()
 {
   while (ros::ok()) {
+
+    moveit_msgs::PlanningScene planning_scene;
+    planning_scene::PlanningScenePtr full_planning_scene;
+    getPlanningScene(planning_scene, full_planning_scene);
+
     // Plan trajectory
     group.setStartStateToCurrentState();
     static const double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
     std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
+
+    // Fixing shoulder_pan and wrist_3 given by the IK
+    joint_vals[1] = this->optimalGoalAngle(joint_vals[1], planning_scene.robot_state.joint_state.position[1]);
+    joint_vals[6] = this->optimalGoalAngle(joint_vals[6], planning_scene.robot_state.joint_state.position[6]);
+
     group.setJointValueTarget(joint_vals);
     int num_tries = 4;
     MoveGroupPlan my_plan;
