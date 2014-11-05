@@ -104,6 +104,8 @@ public:
   // Finds out if the robot needs to rotate clockwise or anti-clockwise
   double optimalGoalAngle(double goal_angle, double current_angle);
 
+  double avoid_human(double goal_angle, double current_angle, geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose);
+
   // get the collision object corresponding to the bin_number
   moveit_msgs::CollisionObjectPtr getBinCollisionObject(int bin_number);
 
@@ -119,6 +121,10 @@ public:
 
   void humanUnsafeCallback(const std_msgs::Bool::ConstPtr& msg);
 
+  void human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped);
+
+  void avoidance_callback(const std_msgs::Bool::ConstPtr& avoid);
+  
   ros::ServiceClient service_client, fk_client;
   moveit_msgs::GetPositionIK::Request ik_srv_req;
   moveit_msgs::GetPositionIK::Response ik_srv_resp;
@@ -137,9 +143,10 @@ public:
 
   bool vertical_check_safety_, traverse_check_safety_;
   bool human_unsafe_;
-  ros::Subscriber hum_unsafe_sub_;
-
+  ros::Subscriber hum_unsafe_sub_, human_pose_sub_;
+  geometry_msgs::Pose human_pose;
   bool use_gripper;
+  bool avoiding_human;
 };
 
 #endif

@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   shape_msgs
   xacro
   actionlib_msgs
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -59,6 +60,7 @@ add_message_files(
   Bins.msg
 )
 
+
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
@@ -94,7 +96,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES excel_bins
 #  CATKIN_DEPENDS geometry_msgs joint_state_publisher moveit_planners_ompl moveit_ros_move_group moveit_ros_visualization robot_state_publisher roscpp rospy shape_msgs xacro
-   CATKIN_DEPENDS actionlib_msgs
+   CATKIN_DEPENDS actionlib_msgs message_runtime
 #  DEPENDS system_lib
 )
 

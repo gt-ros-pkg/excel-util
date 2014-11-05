@@ -216,6 +216,10 @@ bool MoveBin::executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj)
 	control_msgs::FollowJointTrajectoryGoal excel_goal;
 	excel_goal.trajectory = joint_traj;
 
+	// TEST ON GOAL TIME  !!!!!!!!
+	ros::Duration goal_time(2.5);
+	excel_goal.goal_time_tolerance = goal_time;
+
 	// Ask to execute now
 	ros::Time time_zero(0.0);
 	excel_goal.trajectory.header.stamp = time_zero; 
@@ -228,11 +232,12 @@ bool MoveBin::executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj)
 	int total_count = 30*10;
 	bool is_successful = false;
 
-	while ( !is_successful ){
-
+	//while ( !is_successful ){
+	while ( excel_ac.getState()== actionlib::SimpleClientGoalState::PENDING||excel_ac.getState()== actionlib::SimpleClientGoalState::ACTIVE||robot_stopped ){
 		ros::spinOnce();
-
+		ROS_INFO("In loop");
 		if (human_unsafe) {
+		  ROS_INFO("human unsafe");
 			if (!robot_stopped){
 				this->stop();
 				robot_stopped = true;
@@ -240,15 +245,26 @@ bool MoveBin::executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj)
 			}
 		}
 		else if (robot_stopped){
+		  ROS_INFO("Robot stopped");
 			robot_stopped = false;
 			carry_bin_to(last_x,last_y,last_o);
 		}
 		else{
-			is_successful = excel_ac.getState()== actionlib::SimpleClientGoalState::SUCCEEDED;//excel_ac.getResult()->error_code!=excel_ac.getResult()->SUCCESSFUL;
+		  ROS_INFO("Robot not stopped");
+		  std::string state = excel_ac.getState().toString();
+		  ROS_INFO("%s",state.c_str());
+		  //is_successful = excel_ac.getState()== actionlib::SimpleClientGoalState::SUCCEEDED;//excel_ac.getResult()->error_code!=excel_ac.getResult()->SUCCESSFUL;
+		  is_successful = excel_ac.getState()== actionlib::SimpleClientGoalState::SUCCEEDED;
+
+			ROS_INFO("Trajectory %s completed", is_successful ? "":"not");
 		}
 		r.sleep();
 	}
-	return is_successful;
+	//return is_successful;
+	std::string state = excel_ac.getState().toString();
+	ROS_INFO("Final state is : %s",state.c_str());
+	
+	return excel_ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED;
 }
 
 void MoveBin::stop(){
@@ -271,7 +287,13 @@ void MoveBin::stop_callback(const std_msgs::Bool::ConstPtr& stop)
 
 void MoveBin::human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped)
 {
-	human_pose = pose_stamped->pose;
+  if(isnan(pose_stamped->pose.position.x)){
+    geometry_msgs::Pose fake_pose;
+    fake_pose.position.x = 1000;
+    fake_pose.position.y = 1000;
+    human_pose = fake_pose;
+  }
+  else human_pose = pose_stamped->pose;
 }
 
 int main(int argc, char **argv)
