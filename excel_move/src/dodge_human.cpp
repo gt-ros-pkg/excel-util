@@ -216,6 +216,10 @@ bool MoveBin::executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj)
 	control_msgs::FollowJointTrajectoryGoal excel_goal;
 	excel_goal.trajectory = joint_traj;
 
+	// TEST ON GOAL TIME  !!!!!!!!
+	ros::Duration goal_time(2.5);
+	excel_goal.goal_time_tolerance = goal_time;
+
 	// Ask to execute now
 	ros::Time time_zero(0.0);
 	excel_goal.trajectory.header.stamp = time_zero; 

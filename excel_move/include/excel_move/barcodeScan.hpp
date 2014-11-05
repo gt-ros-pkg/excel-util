@@ -96,7 +96,15 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
       DmtxRegion     *reg;
       DmtxMessage    *dmtx_msg;
       
-      
+      /* SAVING IMAGES
+      double secs =ros::Time::now().toSec();
+      char filename[50];
+      sprintf(filename, "asif_jimmy_%f.png", secs);     
+      string file_str(filename);
+      cout << "File: " << file_str << endl;
+      cv::imwrite(file_str, cv_ptr->image );
+      //*/
+
       switch(processing_option_){
                 case 1:
 		cv_ptr->image.copyTo(image_thresh);
@@ -118,7 +126,7 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
 		case 5:
 		cv::threshold(cv_ptr->image, image_thresh, threshold_, 255, cv::THRESH_BINARY );
 		cv::floodFill(image_thresh, cv::Point(150,150), cv::Scalar(255.0));
-                //cv::dilate(image_thresh, image_thresh, cv::Mat(2,2,CV_8UC1));
+                //cv::dilate(image_threclearsh, image_thresh, cv::Mat(2,2,CV_8UC1));
 		break;
 
 		case 6:

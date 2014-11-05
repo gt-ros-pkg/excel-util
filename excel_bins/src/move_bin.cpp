@@ -26,7 +26,7 @@ MoveBin::MoveBin() :
   nh_param_.getParam("traverse_check_safety", traverse_check_safety_);
 
   human_unsafe_ = false;
-	hum_unsafe_sub_ = nh_.subscribe("human/safety/stop", 1, &MoveBin::humanUnsafeCallback,this);
+  hum_unsafe_sub_ = nh_.subscribe("human/safety/stop", 1, &MoveBin::humanUnsafeCallback,this);
 
   ros::WallDuration sleep_t(0.5);
   group.setPlanningTime(8.0);
@@ -62,6 +62,9 @@ MoveBin::MoveBin() :
   {
     sleep_t.sleep();
   }
+
+  human_pose_sub_ = nh_.subscribe("human/estimated/pose", 1, &MoveBin::human_pose_callback,this);
+  avoiding_human = true;
 
   // Define joint_constraints for the IK service
   rail_constraint.joint_name = "table_rail_joint";
@@ -293,8 +296,17 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
       this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],
                                planning_scene.robot_state.joint_state.position[6]);
 
+    if (avoiding_human){
+      if (human_pose.position.y < 1.4){
+        ROS_WARN("Avoiding the human");
+        // Correct the rotation to avoid the human
+        geometry_msgs::PoseStamped current_pose = group.getCurrentPose();
+        ik_srv_resp.solution.joint_state.position[1] = this->avoid_human(ik_srv_resp.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1], current_pose.pose, ik_srv_req.ik_request.pose_stamped.pose);
+      }
+    }
+
     // Plan trajectory
-    group.setStartStateToCurrentState();
+    //group.setStartStateToCurrentState();
     group.setJointValueTarget(ik_srv_resp.solution.joint_state);
     int num_tries = 4;
     MoveGroupPlan my_plan;
@@ -590,6 +602,56 @@ double MoveBin::optimalGoalAngle(double goal_angle, double current_angle)
   }
   //std::cout<<"Final angle is : "<< goal_angle<< std::endl;
   return goal_angle;
+}
+
+/*--------------------------------------------------------------------
+ * avoid_human(goal_angle, current_goal, current_pose, goal_pose)
+ * Finds out if the robot needs to rotate clockwise or anti-clockwise to avoid the human
+ *------------------------------------------------------------------*/
+double MoveBin::avoid_human(double goal_angle, double current_angle, geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose)
+{
+	double cur_x, cur_y, goal_x, goal_y;
+	cur_x = current_pose.position.x; cur_y = current_pose.position.y;
+	goal_x = goal_pose.position.x; goal_y = goal_pose.position.y;
+
+	// Robot on the human table, goal is not
+	if( ((cur_x <1.0)&(cur_y>1.0)) & !((goal_x <1.0)&(goal_y>1.0)) ){
+		ROS_WARN("Going from A to B");
+		if (goal_angle < current_angle){
+			goal_angle += 2*M_PI;
+		}	
+
+	}else{
+		// Robot on not the human table, but goal is
+		if( !((cur_x <1.0)&(cur_y>1.0)) & ((goal_x <1.0)&(goal_y>1.0)) ){
+			ROS_WARN("Going from B to A");
+			if(goal_angle > current_angle){
+				goal_angle -= 2*M_PI;
+			}
+		}
+	}
+	if(goal_angle>2*M_PI){
+		goal_angle -= 2*M_PI;
+	}
+	if(goal_angle<-2*M_PI){
+		goal_angle += 2*M_PI;
+	}
+	return goal_angle;
+}
+
+void MoveBin::human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped)
+{
+  if(isnan(pose_stamped->pose.position.x)){
+    geometry_msgs::Pose fake_pose;
+    fake_pose.position.x = 1000;
+    fake_pose.position.y = 1000;
+    human_pose = fake_pose;
+  }
+  else human_pose = pose_stamped->pose;
+}
+
+void MoveBin::avoidance_callback(const std_msgs::Bool::ConstPtr& avoid){
+    avoiding_human = avoid->data;
 }
 
 bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety)
