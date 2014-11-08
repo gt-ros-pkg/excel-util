@@ -72,7 +72,7 @@ MoveBin::MoveBin(ros::NodeHandle nh) : group("excel"), excel_ac("vel_pva_traject
 
 	rail_max = 3.29;
 	rail_min = 0.41;
-	rail_tolerance = 0.3;
+	rail_tolerance = 1.6;
 
 	if(!sim){
 		ROS_INFO("Waiting for action server to be available...");
@@ -129,7 +129,7 @@ int MoveBin::carry_bin_to(double x_target, double y_target, double angle_target)
 	service_response.solution.joint_state.position[1] = this->optimal_goal_angle(service_response.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1]);
 	service_response.solution.joint_state.position[6] = this->optimal_goal_angle(service_response.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
 
-	if (human_pose.position.y < 1.4){
+	if (human_pose.position.y < 2.6){
 		ROS_WARN("Avoiding the human");
 		// Correct the rotation to avoid the human
 		geometry_msgs::PoseStamped current_pose = group.getCurrentPose();
@@ -285,15 +285,15 @@ void MoveBin::stop_callback(const std_msgs::Bool::ConstPtr& stop)
 	human_unsafe = stop->data;
 }
 
-void MoveBin::human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped)
+void MoveBin::human_pose_callback(const geometry_msgs::PoseArray::ConstPtr& pose_array)
 {
-  if(isnan(pose_stamped->pose.position.x)){
+  if(isnan(pose_array->poses[0].position.x)){
     geometry_msgs::Pose fake_pose;
     fake_pose.position.x = 1000;
     fake_pose.position.y = 1000;
     human_pose = fake_pose;
   }
-  else human_pose = pose_stamped->pose;
+  else human_pose = pose_array->poses[0];
 }
 
 int main(int argc, char **argv)
@@ -305,11 +305,11 @@ int main(int argc, char **argv)
 	MoveBin movebin(nh);
 
 	double x1 ,y1, o1, x2 ,y2, o2;
-	x1 = 0.5;
-	y1 = 1.2;
+	x1 = 0.8;
+	y1 = 1.5;
 
-	x2 = 2.5;
-	y2 = 1.5;
+	x2 = 1.5;
+	y2 = 0.4;
 
 	o1 = 0;
 	o2 = 0;

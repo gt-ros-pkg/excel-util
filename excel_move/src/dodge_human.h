@@ -29,6 +29,7 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
 #include <std_msgs/Bool.h>
+#include <geometry_msgs/PoseArray.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
@@ -88,7 +89,7 @@ public:
 
 	void stop_callback(const std_msgs::Bool::ConstPtr& stop);
 	
-	void human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped);
+	void human_pose_callback(const geometry_msgs::PoseArray::ConstPtr& pose_array);
 
 	bool executeTrajectory(trajectory_msgs::JointTrajectory& joint_traj);
 

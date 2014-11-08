@@ -38,7 +38,7 @@ generate_messages(
 
 catkin_package(
   CATKIN_DEPENDS geometry_msgs joint_state_publisher moveit_planners_ompl moveit_ros_move_group moveit_ros_visualization robot_state_publisher roscpp rospy xacro
-  cv_bridge image_transport opencv2
+  cv_bridge image_transport 
   DEPENDS system_lib
 )
 
