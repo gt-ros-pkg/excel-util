@@ -30,11 +30,12 @@
 #include <control_msgs/GripperCommandAction.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
+#include <std_msgs/Bool.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
 # define GRIPPING_OFFSET 0.1  
-# define DZ 0.25 
+# define DZ 0.30 
 
 typedef move_group_interface::MoveGroup::Plan MoveGroupPlan;
 
@@ -46,7 +47,7 @@ public:
 
   ////////////////////////// Outer actions /////////////////////////
   // The robot tries to plan a trajectory to its home position
-  bool moveToHome() {return false;}
+  bool moveToHome();
 
   // From the current joint pose, the robot moves the requested bin from its location
   // to the target location, and backs away
@@ -103,16 +104,27 @@ public:
   // Finds out if the robot needs to rotate clockwise or anti-clockwise
   double optimalGoalAngle(double goal_angle, double current_angle);
 
+  double avoid_human(double goal_angle, double current_angle, geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose);
+
   // get the collision object corresponding to the bin_number
   moveit_msgs::CollisionObjectPtr getBinCollisionObject(int bin_number);
 
-  // execute this joint trajectory
-  bool executeJointTrajectory(MoveGroupPlan& mg_plan);
+  // execute a joint trajectory
+  bool executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety);
+  // stop a joint trajectory
+  void stopJointTrajectory();
+
   bool executeGripperAction(bool is_close, bool wait_for_result);
 
   void getPlanningScene(moveit_msgs::PlanningScene& planning_scene, 
                         planning_scene::PlanningScenePtr& full_planning_scene);
 
+  void humanUnsafeCallback(const std_msgs::Bool::ConstPtr& msg);
+
+  void human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped);
+
+  void avoidance_callback(const std_msgs::Bool::ConstPtr& avoid);
+  
   ros::ServiceClient service_client, fk_client;
   moveit_msgs::GetPositionIK::Request ik_srv_req;
   moveit_msgs::GetPositionIK::Response ik_srv_resp;
@@ -129,7 +141,12 @@ public:
   moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
   double rail_max, rail_min, rail_tolerance;
 
+  bool vertical_check_safety_, traverse_check_safety_;
+  bool human_unsafe_;
+  ros::Subscriber hum_unsafe_sub_, human_pose_sub_;
+  geometry_msgs::Pose human_pose;
   bool use_gripper;
+  bool avoiding_human;
 };
 
 #endif

@@ -29,12 +29,16 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
 
+#include <vector>
+#include <string>
 #include "barcodeScan.hpp"
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
 # define GRIPPING_OFFSET 0.1  
 # define DZ 0.25 
+
+using namespace std;
 
 class Scanning
 {
@@ -60,11 +64,17 @@ public:
 	actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> excel_ac;
 	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
 	moveit::planning_interface::MoveGroup::Plan my_plan;
+	
+	int scan_it(const vector<string> &good_bins, const vector<string> &bad_bins);
+	
+	bool move_robot(int pose, int orientation);
+	
 	double rail_max, rail_min, rail_tolerance;
 	bool sim;
 	int orientation_try, current_orientation;
 	BarcodeScan scan_obj;
-	bool results[3];
+	int results[3];
+	
 	/* ros::NodeHandle nh_; */
 };
 

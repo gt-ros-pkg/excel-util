@@ -1,4 +1,5 @@
 #include <excel_bins/move_bin.h>
+#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 /*--------------------------------------------------------------------
  * MoveBin()
@@ -17,8 +18,15 @@ MoveBin::MoveBin() :
   ros::NodeHandle nh_, nh_param_("~");
   sim = false;
   use_gripper = true;
-  nh_param_.getParam("sim",sim);
-  nh_param_.getParam("use_gripper",use_gripper);
+  vertical_check_safety_ = false;
+  traverse_check_safety_ = true;
+  nh_param_.getParam("sim", sim);
+  nh_param_.getParam("use_gripper", use_gripper);
+  nh_param_.getParam("vertical_check_safety", vertical_check_safety_);
+  nh_param_.getParam("traverse_check_safety", traverse_check_safety_);
+
+  human_unsafe_ = false;
+  hum_unsafe_sub_ = nh_.subscribe("human/safety/stop", 1, &MoveBin::humanUnsafeCallback,this);
 
   ros::WallDuration sleep_t(0.5);
   group.setPlanningTime(8.0);
@@ -55,6 +63,9 @@ MoveBin::MoveBin() :
     sleep_t.sleep();
   }
 
+  human_pose_sub_ = nh_.subscribe("human/estimated/pose", 1, &MoveBin::human_pose_callback,this);
+  avoiding_human = true;
+
   // Define joint_constraints for the IK service
   rail_constraint.joint_name = "table_rail_joint";
   rail_constraint.position = 2.00;
@@ -83,9 +94,64 @@ MoveBin::MoveBin() :
   }
 }
 
+void MoveBin::humanUnsafeCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  human_unsafe_ = msg->data;
+}
+
+bool MoveBin::moveToHome()
+{
+  while (ros::ok()) {
+
+    moveit_msgs::PlanningScene planning_scene;
+    planning_scene::PlanningScenePtr full_planning_scene;
+    getPlanningScene(planning_scene, full_planning_scene);
+
+    // Plan trajectory
+    group.setStartStateToCurrentState();
+    static const double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
+    std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
+
+    // Fixing shoulder_pan and wrist_3 given by the IK
+    joint_vals[1] = this->optimalGoalAngle(joint_vals[1], planning_scene.robot_state.joint_state.position[1]);
+    joint_vals[6] = this->optimalGoalAngle(joint_vals[6], planning_scene.robot_state.joint_state.position[6]);
+
+    group.setJointValueTarget(joint_vals);
+    int num_tries = 4;
+    MoveGroupPlan my_plan;
+    // try to plan a few times, just to be safe
+    while (ros::ok() && num_tries > 0) {
+      if (group.plan(my_plan))
+        break;
+      num_tries--;
+    }
+
+    if (num_tries > 0) {
+      // found plan, let's try and execute
+      if (executeJointTrajectory(my_plan, true)) {
+        ROS_INFO("Home position joint trajectory execution successful");
+        return true;
+      }
+      else {
+        ROS_WARN("Home position joint trajectory execution failed");
+        ros::Duration(0.5).sleep();
+        continue;
+      }
+    }
+    else {
+      ROS_ERROR("Home position Motion planning failed");
+      continue;
+    }
+  }
+  return true;
+}
+
 bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target)
 {
   ROS_INFO("Moving bin %d to target (%.3f, %.3f, %f)", bin_number, x_target, y_target, angle_target);
+  if(bin_number == -5) {
+    return moveToHome();
+  }
   double bin_height;
   executeGripperAction(false, false); // open gripper, but don't wait
   if(!approachBin(bin_number, bin_height)) {
@@ -167,80 +233,107 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
 {
   ROS_INFO("Traverse move to position (%.2f, %.2f, %.2f)", 
                         pose.position.x, pose.position.y, pose.position.z);
-  // update planning scene
-  moveit_msgs::PlanningScene planning_scene;
-  planning_scene::PlanningScenePtr full_planning_scene;
-  getPlanningScene(planning_scene, full_planning_scene);
+  while (ros::ok()) {
+    // update planning scene
+    moveit_msgs::PlanningScene planning_scene;
+    planning_scene::PlanningScenePtr full_planning_scene;
+    getPlanningScene(planning_scene, full_planning_scene);
 
-  ////////////// Perform IK to find joint goal //////////////
-  moveit_msgs::GetPositionIK::Request ik_srv_req;
+    ////////////// Perform IK to find joint goal //////////////
+    moveit_msgs::GetPositionIK::Request ik_srv_req;
 
-  // setup IK request
-  ik_srv_req.ik_request.group_name = "excel";
-  ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
-  ik_srv_req.ik_request.pose_stamped.header.stamp = ros::Time::now();
-  ik_srv_req.ik_request.avoid_collisions = true;
-  ik_srv_req.ik_request.attempts = 30;
+    // setup IK request
+    ik_srv_req.ik_request.group_name = "excel";
+    ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
+    ik_srv_req.ik_request.pose_stamped.header.stamp = ros::Time::now();
+    ik_srv_req.ik_request.avoid_collisions = true;
+    ik_srv_req.ik_request.attempts = 30;
 
-  // set pose
-  ik_srv_req.ik_request.pose_stamped.pose = pose;
+    // set pose
+    ik_srv_req.ik_request.pose_stamped.pose = pose;
 
-  // set joint constraints
-  double rail_center = pose.position.x;
-  moveit_msgs::JointConstraint special_rail_constraint;
-  special_rail_constraint.joint_name = "table_rail_joint";
-  special_rail_constraint.position = rail_max - rail_center;
-  special_rail_constraint.tolerance_above = std::max(
-      std::min(rail_max - rail_center + rail_tolerance, rail_max) - 
-               (rail_max - rail_center), 0.0);
-  special_rail_constraint.tolerance_below = 
-    std::max((rail_max - rail_center) - 
-             std::max(rail_max - rail_center - rail_tolerance, rail_min), 0.0);
-  special_rail_constraint.weight = 1;
-  ROS_INFO("Special rail constraint: %.3f (+%.3f, -%.3f)", special_rail_constraint.position, 
-           special_rail_constraint.tolerance_above, special_rail_constraint.tolerance_below);
-  ik_srv_req.ik_request.constraints.joint_constraints.push_back(special_rail_constraint);
-  ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
-  //ik_srv_req.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+    // set joint constraints
+    double rail_center = pose.position.x;
+    moveit_msgs::JointConstraint special_rail_constraint;
+    special_rail_constraint.joint_name = "table_rail_joint";
+    special_rail_constraint.position = rail_max - rail_center;
+    special_rail_constraint.tolerance_above = std::max(
+        std::min(rail_max - rail_center + rail_tolerance, rail_max) - 
+                 (rail_max - rail_center), 0.0);
+    special_rail_constraint.tolerance_below = 
+      std::max((rail_max - rail_center) - 
+               std::max(rail_max - rail_center - rail_tolerance, rail_min), 0.0);
+    special_rail_constraint.weight = 1;
+    ROS_INFO("Special rail constraint: %.3f (+%.3f, -%.3f)", special_rail_constraint.position, 
+             special_rail_constraint.tolerance_above, special_rail_constraint.tolerance_below);
+    ik_srv_req.ik_request.constraints.joint_constraints.push_back(special_rail_constraint);
+    ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+    //ik_srv_req.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
 
-  // call IK server
-  ROS_INFO("Calling IK for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
-      ik_srv_req.ik_request.pose_stamped.pose.position.x,
-      ik_srv_req.ik_request.pose_stamped.pose.position.y,
-      ik_srv_req.ik_request.pose_stamped.pose.position.z,
-      ik_srv_req.ik_request.pose_stamped.pose.orientation.x,
-      ik_srv_req.ik_request.pose_stamped.pose.orientation.y,
-      ik_srv_req.ik_request.pose_stamped.pose.orientation.z,
-      ik_srv_req.ik_request.pose_stamped.pose.orientation.w);
-  moveit_msgs::GetPositionIK::Response ik_srv_resp;
-  service_client.call(ik_srv_req, ik_srv_resp);
-  if(ik_srv_resp.error_code.val !=1){
-    ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
-    return false;
+    // call IK server
+    ROS_INFO("Calling IK for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
+        ik_srv_req.ik_request.pose_stamped.pose.position.x,
+        ik_srv_req.ik_request.pose_stamped.pose.position.y,
+        ik_srv_req.ik_request.pose_stamped.pose.position.z,
+        ik_srv_req.ik_request.pose_stamped.pose.orientation.x,
+        ik_srv_req.ik_request.pose_stamped.pose.orientation.y,
+        ik_srv_req.ik_request.pose_stamped.pose.orientation.z,
+        ik_srv_req.ik_request.pose_stamped.pose.orientation.w);
+    moveit_msgs::GetPositionIK::Response ik_srv_resp;
+    service_client.call(ik_srv_req, ik_srv_resp);
+    if(ik_srv_resp.error_code.val !=1){
+      ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
+      return false;
+    }
+    ROS_INFO("IK returned succesfully");
+    ///////////////////////////////////////////////////////////
+
+    // Fixing shoulder_pan and wrist_3 given by the IK
+    ik_srv_resp.solution.joint_state.position[1] = 
+      this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[1], 
+                               planning_scene.robot_state.joint_state.position[1]);
+    ik_srv_resp.solution.joint_state.position[6] = 
+      this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],
+                               planning_scene.robot_state.joint_state.position[6]);
+
+    if (avoiding_human){
+      if (human_pose.position.y < 1.4){
+        ROS_WARN("Avoiding the human");
+        // Correct the rotation to avoid the human
+        geometry_msgs::PoseStamped current_pose = group.getCurrentPose();
+        ik_srv_resp.solution.joint_state.position[1] = this->avoid_human(ik_srv_resp.solution.joint_state.position[1],planning_scene.robot_state.joint_state.position[1], current_pose.pose, ik_srv_req.ik_request.pose_stamped.pose);
+      }
+    }
+
+    // Plan trajectory
+    //group.setStartStateToCurrentState();
+    group.setJointValueTarget(ik_srv_resp.solution.joint_state);
+    int num_tries = 4;
+    MoveGroupPlan my_plan;
+    // try to plan a few times, just to be safe
+    while (ros::ok() && num_tries > 0) {
+      if (group.plan(my_plan))
+        break;
+      num_tries--;
+    }
+
+    if (num_tries > 0) {
+      // found plan, let's try and execute
+      if (executeJointTrajectory(my_plan, traverse_check_safety_)) {
+        ROS_INFO("Traverse joint trajectory execution successful");
+        return true;
+      }
+      else {
+        ROS_WARN("Traverse joint trajectory execution failed, going to restart");
+        ros::Duration(0.5).sleep();
+        continue;
+      }
+    }
+    else {
+      ROS_ERROR("Motion planning failed");
+      return false;
+    }
   }
-  ROS_INFO("IK returned succesfully");
-  ///////////////////////////////////////////////////////////
-
-  // Fixing shoulder_pan and wrist_3 given by the IK
-  ik_srv_resp.solution.joint_state.position[1] = 
-    this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[1], 
-                             planning_scene.robot_state.joint_state.position[1]);
-  ik_srv_resp.solution.joint_state.position[6] = 
-    this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],
-                             planning_scene.robot_state.joint_state.position[6]);
-
-  // Plan trajectory
-  group.setStartStateToCurrentState();
-  group.setJointValueTarget(ik_srv_resp.solution.joint_state);
-  int num_tries = 4;
-  MoveGroupPlan my_plan;
-  while(ros::ok() && num_tries > 0) {
-    if(group.plan(my_plan))
-      return executeJointTrajectory(my_plan);
-    num_tries--;
-  }
-  ROS_ERROR("Motion planning failed");
-  return 0;
 }
 
 bool MoveBin::ascent(double bin_height)
@@ -259,114 +352,152 @@ bool MoveBin::verticalMove(double target_z)
 {
   ROS_INFO("Vertical move to target z: %f", target_z);
 
-  // update the planning scene to get the robot's state
-  moveit_msgs::PlanningScene planning_scene;
-  planning_scene::PlanningScenePtr full_planning_scene;
-  getPlanningScene(planning_scene, full_planning_scene);
+  while (ros::ok()) {
+    // update the planning scene to get the robot's state
+    moveit_msgs::PlanningScene planning_scene;
+    planning_scene::PlanningScenePtr full_planning_scene;
+    getPlanningScene(planning_scene, full_planning_scene);
 
-  ////////////// Perform FK to find end effector pose ////////////
-  /*
-  moveit_msgs::GetPositionFK::Request fk_request;
-  moveit_msgs::GetPositionFK::Response fk_response;
-  fk_request.header.frame_id = "table_link";
-  fk_request.fk_link_names.push_back("ee_link");
-  fk_request.robot_state = planning_scene.robot_state;
-  fk_client.call(fk_request, fk_response);
-  */
-  ////////////////////////////////////////////////////////////////
+    ////////////// Perform FK to find end effector pose ////////////
+    /*
+    moveit_msgs::GetPositionFK::Request fk_request;
+    moveit_msgs::GetPositionFK::Response fk_response;
+    fk_request.header.frame_id = "table_link";
+    fk_request.fk_link_names.push_back("ee_link");
+    fk_request.robot_state = planning_scene.robot_state;
+    fk_client.call(fk_request, fk_response);
+    */
+    ////////////////////////////////////////////////////////////////
 
-  ////////////// Perform IK to find joint goal //////////////
-  moveit_msgs::GetPositionIK::Request ik_srv_req;
+#if 0
+    ////////////// Perform IK to find joint goal //////////////
+    moveit_msgs::GetPositionIK::Request ik_srv_req;
 
-  // setup IK request
-  ik_srv_req.ik_request.group_name = "excel";
-  ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
-  ik_srv_req.ik_request.avoid_collisions = false;
-  ik_srv_req.ik_request.attempts = 100;
+    // setup IK request
+    ik_srv_req.ik_request.group_name = "excel";
+    ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
+    ik_srv_req.ik_request.avoid_collisions = false;
+    ik_srv_req.ik_request.attempts = 100;
 
-  // the target pose is the current location with a different z position
-  ik_srv_req.ik_request.pose_stamped = group.getCurrentPose();
-  // ik_srv_req.ik_request.pose_stamped = fk_response.pose_stamped[0];
-  ik_srv_req.ik_request.pose_stamped.pose.position.z = target_z;
+    // the target pose is the current location with a different z position
+    ik_srv_req.ik_request.pose_stamped = group.getCurrentPose();
+    // ik_srv_req.ik_request.pose_stamped = fk_response.pose_stamped[0];
+    ik_srv_req.ik_request.pose_stamped.pose.position.z = target_z;
 
-  ik_srv_req.ik_request.constraints.joint_constraints.clear();
-  // ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
-  //ik_srv_req.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
-  moveit_msgs::JointConstraint rail_fixed_constraint, shoulder_pan_fixed_constraint,
-                               wrist_3_fixed_constraint;
-  rail_fixed_constraint.joint_name = "table_rail_joint";
-  shoulder_pan_fixed_constraint.joint_name = "shoulder_pan_joint";
-  wrist_3_fixed_constraint.joint_name = "wrist_3_joint";
-  const double *rail_current_pose = 
-    full_planning_scene->getCurrentState().getJointPositions("table_rail_joint");
-  const double *shoulder_pan_current_pose = 
-    full_planning_scene->getCurrentState().getJointPositions("shoulder_pan_joint");
-  const double *wrist_3_current_pose = 
-    full_planning_scene->getCurrentState().getJointPositions("wrist_3_joint");
-  rail_fixed_constraint.position = *rail_current_pose;
-  shoulder_pan_fixed_constraint.position = *shoulder_pan_current_pose;
-  wrist_3_fixed_constraint.position = *wrist_3_current_pose;
+    ik_srv_req.ik_request.constraints.joint_constraints.clear();
+    // ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_constraint);
+    //ik_srv_req.ik_request.constraints.joint_constraints.push_back(elbow_constraint);
+    moveit_msgs::JointConstraint rail_fixed_constraint, shoulder_pan_fixed_constraint,
+                                 wrist_3_fixed_constraint;
+    rail_fixed_constraint.joint_name = "table_rail_joint";
+    shoulder_pan_fixed_constraint.joint_name = "shoulder_pan_joint";
+    wrist_3_fixed_constraint.joint_name = "wrist_3_joint";
+    const double *rail_current_pose = 
+      full_planning_scene->getCurrentState().getJointPositions("table_rail_joint");
+    const double *shoulder_pan_current_pose = 
+      full_planning_scene->getCurrentState().getJointPositions("shoulder_pan_joint");
+    const double *wrist_3_current_pose = 
+      full_planning_scene->getCurrentState().getJointPositions("wrist_3_joint");
+    rail_fixed_constraint.position = *rail_current_pose;
+    shoulder_pan_fixed_constraint.position = *shoulder_pan_current_pose;
+    wrist_3_fixed_constraint.position = *wrist_3_current_pose;
 
-  rail_fixed_constraint.tolerance_above = 0.2;
-  rail_fixed_constraint.tolerance_below = 0.2;
-  rail_fixed_constraint.weight = 1;
-  shoulder_pan_fixed_constraint.tolerance_above = 0.2;
-  shoulder_pan_fixed_constraint.tolerance_below = 0.2;
-  shoulder_pan_fixed_constraint.weight = 1;
-  wrist_3_fixed_constraint.tolerance_above = 0.2;
-  wrist_3_fixed_constraint.tolerance_below = 0.2;
-  wrist_3_fixed_constraint.weight = 1;
-  ik_srv_req.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
-  ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
-  ik_srv_req.ik_request.constraints.joint_constraints.push_back(wrist_3_fixed_constraint);
+    rail_fixed_constraint.tolerance_above = 0.2;
+    rail_fixed_constraint.tolerance_below = 0.2;
+    rail_fixed_constraint.weight = 1;
+    shoulder_pan_fixed_constraint.tolerance_above = 0.2;
+    shoulder_pan_fixed_constraint.tolerance_below = 0.2;
+    shoulder_pan_fixed_constraint.weight = 1;
+    wrist_3_fixed_constraint.tolerance_above = 0.2;
+    wrist_3_fixed_constraint.tolerance_below = 0.2;
+    wrist_3_fixed_constraint.weight = 1;
+    ik_srv_req.ik_request.constraints.joint_constraints.push_back(rail_fixed_constraint);
+    ik_srv_req.ik_request.constraints.joint_constraints.push_back(shoulder_pan_fixed_constraint);
+    ik_srv_req.ik_request.constraints.joint_constraints.push_back(wrist_3_fixed_constraint);
 
-  ROS_INFO("Calling IK for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
-      ik_srv_req.ik_request.pose_stamped.pose.position.x,
-      ik_srv_req.ik_request.pose_stamped.pose.position.y,
-      ik_srv_req.ik_request.pose_stamped.pose.position.z,
-      ik_srv_req.ik_request.pose_stamped.pose.orientation.x,
-      ik_srv_req.ik_request.pose_stamped.pose.orientation.y,
-      ik_srv_req.ik_request.pose_stamped.pose.orientation.z,
-      ik_srv_req.ik_request.pose_stamped.pose.orientation.w);
-  moveit_msgs::GetPositionIK::Response ik_srv_resp;
-  service_client.call(ik_srv_req, ik_srv_resp);
-  if(ik_srv_resp.error_code.val !=1){
-    ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
-    return 0;
+    ROS_INFO("Calling IK for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
+        ik_srv_req.ik_request.pose_stamped.pose.position.x,
+        ik_srv_req.ik_request.pose_stamped.pose.position.y,
+        ik_srv_req.ik_request.pose_stamped.pose.position.z,
+        ik_srv_req.ik_request.pose_stamped.pose.orientation.x,
+        ik_srv_req.ik_request.pose_stamped.pose.orientation.y,
+        ik_srv_req.ik_request.pose_stamped.pose.orientation.z,
+        ik_srv_req.ik_request.pose_stamped.pose.orientation.w);
+    moveit_msgs::GetPositionIK::Response ik_srv_resp;
+    service_client.call(ik_srv_req, ik_srv_resp);
+    if(ik_srv_resp.error_code.val !=1){
+      ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
+      return 0;
+    }
+    ROS_INFO("IK returned succesfully");
+
+    // Fixing wrist_3 given by the IK
+    ik_srv_resp.solution.joint_state.position[1] = 
+      this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[1], 
+                               planning_scene.robot_state.joint_state.position[1]);
+    ik_srv_resp.solution.joint_state.position[6] = this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
+
+    group.setJointValueTarget(ik_srv_resp.solution.joint_state);
+#endif
+    group.setStartStateToCurrentState();
+    /*
+    int num_tries = 4;
+    MoveGroupPlan my_plan;
+    while(ros::ok() && num_tries > 0) {
+      if(group.plan(my_plan))
+        return executeJointTrajectory(my_plan);
+      num_tries--;
+    }
+    */
+    // ROS_WARN("Motion planning failed");
+
+    geometry_msgs::Pose pose = group.getCurrentPose().pose;
+    pose.position.z = target_z;
+
+    ROS_INFO("Calling cart path for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
+        pose.position.x,
+        pose.position.y,
+        pose.position.z,
+        pose.orientation.x,
+        pose.orientation.y,
+        pose.orientation.z,
+        pose.orientation.w);
+    // find linear trajectory
+    moveit_msgs::RobotTrajectory lin_traj_msg;
+    std::vector<geometry_msgs::Pose> waypoints;
+    waypoints.push_back(pose);
+    double fraction = group.computeCartesianPath(waypoints, 0.07, 0.0, lin_traj_msg, false);
+
+    // create new robot trajectory object
+    robot_trajectory::RobotTrajectory lin_rob_traj(group.getCurrentState()->getRobotModel(), "excel");
+    // copy the trajectory message into the robot trajectory object
+    lin_rob_traj.setRobotTrajectoryMsg(*group.getCurrentState(), lin_traj_msg);
+
+    trajectory_processing::IterativeParabolicTimeParameterization iter_parab_traj_proc;
+    if(!iter_parab_traj_proc.computeTimeStamps(lin_rob_traj)) {
+      ROS_ERROR("Failed smoothing trajectory");
+      return false;
+    }
+    // put the smoothed trajectory back into the message....
+    lin_rob_traj.getRobotTrajectoryMsg(lin_traj_msg);
+
+    MoveGroupPlan lin_traj_plan;
+    lin_traj_plan.trajectory_ = lin_traj_msg;
+    ROS_INFO("computeCartesianPath fraction = %f", fraction);
+    if(fraction < 0.0) {
+      ROS_ERROR("Failed computeCartesianPath");
+      return false;
+    }
+
+    if (executeJointTrajectory(lin_traj_plan, vertical_check_safety_)) {
+      ROS_INFO("Vertical joint trajectory execution successful");
+      return true;
+    }
+    else {
+      ROS_WARN("Vertical joint trajectory execution failed, going to restart");
+      continue;
+    }
   }
-  ROS_INFO("IK returned succesfully");
-
-  // Fixing wrist_3 given by the IK
-  ik_srv_resp.solution.joint_state.position[1] = 
-    this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[1], 
-                             planning_scene.robot_state.joint_state.position[1]);
-  ik_srv_resp.solution.joint_state.position[6] = this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6],planning_scene.robot_state.joint_state.position[6]);
-
-  group.setJointValueTarget(ik_srv_resp.solution.joint_state);
-  group.setStartStateToCurrentState();
-  /*
-  int num_tries = 4;
-  MoveGroupPlan my_plan;
-  while(ros::ok() && num_tries > 0) {
-    if(group.plan(my_plan))
-      return executeJointTrajectory(my_plan);
-    num_tries--;
-  }
-  */
-  // ROS_WARN("Motion planning failed");
-  moveit_msgs::RobotTrajectory trajectory;
-  std::vector<geometry_msgs::Pose> waypoints;
-  waypoints.push_back(ik_srv_req.ik_request.pose_stamped.pose);
-  double fraction = group.computeCartesianPath(waypoints, 0.07, 0.0, trajectory, false);
-  MoveGroupPlan lin_traj_plan;
-  lin_traj_plan.trajectory_ = trajectory;
-  ROS_INFO("computeCartesianPath fraction = %f", fraction);
-  if(fraction < 0.0) {
-    ROS_ERROR("Failed computeCartesianPath");
-    return false;
-  }
-
-  return executeJointTrajectory(lin_traj_plan);
 }
 
 bool MoveBin::attachBin(int bin_number)
@@ -384,11 +515,11 @@ bool MoveBin::attachBin(int bin_number)
     attached_object.object = *bin_coll_obj;
     attached_object.object.operation = attached_object.object.ADD;
     attached_object_publisher.publish(attached_object);
-    return 1;
+    return true;
   } else {
     // std::string error_msg = ""+bin_name + " is not in the scene. Aborting !";
     ROS_ERROR("This bin is not in the scene.");
-    return 0;
+    return false;
   }
 }
 
@@ -473,7 +604,57 @@ double MoveBin::optimalGoalAngle(double goal_angle, double current_angle)
   return goal_angle;
 }
 
-bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan)
+/*--------------------------------------------------------------------
+ * avoid_human(goal_angle, current_goal, current_pose, goal_pose)
+ * Finds out if the robot needs to rotate clockwise or anti-clockwise to avoid the human
+ *------------------------------------------------------------------*/
+double MoveBin::avoid_human(double goal_angle, double current_angle, geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose)
+{
+	double cur_x, cur_y, goal_x, goal_y;
+	cur_x = current_pose.position.x; cur_y = current_pose.position.y;
+	goal_x = goal_pose.position.x; goal_y = goal_pose.position.y;
+
+	// Robot on the human table, goal is not
+	if( ((cur_x <1.0)&(cur_y>1.0)) & !((goal_x <1.0)&(goal_y>1.0)) ){
+		ROS_WARN("Going from A to B");
+		if (goal_angle < current_angle){
+			goal_angle += 2*M_PI;
+		}	
+
+	}else{
+		// Robot on not the human table, but goal is
+		if( !((cur_x <1.0)&(cur_y>1.0)) & ((goal_x <1.0)&(goal_y>1.0)) ){
+			ROS_WARN("Going from B to A");
+			if(goal_angle > current_angle){
+				goal_angle -= 2*M_PI;
+			}
+		}
+	}
+	if(goal_angle>2*M_PI){
+		goal_angle -= 2*M_PI;
+	}
+	if(goal_angle<-2*M_PI){
+		goal_angle += 2*M_PI;
+	}
+	return goal_angle;
+}
+
+void MoveBin::human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped)
+{
+  if(isnan(pose_stamped->pose.position.x)){
+    geometry_msgs::Pose fake_pose;
+    fake_pose.position.x = 1000;
+    fake_pose.position.y = 1000;
+    human_pose = fake_pose;
+  }
+  else human_pose = pose_stamped->pose;
+}
+
+void MoveBin::avoidance_callback(const std_msgs::Bool::ConstPtr& avoid){
+    avoiding_human = avoid->data;
+}
+
+bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety)
 {
   int num_pts = mg_plan.trajectory_.joint_trajectory.points.size();
   ROS_INFO("Executing joint trajectory with %d knots and duration %f", num_pts, 
@@ -491,14 +672,33 @@ bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan)
   // Specify path and goal tolerance
   //excel_goal.path_tolerance
 
+  while (check_safety && human_unsafe_ && ros::ok()) {
+    ROS_WARN_THROTTLE(1.0, "Human unsafe condition detected. Waiting for this to clear.");
+    ros::Duration(1.0/30.0).sleep();
+  }
   // Send goal and wait for a result
   excel_ac.sendGoal(excel_goal);
-  if(!excel_ac.waitForResult(ros::Duration(30.0))) {
-    ROS_ERROR("Trajectory timed out");
-    return false;
+  while (ros::ok()) {
+    if (excel_ac.waitForResult(ros::Duration(1.0/30.0))) 
+      break;
+    if (check_safety && human_unsafe_) {
+      ROS_WARN("Human unsafe condition detected. Stopping trajectory");
+      stopJointTrajectory();
+      ros::Duration(0.5).sleep();
+      return false;
+    }
   }
   actionlib::SimpleClientGoalState end_state = excel_ac.getState();
   return end_state == actionlib::SimpleClientGoalState::SUCCEEDED;
+}
+
+void MoveBin::stopJointTrajectory()
+{
+  if(sim)
+		group.stop();
+
+  ROS_INFO("Stopping joint trajectory");
+  excel_ac.cancelGoal();
 }
 
 bool MoveBin::executeGripperAction(bool is_close, bool wait_for_result)

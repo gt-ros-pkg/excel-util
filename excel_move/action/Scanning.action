@@ -1,0 +1,5 @@
+string[] good_bins
+string[] bad_bins
+---
+int32 result
+---

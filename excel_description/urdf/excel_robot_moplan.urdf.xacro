@@ -38,6 +38,6 @@
    <xacro:gripper prefix="" />
 
    <!-- cameras -->
-   <!-- <xacro:cameras/> -->
+   <!-- <xacro:cameras x_offset="0.0" y_offset="0.0" theta_offset="0.0"/> -->
 
 </robot>

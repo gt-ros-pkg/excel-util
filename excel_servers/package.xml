@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <package>
-  <name>excel_calibration</name>
+  <name>excel_servers</name>
   <version>0.0.0</version>
-  <description>The excel_calibration package</description>
+  <description>The excel_servers package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="hyatt@todo.todo">hyatt</maintainer>
+  <maintainer email="jimmy@todo.todo">jimmy</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/excel_calibration</url> -->
+  <!-- <url type="website">http://wiki.ros.org/excel_bins</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -40,14 +40,28 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>extrinsic_calibration</build_depend>
-  <build_depend>excel_move</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <!--<build_depend>industrial_extrinsic_cal</build_depend>-->
-  <run_depend>extrinsic_calibration</run_depend>
-  <run_depend>excel_move</run_depend>
-  <run_depend>cv_bridge</run_depend>
-  <!--<run_depend>industrial_extrinsic_cal</run_depend>-->
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>joint_state_publisher</build_depend>
+  <build_depend>moveit_planners_ompl</build_depend>
+  <build_depend>moveit_ros_move_group</build_depend>
+  <build_depend>moveit_ros_visualization</build_depend>
+  <build_depend>robot_state_publisher</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>shape_msgs</build_depend>
+  <build_depend>xacro</build_depend>
+  <build_depend>message_generation</build_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>joint_state_publisher</run_depend>
+  <run_depend>moveit_planners_ompl</run_depend>
+  <run_depend>moveit_ros_move_group</run_depend>
+  <run_depend>moveit_ros_visualization</run_depend>
+  <run_depend>robot_state_publisher</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>shape_msgs</run_depend>
+  <run_depend>xacro</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
