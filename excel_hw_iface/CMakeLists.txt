@@ -61,7 +61,6 @@ include_directories(${INCLUDE_DIRS})
 add_executable(test_excel_ctrl_man src/excel_ctrl_man.cpp)
 target_link_libraries(test_excel_ctrl_man idcs_test_vel_ctrl ${CTRL_LINK_LIBS} ${catkin_LIBRARIES})
 set_target_properties(test_excel_ctrl_man PROPERTIES COMPILE_DEFINITIONS "TEST_CTRL")
-message(${CTRL_LINK_LIBS})
 
 if( NOT (INDRADRIVE_HW_LIBRARY MATCHES "INDRADRIVE_HW_LIBRARY-NOTFOUND") )
   if( XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND")
