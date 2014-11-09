@@ -61,11 +61,11 @@ targets:
 - frame: /circle_grid_frame
   type: 1
   pt_spacing: 0.1158
-  rows: 5
-  cols: 7
+  rows: 4
+  cols: 5
   guess_pose:
-    translation: {x: 0.0368, y: -0.2365, z: -0.7861}
-    rotation: {x: 0.0, y: -0.70710808, z: 0.0, w: 0.70710548}
+    translation: {x: 0.2, y: 0.0, z: 0.2}
+    rotation: {x: 0.5, y: 0.5, z: -0.5, w: 0.5}
   calibrated_pose:
     translation: {x: 0.0, y: 0.0, z: 0.0}
     rotation: {x: 0.0, y: 0.0, z: 0.0, w: 0.0}

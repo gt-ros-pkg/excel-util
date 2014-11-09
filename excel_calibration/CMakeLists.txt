@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(excel_calibration)
 
+find_package(OpenCV REQUIRED)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   extrinsic_calibration
+  excel_move
 )
 
 ## System dependencies are found with CMake's conventions
@@ -94,6 +97,10 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
+
+add_executable(auto_calib_node src/auto_calib_node.cpp)
+target_link_libraries(auto_calib_node ${catkin_LIBRARIES})
+target_link_libraries(auto_calib_node yaml-cpp)
 
 ## Declare a cpp library
 # add_library(excel_calibration

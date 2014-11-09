@@ -1,0 +1,14 @@
+<launch>
+
+  <arg name="sim" default="false"  />
+
+  <param name="timeout" value="200.0" />
+  <param name="min_edge" value="5.0" />
+  <param name="max_edge" value="150.0" />
+  <param name="processing_option" value="5" />
+  <param name="threshold" value="200.0" />
+  <node name="scanning_action_server" pkg="excel_move" type="scanning_action_server" output="screen">
+  	<param name="sim" value="$(arg sim)" type="bool" />
+  </node>
+
+</launch>
