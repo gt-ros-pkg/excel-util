@@ -15,7 +15,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   ur_ctrl_client
   urdf
+  cmake_modules
 )
+
+find_package(Xenomai)
 
 catkin_python_setup()
 
@@ -27,22 +30,17 @@ find_library(INDRADRIVE_HW_LIBRARY
   NAMES idcs_hw_vel_ctrl
 )
 
-find_library(XENOMAI_LIBRARY
-  NAMES xenomai
-  PATHS /usr/xenomai/lib
-)
-
 if( NOT (INDRADRIVE_HW_LIBRARY MATCHES "INDRADRIVE_HW_LIBRARY-NOTFOUND") )
   set(INCLUDE_DIRS ${INCLUDE_DIRS} /opt/etherlab/include)
   set(DEPENDS_LIBRARIES ${ECAT_LIBRARY})
   set(CTRL_LINK_LIBS ${CTRL_LINK_LIBS} ${ECAT_LIBRARY} rt m)
 
-  if( NOT (XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND" ) )
+  if( XENOMAI_FOUND )
     message( "Xenomai found, also installing xeno realtime binaries" )
-    set(INCLUDE_DIRS ${INCLUDE_DIRS} /usr/xenomai/include)
-    set(DEPENDS_LIBRARIES ${DEPENDS_LIBRARIES} xenomai native rtdm)
-    set(CTRL_LINK_LIBS ${CTRL_LINK_LIBS} xenomai native rtdm)
-    link_directories(/usr/xenomai/lib)
+    set(INCLUDE_DIRS ${INCLUDE_DIRS} ${Xenomai_INCLUDE_DIRS} ${Xenomai_NATIVE_INCLUDE_DIRS} ${Xenomai_RTDM_INCLUDE_DIRS})
+    set(DEPENDS_LIBRARIES ${DEPENDS_LIBRARIES} ${Xenomai_LIBRARY_XENOMAI} ${Xenomai_LIBRARY_NATIVE} ${Xenomai_LIBRARY_RTDM})
+    set(CTRL_LINK_LIBS ${CTRL_LINK_LIBS} ${Xenomai_LIBRARY_XENOMAI} ${Xenomai_LIBRARY_NATIVE} ${Xenomai_LIBRARY_RTDM})
+    link_directories(${Xenomai_NATIVE_LIBRARY_DIRS} ${Xenomai_RTDM_LIBRARY_DIRS})
   else()
     message( "Xenomai libary not found so RT driver will not be built" )
   endif()
@@ -64,13 +62,13 @@ set_target_properties(test_excel_ctrl_man PROPERTIES COMPILE_DEFINITIONS "TEST_C
 message(${CTRL_LINK_LIBS})
 
 if( NOT (INDRADRIVE_HW_LIBRARY MATCHES "INDRADRIVE_HW_LIBRARY-NOTFOUND") )
-  if( XENOMAI_LIBRARY MATCHES "XENOMAI_LIBRARY-NOTFOUND")
-    add_executable(excel_ctrl_man src/excel_ctrl_man.cpp)
-    target_link_libraries(excel_ctrl_man ${CTRL_LINK_LIBS})
-  else()
+  if( XENOMAI_FOUND )
     add_executable(excel_ctrl_man_xeno src/excel_ctrl_man.cpp)
     set_target_properties(excel_ctrl_man_xeno PROPERTIES COMPILE_DEFINITIONS "XENOMAI_REALTIME")
     target_link_libraries(excel_ctrl_man_xeno ${CTRL_LINK_LIBS})
+  else()
+    add_executable(excel_ctrl_man src/excel_ctrl_man.cpp)
+    target_link_libraries(excel_ctrl_man ${CTRL_LINK_LIBS})
   endif()
 endif()
 

@@ -4,7 +4,6 @@ project(excel_move)
 SET (PROJECT_CMAKE_DIR ${PROJECT_SOURCE_DIR}/cmake)
 SET (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${PROJECT_CMAKE_DIR}")
 
-set (DMTX_FOUND FALSE)
 find_package (DMTX)
 find_package(OpenCV REQUIRED)
 
@@ -42,15 +41,14 @@ catkin_package(
   DEPENDS system_lib
 )
 
-include_directories(
-  include
-  if (DMTX_FOUND)
-    ${DMTX_INCLUDE_DIRS}
-  endif()
-  ${catkin_INCLUDE_DIRS}
-)
+set (EXCEL_MOVE_INCLUDES include ${catkin_INCLUDE_DIRS})
 
-add_library(scanning src/scanning.cpp)
+if (DMTX_FOUND)
+  set (EXCEL_MOVE_INCLUDES ${EXCEL_MOVE_INCLUDES} ${DMTX_INCLUDE_DIRS})
+endif()
+
+include_directories(${EXCEL_MOVE_INCLUDES})
+
 
 add_executable(moveit_to_known_position_node src/move_to_known_position.cpp)
 add_executable(moveit_joint_node src/move_joint.cpp)
@@ -64,13 +62,27 @@ add_executable(dodge_human_node src/dodge_human.cpp)
 add_executable(move_to_joint_positions_node src/move_to_joint_positions.cpp)
 
 if (DMTX_FOUND)
+  add_library(scanning src/scanning.cpp)
   add_executable(scanning_node src/scanning_node.cpp)
   add_executable(scanning_action_server src/scanning_action_server.cpp)
-endif()
 
-add_dependencies(scanning_action_server
-  ${excel_move_EXPORTED_TARGETS}
-)
+  add_dependencies(scanning_action_server
+    ${excel_move_EXPORTED_TARGETS}
+  )
+
+  target_link_libraries(scanning 
+    ${OpenCV_LIBRARIES}
+    ${DMTX_LIBRARIES}
+  )
+  target_link_libraries(scanning_node 
+    scanning
+    ${catkin_LIBRARIES}    
+  )
+  target_link_libraries(scanning_action_server 
+    scanning
+    ${catkin_LIBRARIES}    
+  )
+endif()
 
 target_link_libraries(moveit_to_known_position_node ${catkin_LIBRARIES})
 target_link_libraries(moveit_joint_node ${catkin_LIBRARIES})
@@ -83,21 +95,5 @@ target_link_libraries(back_n_forth_node ${catkin_LIBRARIES})
 target_link_libraries(dodge_human_node ${catkin_LIBRARIES})
 target_link_libraries(move_to_joint_positions_node ${catkin_LIBRARIES})
 
-
-target_link_libraries(scanning 
-  ${OpenCV_LIBRARIES}
-  ${DMTX_LIBRARIES}
-)
-
 target_link_libraries(move_to_joint_positions_node yaml-cpp)
 
-if (DMTX_FOUND)
-  target_link_libraries(scanning_node 
-    scanning
-    ${catkin_LIBRARIES}    
-  )
-  target_link_libraries(scanning_action_server 
-    scanning
-    ${catkin_LIBRARIES}    
-  )
-endif()

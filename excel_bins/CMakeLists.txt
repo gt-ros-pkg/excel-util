@@ -134,9 +134,10 @@ add_executable(isBinLocationEmpty_client_node src/isBinLocationEmpty_client.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(excel_bins_node excel_bins_generate_messages_cpp)
-add_dependencies(move_bin_action_server
-  ${excel_bins_EXPORTED_TARGETS}
-)
+add_dependencies(move_bin_action_server ${excel_bins_EXPORTED_TARGETS})
+add_dependencies(isBinLocationEmpty_node ${excel_bins_EXPORTED_TARGETS})
+add_dependencies(isBinLocationEmpty_client_node ${excel_bins_EXPORTED_TARGETS})
+add_dependencies(update_bins_node ${excel_bins_EXPORTED_TARGETS})
 
 target_link_libraries(move_bin ${catkin_LIBRARIES})
 

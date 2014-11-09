@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   tf
+  ar_track_alvar
 )
 
 ## System dependencies are found with CMake's conventions
@@ -65,10 +66,6 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
 
 ###################################
 ## catkin specific configuration ##
@@ -82,7 +79,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES excel_cameras
-#  CATKIN_DEPENDS openni_camera openni_launch openni_tracker roscpp rospy tf
+  CATKIN_DEPENDS roscpp rospy tf ar_track_alvar
 #  DEPENDS system_lib
 )
 
@@ -105,7 +102,8 @@ add_executable(ar_pose_sync_node src/ar_pose_sync.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(excel_bins_node excel_bins_generate_messages_cpp)
+add_dependencies(ar_pose_sync ${catkin_EXPORTED_TARGETS})
+add_dependencies(ar_pose_sync_node ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(ar_pose_sync_node ${catkin_LIBRARIES})
