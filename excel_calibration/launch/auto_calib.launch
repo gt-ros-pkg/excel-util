@@ -1,8 +1,11 @@
 <?xml version="1.0" ?>
 <launch>
   <arg name="pose_file" default="overhead_rob" />
+  <arg name="load_board" default="true" />
 
-  <include file="$(find excel_calibration)/launch/calib_server.launch" />
+  <include file="$(find excel_calibration)/launch/calib_server.launch">
+    <arg name="delete_job" value="true" />
+  </include>
 
   <node pkg="excel_calibration" type="auto_calib_node" name="auto_calib_node" 
         output="screen">
@@ -10,5 +13,6 @@
               file="$(find excel_calibration)/joint_pose_data/$(arg pose_file)_poses.yaml" 
               param="joint_poses" />
     <param name="sim" value="false" />
+    <param name="load_board" value="$(arg load_board)" />
   </node>
 </launch>

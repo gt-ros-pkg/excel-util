@@ -203,7 +203,7 @@ bool CalibrationServer::calibrateCallback(std_srvs::Empty::Request& request,
   nh_.getParam("pixel_noise", pixel_noise);
   nh_.getParam("xy_noise", xy_noise);
   nh_.getParam("z_noise", z_noise);
-  cameraArmTargetDetectPointCalibrate(cal_job_, pixel_noise, xy_noise, z_noise);
+  cameraArmTargetPointCalibrate(cal_job_, pixel_noise, xy_noise, z_noise);
   calib_bc_.setUseCalib(true);
   return true;
 }

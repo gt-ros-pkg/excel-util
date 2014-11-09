@@ -1,0 +1,6 @@
+
+<launch>
+  <node name="kinect_back_rgb_optical_frame_tf" pkg="tf" type="static_transform_publisher"
+        args="3.853371 3.675548 2.311574 0.467374 0.751248 -0.402218 -0.234827 /table_link kinect_back_rgb_optical_frame 100"/>
+</launch>
+

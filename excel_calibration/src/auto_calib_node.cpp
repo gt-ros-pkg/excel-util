@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <std_srvs/Empty.h>
+#include <control_msgs/GripperCommandAction.h>
 
 using namespace XmlRpc;
 
@@ -28,15 +29,17 @@ double readXmlRpcNumber(XmlRpc::XmlRpcValue& num_val)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "move_to_joint_positions_node");
+  ros::init(argc, argv, "auto_calib_node");
   ros::NodeHandle nh_param("~");
-  bool sim = false;
+  bool sim = false, load_board = true;
   nh_param.getParam("sim", sim);
+  nh_param.getParam("load_board", load_board);
 
   ros::NodeHandle nh;
   std_srvs::Empty empty_srv;
   ros::ServiceClient detect_srv = nh.serviceClient<std_srvs::Empty>("/excel_calib_srv/detect_targets");
   ros::ServiceClient calibrate_srv = nh.serviceClient<std_srvs::Empty>("/excel_calib_srv/calibrate");
+  ros::ServiceClient save_srv = nh.serviceClient<std_srvs::Empty>("/excel_calib_srv/save");
 
   std::vector< std::vector<double> > joints_list;
   XmlRpcValue joint_poses;
@@ -65,6 +68,9 @@ int main(int argc, char **argv)
   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory");
   move_group_interface::MoveGroup group("excel");
   move_group_interface::MoveGroup::Plan my_plan;
+
+  actionlib::SimpleActionClient<control_msgs::GripperCommandAction> 
+    gripper_ac("gripper_controller/gripper_action", true);
 
   for(int i=0; i<joints_list.size(); i++){
     int num_tries = 4;
@@ -99,6 +105,23 @@ int main(int argc, char **argv)
     }else
       group.execute(my_plan);
 
+    if (load_board) {
+      control_msgs::GripperCommandGoal goal;
+      goal.command.position = 0.02;
+      goal.command.max_effort = 100;
+      gripper_ac.sendGoal(goal);
+      gripper_ac.waitForResult(ros::Duration(30.0));
+
+      char blah;
+      std::cin >> blah;
+      ros::Duration(5.0).sleep();
+
+      goal.command.position = 0.00;
+      gripper_ac.sendGoal(goal);
+      gripper_ac.waitForResult(ros::Duration(30.0));
+      load_board = false;
+    }
+
     //get info from the cameras
     ros::Duration(2.0).sleep();
     detect_srv.call(empty_srv);
@@ -106,6 +129,7 @@ int main(int argc, char **argv)
     ros::Duration(1.0).sleep();
   }
   calibrate_srv.call(empty_srv);
+  save_srv.call(empty_srv);
 
   spinner.stop();
   return 0;
