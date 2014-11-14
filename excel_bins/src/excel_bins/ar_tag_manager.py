@@ -91,9 +91,13 @@ class ARTagManager(ARTagManagerInterface):
         #for bid in self.ar_poses:
         for bid in bin_data:
             if bid+10 in bin_data:
-                #print 'pair of ids found'
-                #print [bid,bid+10]
-                
+                if bin_data[bid][:2] is None:
+                    # print "None type"
+                    break;
+                if bin_data[bid+10][:2] is None:
+                    # print "None type"
+                    break;
+
                 if not bin_data[bid][:2]:
                     # print "empty"
                     break;

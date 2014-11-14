@@ -125,7 +125,7 @@ public:
 
   void avoidance_callback(const std_msgs::Bool::ConstPtr& avoid);
   
-  ros::ServiceClient service_client, fk_client;
+  ros::ServiceClient service_client, fk_client, cartesian_path_service_;
   moveit_msgs::GetPositionIK::Request ik_srv_req;
   moveit_msgs::GetPositionIK::Response ik_srv_resp;
 
