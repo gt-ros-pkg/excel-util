@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "excel_bins/BinLocationEmpty.h"
+#include "excel_servers/BinLocationEmpty.h"
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 
