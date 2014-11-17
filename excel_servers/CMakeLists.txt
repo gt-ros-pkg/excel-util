@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   shape_msgs
   xacro
+  excel_bins
 )
 
 ## System dependencies are found with CMake's conventions

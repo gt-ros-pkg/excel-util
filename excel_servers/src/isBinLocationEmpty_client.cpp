@@ -19,10 +19,10 @@ int main(int argc, char **argv)
     double angle = 0.0;
 
     ros::NodeHandle nh_;
-    ros::ServiceClient client = nh_.serviceClient<excel_bins::BinLocationEmpty>("is_bin_location_empty");
+    ros::ServiceClient client = nh_.serviceClient<excel_servers::BinLocationEmpty>("is_bin_location_empty");
     ros::service::waitForService("is_bin_location_empty");
 
-    excel_bins::BinLocationEmpty srv;
+    excel_servers::BinLocationEmpty srv;
 
     moveit_msgs::CollisionObject collision_object;
     collision_object.header.frame_id = "table_link";

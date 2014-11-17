@@ -9,7 +9,7 @@ public:
     // Constructor.
     BinCollisionDetection();
 
-    bool checkForBinCollision(excel_bins::BinLocationEmpty::Request  &req, excel_bins::BinLocationEmpty::Response &res);
+    bool checkForBinCollision(excel_servers::BinLocationEmpty::Request  &req, excel_servers::BinLocationEmpty::Response &res);
 
     planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor;
     //boost::shared_ptr<tf::TransformListener> tf;
@@ -27,14 +27,12 @@ BinCollisionDetection::BinCollisionDetection() {
     planning_scene_monitor->startStateMonitor();
     planning_scene_monitor->startWorldGeometryMonitor();
 
-
-    //ros::ServiceServer service = nh_.advertiseService<excel_bins::BinLocationEmpty::Request, excel_bins::BinLocationEmpty::Response>("is_bin_location_empty", boost::bind(&BinCollisionDetection::checkForBinCollision,this, _1, _2));
     service = nh_.advertiseService("is_bin_location_empty",&BinCollisionDetection::checkForBinCollision,this);
 
     ROS_INFO("ADVERTISING SERVICE is_bin_location_empty");
 }
 
-bool BinCollisionDetection::checkForBinCollision(excel_bins::BinLocationEmpty::Request &req, excel_bins::BinLocationEmpty::Response &res)
+bool BinCollisionDetection::checkForBinCollision(excel_servers::BinLocationEmpty::Request &req, excel_servers::BinLocationEmpty::Response &res)
 {
     ROS_INFO("Collision check called");
 
