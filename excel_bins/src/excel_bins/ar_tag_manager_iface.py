@@ -286,8 +286,6 @@ class ARTagManagerInterface(object):
 
         # call the service to determine if the slot is available
         res = isBinLocationEmpty(collision_object_array)
-        print "RESPONSE"
-        print res
         for i in range(0,len(slots_ids)):
             if res.empty[i]:
                 empty_slots.append(slots_ids[i])
