@@ -220,8 +220,8 @@ def main():
         if True: #i % 10 == 0:
          #   print "filled slots"
          #   print filled
-            print "empty slots"
-            print empty
+#            print "empty slots"
+#            print empty
            # print "bin poses"
            # print bin_poses_real
            # print "slot states"

@@ -61,11 +61,11 @@ int main(int argc, char **argv)
     collision_object.mesh_poses.push_back(mesh_pose);
     collision_object.operation = collision_object.ADD;
 
-    srv.request.bin_to_place = collision_object;
+    srv.request.bin_to_place[0] = collision_object;
 
     if (client.call(srv))
     {
-        ROS_INFO("Bin location is%s empty", srv.response.empty ? "":" not");
+        ROS_INFO("Bin location is%s empty", srv.response.empty[0] ? "":" not");
     }
     else
     {

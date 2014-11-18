@@ -239,21 +239,21 @@ class ARTagManagerInterface(object):
         return slot_states, missing_bins
      
         
-    #### NEW FONCTIONS RELATED TO BINS AND NOT TAGS
+    #### NEW FONCTIONS TO CHECK BIN COLLISION
     def empty_slots(self):
 	rospy.wait_for_service('is_bin_location_empty')
 	isBinLocationEmpty = rospy.ServiceProxy('is_bin_location_empty', BinLocationEmpty)
 	
-	collision_object = CollisionObject()
-	collision_object.header.frame_id = "table_link"
-	collision_object.id = "large_bin"  #need to be "small_bin" to load a small bin
-	collision_object.operation = collision_object.ADD	
-
+	collision_object_array = []
 	slots_ids = self.get_slot_ids()	
-
 	empty_slots = []
 
 	for slot_id in slots_ids:
+	    collision_object = CollisionObject()
+	    collision_object.header.frame_id = "table_link"
+	    collision_object.id = "large_bin"  #need to be "small_bin" to load a small bin
+	    collision_object.operation = collision_object.ADD
+	    
 	    # clearing the collision object
 	    collision_object.meshes = []
 	    collision_object.mesh_poses = []
@@ -270,11 +270,17 @@ class ARTagManagerInterface(object):
 	    pose_msg.orientation.z = quat[2]
 	    pose_msg.orientation.w = quat[3]
 	    collision_object.mesh_poses.append(pose_msg) 
-	    
-	    # call the service to determine if the slot is available
-	    res = isBinLocationEmpty(collision_object)
-	    if res.empty:
-		empty_slots.append(slot_id)
+		
+	    # add the collision object to the array
+	    collision_object_array.append(collision_object)
+	
+	# call the service to determine if the slot is available
+	res = isBinLocationEmpty(collision_object_array)
+	print "RESPONSE"
+	print res
+	for i in range(0,len(slots_ids)):
+		if res.empty[i]:
+			empty_slots.append(slots_ids[i])
 
 	return empty_slots
 
