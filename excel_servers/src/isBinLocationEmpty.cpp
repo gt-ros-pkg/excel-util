@@ -54,7 +54,6 @@ bool BinCollisionDetection::checkForBinCollision(excel_servers::BinLocationEmpty
 	std::string path;
 
 	for(int i = 0;i<req.bin_to_place.size();i++){
-		ROS_INFO_STREAM(""<<req.bin_to_place[i]);
 		attached_object.object = req.bin_to_place[i];
 
 		if(req.bin_to_place[i].id =="small_bin")

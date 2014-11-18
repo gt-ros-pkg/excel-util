@@ -181,7 +181,7 @@ class BinDeliverer(object):
                 bins_required_pub.publish(data=bin_order)
                 parts_ready_pub.publish(False)
 
-                if False:
+                if True:
                     rospy.sleep(5.0)
                 else:
                     bin_man.deliver_bin_order(bin_order)
@@ -196,7 +196,7 @@ class BinDeliverer(object):
                 display_message_pub.publish("Waiting for associate")
                 scan_status_pub.publish(-1)
 
-                if True:
+                if False:
                     r = rospy.Rate(1)
                     while not rospy.is_shutdown():
                         print "Waiting for human to occupy workspace"
