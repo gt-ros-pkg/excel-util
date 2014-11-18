@@ -80,7 +80,8 @@ class BinManager(object):
                         print "Bin", bin_to_remove, "still in workspace, this shouldn't happen"
 
                 if len(bins_to_deliver) > 0:
-                    empty_hum_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots)
+                    #empty_hum_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots)
+                    empty_hum_ws_slots = self.ar_man.empty_slots(self.hum_ws_slots)
                     bin_to_deliver = bins_to_deliver[0]
                     empty_hum_ws_slot = empty_hum_ws_slots[0]
 
@@ -127,7 +128,8 @@ class BinManager(object):
         remove_to_slot = -100
         if bin_to_remove in self.bin_home_slots:
             remove_to_slot = self.bin_home_slots[bin_to_remove]
-        empty_rob_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots, invert_set=True)
+        #empty_rob_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots, invert_set=True)
+        empty_rob_ws_slots = self.ar_man.empty_slots(self.hum_ws_slots, invert_set=True)
         print "Current empty robot workspace slots:", empty_rob_ws_slots
         if remove_to_slot not in empty_rob_ws_slots:
             print "Slot", remove_to_slot, "not an empty slot, picking a random empty slot"

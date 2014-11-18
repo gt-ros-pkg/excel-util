@@ -204,7 +204,7 @@ def main():
     rospy.sleep(5.0)
     
     i = 0
-    while not rospy.is_shutdown():
+    while not rospy.is_shutdown() :
         filled = ar_tag_man.get_real_filled_slots()
         empty = ar_tag_man.get_real_empty_slots()
         bin_poses_real = ar_tag_man.get_real_bin_poses()
@@ -212,23 +212,30 @@ def main():
         empty_hum_slots = ar_tag_man.get_real_empty_slots(hum_ws_slots)
         filled_hum_slots = ar_tag_man.get_real_filled_slots(hum_ws_slots)
         empty_rob_slots = ar_tag_man.get_real_empty_slots(hum_ws_slots, invert_set=True)
-        if i % 10 == 0:
-            print "filled slots"
-            print filled
+	seconds1 = rospy.get_time()
+	new_empty = ar_tag_man.empty_slots()
+	seconds2 = rospy.get_time()
+	print "TIME"
+	print seconds2-seconds1 
+        if True: #i % 10 == 0:
+         #   print "filled slots"
+         #   print filled
             print "empty slots"
             print empty
-            print "bin poses"
-            print bin_poses_real
-            print "slot states"
-            print real_slot_states
-            print "bin_slots"
-            print ar_tag_man.bin_slots
-            print "Empty human workspace slots"
-            print empty_hum_slots
-            print "Empty robot workspace slots"
-            print empty_rob_slots
-            print "Bins filled in human workspace slots"
-            print filled_hum_slots
+           # print "bin poses"
+           # print bin_poses_real
+           # print "slot states"
+           # print real_slot_states
+           # print "bin_slots"
+           # print ar_tag_man.bin_slots
+	    print "new empty slots"
+	    print new_empty
+         #   print "Empty human workspace slots"
+         #   print empty_hum_slots
+         #   print "Empty robot workspace slots"
+         #   print empty_rob_slots
+         #   print "Bins filled in human workspace slots"
+         #   print filled_hum_slots
             print"-------------"
         i += 1
         

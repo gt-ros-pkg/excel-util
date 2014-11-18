@@ -8,10 +8,12 @@ from threading import RLock
 from collections import deque
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from roslaunch.substitution_args import resolve_args
+from excel_servers.srv import BinLocationEmpty
 
 import rospy
 from hrl_geom.pose_converter import PoseConv
-from geometry_msgs.msg import PoseStamped, PoseArray
+from geometry_msgs.msg import PoseStamped, PoseArray, Pose
+from moveit_msgs.msg import CollisionObject
 
 def create_slot_tree(bin_slots):
     pos_data = np.zeros((len(bin_slots),3))
@@ -64,17 +66,6 @@ class ARTagManagerInterface(object):
         self.ar_poses[mid].clear()
         self.ar_poses[mid+10].clear()
         self.real_bin_poses[mid] = pose
-
-    # def set_double_bin_location(self, mid, pose, cur_time=0.):
-    #     pos, euler = PoseConv.to_pos_euler(pose)
-    #     euler[2] -= np.pi
-    #     pos, rot = PoseConv.to_pos_rot([pos, euler])
-    #     pos1 = pos + rot*np.mat([-0.09, 0.0, 0.0]).T
-    #     pos2 = pos + rot*np.mat([0.09, 0.0, 0.0]).T
-    #     self.set_bin_location(mid, [pos1, rot])
-    #     self.set_bin_location(mid+10, [pos2, rot])
-    #     cur_time = rospy.get_time()
-    #     self.update_bins(cur_time)
 
     def get_available_bins(self):
         with self.lock:
@@ -248,3 +239,46 @@ class ARTagManagerInterface(object):
         return slot_states, missing_bins
      
         
+    #### NEW FONCTIONS RELATED TO BINS AND NOT TAGS
+    def empty_slots(self):
+	rospy.wait_for_service('is_bin_location_empty')
+	isBinLocationEmpty = rospy.ServiceProxy('is_bin_location_empty', BinLocationEmpty)
+	
+	collision_object = CollisionObject()
+	collision_object.header.frame_id = "table_link"
+	collision_object.id = "large_bin"  #need to be "small_bin" to load a small bin
+	collision_object.operation = collision_object.ADD	
+
+	slots_ids = self.get_slot_ids()	
+
+	empty_slots = []
+
+	for slot_id in slots_ids:
+	    # clearing the collision object
+	    collision_object.meshes = []
+	    collision_object.mesh_poses = []
+
+	    # specifying the bin's pose
+	    pose = self.get_bin_slot(slot_id)
+	    pose_msg = Pose()
+	    pose_msg.position.x = pose[0][0]
+	    pose_msg.position.y = pose[0][1]
+	    pose_msg.position.z = pose[0][2]
+	    quat = quaternion_from_euler(pose[1][0], pose[1][1], pose[1][2])
+	    pose_msg.orientation.x = quat[0]
+	    pose_msg.orientation.y = quat[1]
+	    pose_msg.orientation.z = quat[2]
+	    pose_msg.orientation.w = quat[3]
+	    collision_object.mesh_poses.append(pose_msg) 
+	    
+	    # call the service to determine if the slot is available
+	    res = isBinLocationEmpty(collision_object)
+	    if res.empty:
+		empty_slots.append(slot_id)
+
+	return empty_slots
+
+    def filled_slots(self):
+	return false
+
+

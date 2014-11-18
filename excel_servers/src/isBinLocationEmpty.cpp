@@ -2,6 +2,9 @@
 #include "excel_servers/BinLocationEmpty.h"
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include "geometric_shapes/mesh_operations.h"
+#include "geometric_shapes/shape_operations.h"
+#include <shape_msgs/Mesh.h>
 
 class BinCollisionDetection
 {
@@ -49,6 +52,21 @@ bool BinCollisionDetection::checkForBinCollision(excel_servers::BinLocationEmpty
     attached_object.link_name = "table_link";
     attached_object.object = req.bin_to_place;
     attached_object.object.operation = attached_object.object.ADD;
+
+    shapes::Mesh* m;
+    std::string path;
+    if(req.bin_to_place.id =="small_bin")
+         path = "package://excel_bins/meshes/bin_small.stl"; 
+    else path = "package://excel_bins/meshes/bin_large.stl";
+    
+    m = shapes::createMeshFromResource(path);
+    shape_msgs::Mesh co_mesh;
+    shapes::ShapeMsg co_mesh_msg;
+    shapes::constructMsgFromShape(m, co_mesh_msg);
+    co_mesh = boost::get<shape_msgs::Mesh>(co_mesh_msg);
+    attached_object.object.meshes.clear();
+    attached_object.object.meshes.push_back(co_mesh);
+
     planning_scene.robot_state.attached_collision_objects.push_back(attached_object);
 
     full_planning_scene->setPlanningSceneMsg(planning_scene);
