@@ -181,22 +181,28 @@ class BinDeliverer(object):
                 bins_required_pub.publish(data=bin_order)
                 parts_ready_pub.publish(False)
 
-                if True:
+                if False:
                     rospy.sleep(5.0)
                 else:
                     bin_man.deliver_bin_order(bin_order)
 
                 print "Moving to home position"
-                display_message_pub.publish("Moving to home position")
                 parts_ready_pub.publish(True)
                 home_act_goal = MoveBinGoal()
-                home_act_goal.bin_id = -5
+                if self.is_occupied:
+                    home_act_goal.bin_id = -6
+                    display_message_pub.publish("Workspace occupied, Moving to home position bis")
+
+                else:
+                    home_act_goal.bin_id = -5
+                    display_message_pub.publish("Moving to home position")
+
                 bin_man.bin_move_ac.send_goal_and_wait(home_act_goal)
 
                 display_message_pub.publish("Waiting for associate")
                 scan_status_pub.publish(-1)
 
-                if False:
+                if True: 
                     r = rospy.Rate(1)
                     while not rospy.is_shutdown():
                         print "Waiting for human to occupy workspace"

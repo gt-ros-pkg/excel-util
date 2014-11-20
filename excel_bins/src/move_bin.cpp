@@ -110,7 +110,7 @@ void MoveBin::humanUnsafeCallback(const std_msgs::Bool::ConstPtr& msg)
   human_unsafe_ = msg->data;
 }
 
-bool MoveBin::moveToHome()
+bool MoveBin::moveToHome(bool bis)
 {
   while (ros::ok()) {
 
@@ -120,7 +120,11 @@ bool MoveBin::moveToHome()
 
     // Plan trajectory
     //group.setStartStateToCurrentState();
-    static const double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
+    static double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
+    if(bis)
+    {
+      arr[1] = 3.303;
+    }
     std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
 
     // Fixing shoulder_pan and wrist_3 given by the IK
@@ -164,6 +168,9 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
   ROS_INFO("Moving bin %d to target (%.3f, %.3f, %f)", bin_number, x_target, y_target, angle_target);
   if(bin_number == -5) {
     return moveToHome();
+  }
+  if(bin_number == -6) {
+    return moveToHome(true);
   }
   double bin_height;
   executeGripperAction(false, false); // open gripper, but don't wait
@@ -459,13 +466,7 @@ bool MoveBin::verticalMove(double target_z)
     // getting the current	
     // group.setStartStateToCurrentState();
     // sleep(0.3);	
-    std::vector<double> joints1 = group.getCurrentJointValues();
-    ROS_INFO_STREAM("joints" << joints1[0]);
-
     group.getCurrentState()->update(true);
-    std::vector<double> joints2 = group.getCurrentJointValues();
-    ROS_INFO_STREAM("joints" << joints2[0]);
-
     group.setStartStateToCurrentState();
 
     /*
@@ -522,9 +523,9 @@ bool MoveBin::verticalMove(double target_z)
     double fraction = res.fraction;
     lin_traj_msg = res.solution;
 
-    ROS_INFO_STREAM("currrent state "<< req.start_state);
+    //ROS_INFO_STREAM("currrent state "<< req.start_state);
 
-    ROS_INFO_STREAM("1st point for "<< lin_traj_msg.joint_trajectory.joint_names[0] <<" is " << lin_traj_msg.joint_trajectory.points[0].positions[0]);
+    //ROS_INFO_STREAM("1st point for "<< lin_traj_msg.joint_trajectory.joint_names[0] <<" is " << lin_traj_msg.joint_trajectory.points[0].positions[0]);
 
     // create new robot trajectory object
     robot_trajectory::RobotTrajectory lin_rob_traj(group.getCurrentState()->getRobotModel(), "excel");
@@ -533,7 +534,7 @@ bool MoveBin::verticalMove(double target_z)
 
     // copy the trajectory message into the robot trajectory object
     lin_rob_traj.setRobotTrajectoryMsg(*group.getCurrentState(), lin_traj_msg);
-    ROS_INFO_STREAM("first rail point of smooth traj " << *(lin_rob_traj.getFirstWayPoint().getJointPositions("table_rail_joint")));
+    //ROS_INFO_STREAM("first rail point of smooth traj " << *(lin_rob_traj.getFirstWayPoint().getJointPositions("table_rail_joint")));
 
     trajectory_processing::IterativeParabolicTimeParameterization iter_parab_traj_proc;
     if(!iter_parab_traj_proc.computeTimeStamps(lin_rob_traj)) {
