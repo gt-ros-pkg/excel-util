@@ -125,6 +125,7 @@ add_executable(add_bin_node src/add_bin.cpp)
 add_executable(pick_bin_node src/pick_bin.cpp)
 add_executable(update_bins_node src/update_bins.cpp)
 add_executable(move_bin_node src/move_bin_node.cpp)
+add_executable(tool_handling_sim_node src/tool_handling_sim.cpp)
 add_executable(move_bin_action_server src/move_bin_action_server.cpp)
 
 # add_executable(move_bin_constrained_node src/move_bin_constrained.cpp)
@@ -144,6 +145,10 @@ target_link_libraries(pick_bin_node ${catkin_LIBRARIES})
 target_link_libraries(update_bins_node ${catkin_LIBRARIES})
 
 target_link_libraries(move_bin_node 
+  ${catkin_LIBRARIES}
+  move_bin
+)
+target_link_libraries(tool_handling_sim_node
   ${catkin_LIBRARIES}
   move_bin
 )
