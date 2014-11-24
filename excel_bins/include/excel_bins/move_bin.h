@@ -46,8 +46,8 @@ public:
   MoveBin();
 
   ////////////////////////// Outer actions /////////////////////////
-  // The robot tries to plan a trajectory to its home position
-  bool moveToHome();
+  // The robot tries to plan a trajectory to its home position, or the bis one
+  bool moveToHome(bool bis=false);
 
   // From the current joint pose, the robot moves the requested bin from its location
   // to the target location, and backs away
@@ -124,8 +124,8 @@ public:
   void human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped);
 
   void avoidance_callback(const std_msgs::Bool::ConstPtr& avoid);
-  
-  ros::ServiceClient service_client, fk_client;
+
+  ros::ServiceClient service_client, fk_client, cartesian_path_service_;
   moveit_msgs::GetPositionIK::Request ik_srv_req;
   moveit_msgs::GetPositionIK::Response ik_srv_resp;
 

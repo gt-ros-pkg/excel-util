@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   shape_msgs
   xacro
+  excel_bins
 )
 
 ## System dependencies are found with CMake's conventions
@@ -62,6 +63,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   KinematicsInfo.srv
+  BinLocationEmpty.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -108,10 +110,12 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(get_kinematics_info src/get_kinematics_info.cpp)
+# add_library(get_kinematics_info src/get_kinematics_info.cpp)
 
 ## Declare a cpp executable
 add_executable(get_kinematics_info_node src/get_kinematics_info.cpp)
+add_executable(isBinLocationEmpty_node src/isBinLocationEmpty.cpp)
+add_executable(isBinLocationEmpty_client_node src/isBinLocationEmpty_client.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -119,8 +123,12 @@ add_executable(get_kinematics_info_node src/get_kinematics_info.cpp)
 # add_dependencies(move_bin_action_server
 #   ${excel_bins_EXPORTED_TARGETS}
 # )
+add_dependencies(isBinLocationEmpty_node ${excel_servers_EXPORTED_TARGETS})
+add_dependencies(isBinLocationEmpty_client_node ${excel_servers_EXPORTED_TARGETS})
 
 target_link_libraries(get_kinematics_info_node ${catkin_LIBRARIES})
+target_link_libraries(isBinLocationEmpty_node ${catkin_LIBRARIES})
+target_link_libraries(isBinLocationEmpty_client_node ${catkin_LIBRARIES})
 
 #############
 ## Install ##

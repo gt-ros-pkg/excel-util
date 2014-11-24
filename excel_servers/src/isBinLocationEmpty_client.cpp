@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "excel_bins/BinLocationEmpty.h"
+#include "excel_servers/BinLocationEmpty.h"
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit_msgs/CollisionObject.h>
 #include <tf/transform_broadcaster.h>
@@ -19,10 +19,10 @@ int main(int argc, char **argv)
     double angle = 0.0;
 
     ros::NodeHandle nh_;
-    ros::ServiceClient client = nh_.serviceClient<excel_bins::BinLocationEmpty>("is_bin_location_empty");
+    ros::ServiceClient client = nh_.serviceClient<excel_servers::BinLocationEmpty>("is_bin_location_empty");
     ros::service::waitForService("is_bin_location_empty");
 
-    excel_bins::BinLocationEmpty srv;
+    excel_servers::BinLocationEmpty srv;
 
     moveit_msgs::CollisionObject collision_object;
     collision_object.header.frame_id = "table_link";
@@ -61,11 +61,11 @@ int main(int argc, char **argv)
     collision_object.mesh_poses.push_back(mesh_pose);
     collision_object.operation = collision_object.ADD;
 
-    srv.request.bin_to_place = collision_object;
+    srv.request.bin_to_place[0] = collision_object;
 
     if (client.call(srv))
     {
-        ROS_INFO("Bin location is%s empty", srv.response.empty ? "":" not");
+        ROS_INFO("Bin location is%s empty", srv.response.empty[0] ? "":" not");
     }
     else
     {

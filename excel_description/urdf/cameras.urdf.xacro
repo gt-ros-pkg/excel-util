@@ -9,7 +9,7 @@
    <property name="pi" value="3.14159265" />
 
    <xacro:macro name="cameras" params="x_offset y_offset theta_offset">
-
+<!--
       <link name="overhead_hum_ws_frame">
       </link>
 
@@ -25,7 +25,6 @@
       <joint name="overhead_rob_ws_cam_joint" type="fixed">
          <parent link="table_link" />
          <child link="overhead_rob_ws_frame" />
-         <!--<origin rpy="3.108 -0.038 -0.005" xyz="1.625 0.149 2.643" />-->
          <origin rpy="3.108 -0.028 ${-0.025+theta_offset}" xyz="${1.624+x_offset} ${0.12+y_offset} 2.643" />
       </joint>
 
@@ -50,7 +49,7 @@
       </joint>
 
       <xacro:kinect_frames camera="kinect_back"/>
-
+-->
       <link name="gripper_camera_link">
       </link>
 
