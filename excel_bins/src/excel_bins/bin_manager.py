@@ -143,8 +143,9 @@ def load_ws_setup(filename):
     bin_home_slots = yaml_data['bin_home_slots']
     hum_ws_slots = yaml_data['hum_ws_slots']
     bin_barcode_ids = yaml_data['bin_barcode_ids']
+    tags_list = yaml_data['tags_list']
     f.close()
-    return slots, bin_home_slots, hum_ws_slots, bin_barcode_ids
+    return slots, tags_list, bin_home_slots, hum_ws_slots, bin_barcode_ids
 
 def load_bin_orders(filename):
     f = file(resolve_args(filename), 'r')
@@ -302,7 +303,7 @@ class BinDeliverer(object):
 def main():
     rospy.init_node('bin_manager')
     ws_setup_fn = '$(find excel_bins)/src/excel_bins/bin_workspace_setup.yaml'
-    slots, bin_home_slots, hum_ws_slots, bin_barcode_ids = load_ws_setup(ws_setup_fn)
+    slots, tags_list, bin_home_slots, hum_ws_slots, bin_barcode_ids = load_ws_setup(ws_setup_fn)
     print "Slots:", slots
     print "Bin homes:", bin_home_slots
     print "Human workspace slots:", hum_ws_slots
@@ -310,7 +311,7 @@ def main():
 
     IS_SIMULATION = False
     
-    ar_man = ARTagManager(slots)
+    ar_man = ARTagManager(slots, tags_list)
     bin_man = BinManager(ar_man, hum_ws_slots, bin_home_slots, IS_SIMULATION)
 
     rospy.sleep(1.)

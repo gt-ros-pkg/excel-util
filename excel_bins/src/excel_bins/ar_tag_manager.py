@@ -15,7 +15,7 @@ from excel_bins.msg import Bins, Bin
 from std_msgs.msg import Int8MultiArray, Int32
 
 class ARTagManager(ARTagManagerInterface):
-    def __init__(self, bin_slots, available_bins=None, will_update_bins=True):
+    def __init__(self, bin_slots, tags_list, available_bins=None, will_update_bins=True):
         super(ARTagManager, self).__init__(bin_slots, available_bins=None)
         self.will_update_bins = will_update_bins
         camera_pos = [0, 0, 0]
@@ -23,7 +23,9 @@ class ARTagManager(ARTagManagerInterface):
         self.table_height = 0.88
         self.bin_small_height = 0.13
         self.bin_large_height = 0.18
+        self.toolbox_height = 0.18
         self.camera_pose = PoseConv.to_homo_mat(camera_pos, camera_quat)
+	self.tags_list = tags_list
         
         # FILTER SIZE HAS TO BE ODD because of the median
         self.filter_size = 5
@@ -90,56 +92,94 @@ class ARTagManager(ARTagManagerInterface):
         bins = []
         #for bid in self.ar_poses:
         for bid in bin_data:
-            if bid+10 in bin_data:
-                if bin_data[bid][:2] is None:
-                    # print "None type"
-                    break;
-                if bin_data[bid+10][:2] is None:
-                    # print "None type"
-                    break;
+	    if bid in self.tags_list:
+		if((bid == 100) or (bid==101)):
+		    if ((bin_data[100] is None) or (bin_data[101] is None)):
+	        	# print "None type"
+			break;
+		    if ((not bin_data[100]) or (not bin_data[101])):
+			# print "empty"
+			break;
+		    
+		    # Get the average position
+                    ar_pose1 = PoseConv.to_homo_mat(bin_data[100][:2])
+	            ar_pose2 = PoseConv.to_homo_mat(bin_data[101][:2])
+                    ar_pose = PoseConv.to_homo_mat((ar_pose1+ar_pose2)/2)                       
 
-                if not bin_data[bid][:2]:
-                    # print "empty"
-                    break;
-                if not bin_data[bid+10][:2]:
-                    # print "empty"
-                    break;
-                
-                # Get the average position
-                ar_pose1 = PoseConv.to_homo_mat(bin_data[bid][:2])
-                ar_pose2 = PoseConv.to_homo_mat(bin_data[bid+10][:2])
-                ar_pose = PoseConv.to_homo_mat((ar_pose1+ar_pose2)/2)                       
+                    # Create a bin message
+                    bin = Bin()
+                    bin.name = "toolbox"
+                    bin.size = "toolbox"
 
-                # Create a bin message
-                bin = Bin()
-                bin.name = "bin#"+str(bid)
+                    xdiff = ar_pose1[0,3] - ar_pose2[0,3] 
+                    ydiff = ar_pose1[1,3] - ar_pose2[1,3]
+                    ang = np.arctan2(xdiff, ydiff)
+    
+                    # Get quaternion from angle
+                    new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
+
+                    pose_msg = PoseConv.to_pose_msg(self.camera_pose**-1 * ar_pose)
+                    pose_msg.orientation.x = new_quaternion[1]
+                    pose_msg.orientation.y = new_quaternion[2]
+                    pose_msg.orientation.z = new_quaternion[3]
+                    pose_msg.orientation.w = new_quaternion[0]
                 
-                # Correct bin height
-                if (bid%2):
-                    ar_pose[2,3] = self.table_height + self.bin_large_height
-                    bin.size = "large"
-                else:
-                    ar_pose[2,3] = self.table_height + self.bin_small_height
-                    bin.size = "small"
+                    # Add the bin to the bin's array msg
+                    bin.pose = pose_msg
+                    bins.append(bin)
+                    self.real_bin_poses[bid] = bin.pose
+
+
+                if bid+10 in bin_data:
+		    if bin_data[bid][:2] is None:
+			# print "None type"
+		        break;
+                    if bin_data[bid+10][:2] is None:
+                        # print "None type"
+                        break;
+
+                    if not bin_data[bid][:2]:
+                        # print "empty"
+                        break;
+                    if not bin_data[bid+10][:2]:
+                        # print "empty"
+                        break;
+                
+                    # Get the average position
+                    ar_pose1 = PoseConv.to_homo_mat(bin_data[bid][:2])
+	            ar_pose2 = PoseConv.to_homo_mat(bin_data[bid+10][:2])
+                    ar_pose = PoseConv.to_homo_mat((ar_pose1+ar_pose2)/2)                       
+
+                    # Create a bin message
+                    bin = Bin()
+                    bin.name = "bin#"+str(bid)
+                
+                    # Correct bin height
+                    if (bid%2):
+                        ar_pose[2,3] = self.table_height + self.bin_large_height
+                        bin.size = "large"
+                    else:
+                        ar_pose[2,3] = self.table_height + self.bin_small_height
+                        bin.size = "small"
 
       
-                xdiff = ar_pose1[0,3] - ar_pose2[0,3] 
-                ydiff = ar_pose1[1,3] - ar_pose2[1,3]
-                ang = np.arctan2(xdiff, ydiff)
+                    xdiff = ar_pose1[0,3] - ar_pose2[0,3] 
+                    ydiff = ar_pose1[1,3] - ar_pose2[1,3]
+                    ang = np.arctan2(xdiff, ydiff)
+    
+                    # Get quaternion from angle
+                    new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
 
-                # Get quaternion from angle
-                new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
-
-                pose_msg = PoseConv.to_pose_msg(self.camera_pose**-1 * ar_pose)
-                pose_msg.orientation.x = new_quaternion[1]
-                pose_msg.orientation.y = new_quaternion[2]
-                pose_msg.orientation.z = new_quaternion[3]
-                pose_msg.orientation.w = new_quaternion[0]
+                    pose_msg = PoseConv.to_pose_msg(self.camera_pose**-1 * ar_pose)
+                    pose_msg.orientation.x = new_quaternion[1]
+                    pose_msg.orientation.y = new_quaternion[2]
+                    pose_msg.orientation.z = new_quaternion[3]
+                    pose_msg.orientation.w = new_quaternion[0]
                 
-                # Add the bin to the bin's array msg
-                bin.pose = pose_msg
-                bins.append(bin)
-                self.real_bin_poses[bid] = bin.pose
+                    # Add the bin to the bin's array msg
+                    bin.pose = pose_msg
+                    bins.append(bin)
+                    self.real_bin_poses[bid] = bin.pose
                
         # Publish bins
         msg_bins = bins
@@ -200,7 +240,8 @@ def main():
         if bin_slots[slot_id][0][1] > 0.95 and bin_slots[slot_id][0][0] < 1.5:
             hum_ws_slots.append(slot_id)
     
-    ar_tag_man = ARTagManager(bin_slots)
+    tags_list = [1,11,2,12,3,13,4,14,5,15,6,16,7,17,8,18,9,19,100,101]	
+    ar_tag_man = ARTagManager(bin_slots, tags_list)
     rospy.sleep(5.0)
     
     i = 0
