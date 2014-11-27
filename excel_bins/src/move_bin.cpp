@@ -703,15 +703,17 @@ double MoveBin::avoid_human(double goal_angle, double current_angle, geometry_ms
   return goal_angle;
 }
 
-void MoveBin::human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped)
+void MoveBin::human_pose_callback(const geometry_msgs::PoseArray::ConstPtr& pose_array)
 {
-  if(isnan(pose_stamped->pose.position.x)){
+  return;
+  /*
+  if(isnan(pose_array->pose.position.x)){
     geometry_msgs::Pose fake_pose;
     fake_pose.position.x = 1000;
     fake_pose.position.y = 1000;
     human_pose = fake_pose;
   }
-  else human_pose = pose_stamped->pose;
+  else human_pose = pose_stamped->pose;*/
 }
 
 void MoveBin::avoidance_callback(const std_msgs::Bool::ConstPtr& avoid){

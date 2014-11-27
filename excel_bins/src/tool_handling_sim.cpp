@@ -18,7 +18,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh_;
   usleep(1000*1000);
 
-  // ros::Subscriber human_pose_sub = nh_.subscribe("human_sim/pose", 1, human_pose_callback);
+  //ros::Subscriber human_pose_sub = nh_.subscribe("human_sim/pose", 1, human_pose_callback);
   ros::Subscriber human_pose_sub = nh_.subscribe("human/estimated/pose", 1, human_pose_callback);
 
   MoveBin movebin;
