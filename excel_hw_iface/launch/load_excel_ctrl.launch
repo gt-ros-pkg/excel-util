@@ -41,7 +41,26 @@
       heartbeat_timeout: 0.3
       adapter_namespaces: [vel_fwd, pva_fwd]
       joint_adapters: [vel_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd, pva_fwd]
-      
+
+    vel_cart_pos_ctrl:
+      type: vel_fwd_controllers/CartesianPositionController
+      mode: vel
+      base_frame: table_link
+      ee_frame: ee_link
+      gains:
+        lin_x_p: 0.05
+        lin_x_max: 1.0
+        lin_y_p: 0.05
+        lin_y_max: 1.0
+        lin_z_p: 0.05
+        lin_z_max: 1.0
+        ang_x_p: 0.05
+        ang_x_max: 1.0
+        ang_y_p: 0.05
+        ang_y_max: 1.0
+        ang_z_p: 0.05
+        ang_z_max: 1.0
+
     config_fwd_ctrl:
       type: ur_controllers/ConfigForwardController
 
@@ -67,6 +86,8 @@
             param="vel_trajectory_ctrl/joints" />
   <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
             param="vel_pva_trajectory_ctrl/joints" />
+  <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
+            param="vel_cart_pos_ctrl/joints" />
 
   <rosparam command="load" file="$(find excel_hw_iface)/config/joint_gains.yaml"
             param="vel_trajectory_ctrl/gains" />
