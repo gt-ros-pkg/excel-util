@@ -60,29 +60,6 @@ add_executable(back_n_forth_node src/back_n_forth.cpp)
 add_executable(dodge_human_node src/dodge_human.cpp)
 add_executable(move_to_joint_positions_node src/move_to_joint_positions.cpp)
 
-if (DMTX_FOUND)
-  add_library(scanning src/scanning.cpp)
-  add_executable(scanning_node src/scanning_node.cpp)
-  add_executable(scanning_action_server src/scanning_action_server.cpp)
-
-  add_dependencies(scanning_action_server
-    ${excel_move_EXPORTED_TARGETS}
-  )
-
-  target_link_libraries(scanning 
-    ${OpenCV_LIBRARIES}
-    ${DMTX_LIBRARIES}
-  )
-  target_link_libraries(scanning_node 
-    scanning
-    ${catkin_LIBRARIES}    
-  )
-  target_link_libraries(scanning_action_server 
-    scanning
-    ${catkin_LIBRARIES}    
-  )
-endif()
-
 target_link_libraries(moveit_to_known_position_node ${catkin_LIBRARIES})
 target_link_libraries(moveit_joint_node ${catkin_LIBRARIES})
 target_link_libraries(move_to_carthesian_position_node ${catkin_LIBRARIES})
