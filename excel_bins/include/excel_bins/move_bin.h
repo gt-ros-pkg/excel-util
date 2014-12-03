@@ -32,9 +32,12 @@
 #include "tf/transform_datatypes.h"
 #include <std_msgs/Bool.h>
 #include <geometry_msgs/PoseArray.h>
+#include <math.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
+# define TOOLBOX_HEIGHT 0.22
+# define TOOLBOX_HANDLE_SHIFT 0.12
 # define GRIPPING_OFFSET 0.1  
 # define DZ 0.30 
 
@@ -60,6 +63,8 @@ public:
   // The robot is not holding a bin during this method
   bool approachBin(int bin_number, double& bin_height);
 
+  bool approachToolbox(double& bin_height);
+
   // On the assumption that the robot is currently holding a bin, the robot moves the
   // bin to the target place location, but does not release the bin
   bool deliverBin(double x_target, double y_target, double angle_target, double bin_height);
@@ -69,8 +74,13 @@ public:
 
   // Move arm to pose above bin
   bool moveAboveBin(int bin_number, double& bin_height); 
+  bool moveAboveToolbox(double& bin_height);
+
   void getBinAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geometry_msgs::Pose& pose,
                        double& bin_height);
+
+  void getToolboxAbovePose(moveit_msgs::CollisionObjectPtr toolbox_coll_obj, geometry_msgs::Pose& pose,
+      double& bin_height);
 
   // Move arm to target (X,Y,R), above a place location
   // angle_target is in degrees
@@ -99,8 +109,12 @@ public:
   // grasp bin and attach the collision model to the arm
   bool attachBin(int bin_number);  
 
+  bool attachToolbox();
+
   // release bin and detach the collision model from the arm
   bool detachBin();
+
+  bool detachToolbox();
 
   // Finds out if the robot needs to rotate clockwise or anti-clockwise
   double optimalGoalAngle(double goal_angle, double current_angle);
@@ -109,6 +123,8 @@ public:
 
   // get the collision object corresponding to the bin_number
   moveit_msgs::CollisionObjectPtr getBinCollisionObject(int bin_number);
+
+  moveit_msgs::CollisionObjectPtr getToolboxCollisionObject();
 
   // execute a joint trajectory
   bool executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety);

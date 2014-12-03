@@ -44,12 +44,20 @@ class ARTagManager(ARTagManagerInterface):
 
     def not_track_cb(self, bin_id_msg):
         bin_id = bin_id_msg.data
-        if bin_id > 0:
-            self.ar_poses[bin_id].clear()
-            self.ar_poses[bin_id+10].clear()
-            self.bins_not_tracking.append(bin_id)
-        else:
-            self.bins_not_tracking.remove(-bin_id)
+	if ((not bin_id == 100) and (not bin_id ==-100)):
+            if bin_id > 0:
+                self.ar_poses[bin_id].clear()
+                self.ar_poses[bin_id+10].clear()
+                self.bins_not_tracking.append(bin_id)
+            else:
+                self.bins_not_tracking.remove(-bin_id)
+	else:
+	    if bin_id > 0:
+                self.ar_poses[100].clear()
+                self.ar_poses[101].clear()
+                self.bins_not_tracking.append(bin_id)
+	    else:
+		self.bins_not_tracking.remove(-bin_id)
 
     def ar_cb(self, msg):
         if self.lock.acquire(blocking=0):
