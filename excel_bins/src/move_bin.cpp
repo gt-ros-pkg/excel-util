@@ -120,11 +120,15 @@ bool MoveBin::moveToHome(bool bis)
 
     // Plan trajectory
     //group.setStartStateToCurrentState();
-    static double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
+
+    std::cout <<"movetohome bis is : "<< bis<<std::endl;
+
+    double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
     if(bis)
     {
       arr[1] = 3.303;
     }
+    std::cout << "arr1 "<< arr[1] << std::endl; 
     std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
 
     // Fixing shoulder_pan and wrist_3 given by the IK
@@ -186,9 +190,14 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
         ROS_ERROR("Failed to attach toolbox");
         return false;
     }
-    if(!deliverBin(x_target, y_target, angle_target, bin_height)){
-        ROS_ERROR("Failed to deliver toolbox");
-        return false;
+    if(!ascent(bin_height+0.05)) {
+      ROS_ERROR("Failed to ascend while grasping toolbox.");
+      return false;
+    }
+    if(!carryBinTo(x_target, y_target, angle_target, bin_height+0.05)) {
+      ROS_ERROR("Failed to carry bin to target (%.3f, %.3f, %.3f)", 
+          x_target, y_target, angle_target);
+      return false;
     }
     return true;
   }
