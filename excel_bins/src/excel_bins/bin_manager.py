@@ -190,10 +190,11 @@ class BinDeliverer(object):
                 print "Moving to home position"
                 parts_ready_pub.publish(True)
                 home_act_goal = MoveBinGoal()
+                wait_time = 4.0
                 if self.is_occupied:
                     home_act_goal.bin_id = -6
                     display_message_pub.publish("Workspace occupied, Moving to home position bis")
-
+                    wait_time = 0.5
                 else:
                     home_act_goal.bin_id = -5
                     display_message_pub.publish("Moving to home position")
@@ -204,13 +205,13 @@ class BinDeliverer(object):
                 scan_status_pub.publish(-1)
 
                 if True: 
-                    r = rospy.Rate(1)
+                    r = rospy.Rate(0.5)
                     while not rospy.is_shutdown():
                         print "Waiting for human to occupy workspace"
                         if self.is_occupied:
                             break
                         r.sleep()
-                    rospy.sleep(4.)
+                    rospy.sleep(wait_time)
 
                     print "Starting first scan"
                     display_message_pub.publish("Starting first scan")
@@ -297,6 +298,8 @@ class BinDeliverer(object):
                 else:
                     print "Order complete, (scanning now), press enter to continue"
                     sys.stdin.readline()
+                
+                scan_status_pub.publish(0)
 
             print "Starting at the beginning"
 
