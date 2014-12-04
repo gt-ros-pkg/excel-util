@@ -53,6 +53,8 @@ public:
   // The robot tries to plan a trajectory to its home position, or the bis one
   bool moveToHome(bool bis=false);
 
+  bool moveToToolboxHome();
+
   // From the current joint pose, the robot moves the requested bin from its location
   // to the target location, and backs away
   bool moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target);

@@ -121,14 +121,61 @@ bool MoveBin::moveToHome(bool bis)
     // Plan trajectory
     //group.setStartStateToCurrentState();
 
-    std::cout <<"movetohome bis is : "<< bis<<std::endl;
-
     double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
     if(bis)
     {
       arr[1] = 3.303;
     }
-    std::cout << "arr1 "<< arr[1] << std::endl; 
+    std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
+
+    // Fixing shoulder_pan and wrist_3 given by the IK
+    joint_vals[1] = this->optimalGoalAngle(joint_vals[1], planning_scene.robot_state.joint_state.position[1]);
+    joint_vals[6] = this->optimalGoalAngle(joint_vals[6], planning_scene.robot_state.joint_state.position[6]);
+
+    group.getCurrentState()->update(true);
+
+    group.setJointValueTarget(joint_vals);
+    int num_tries = 4;
+    MoveGroupPlan my_plan;
+    // try to plan a few times, just to be safe
+    while (ros::ok() && num_tries > 0) {
+      if (group.plan(my_plan))
+        break;
+      num_tries--;
+    }
+
+    if (num_tries > 0) {
+      // found plan, let's try and execute
+      if (executeJointTrajectory(my_plan, true)) {
+        ROS_INFO("Home position joint trajectory execution successful");
+        return true;
+      }
+      else {
+        ROS_WARN("Home position joint trajectory execution failed");
+        ros::Duration(0.5).sleep();
+        continue;
+      }
+    }
+    else {
+      ROS_ERROR("Home position Motion planning failed");
+      continue;
+    }
+  }
+  return true;
+}
+
+bool MoveBin::moveToToolboxHome()
+{
+  while (ros::ok()) {
+
+    moveit_msgs::PlanningScene planning_scene;
+    planning_scene::PlanningScenePtr full_planning_scene;
+    getPlanningScene(planning_scene, full_planning_scene);
+
+    // Plan trajectory
+    //group.setStartStateToCurrentState();
+
+    double arr[] = {1.5167, -4.6581, -1.6223, 1.8332, -1.7781, -1.5710, 1.6644};
     std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
 
     // Fixing shoulder_pan and wrist_3 given by the IK
@@ -194,9 +241,8 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
       ROS_ERROR("Failed to ascend while grasping toolbox.");
       return false;
     }
-    if(!carryBinTo(x_target, y_target, angle_target, bin_height+0.05)) {
-      ROS_ERROR("Failed to carry bin to target (%.3f, %.3f, %.3f)", 
-          x_target, y_target, angle_target);
+    if(!moveToToolboxHome()) {
+      ROS_ERROR("Failed to go to toolbox home position");
       return false;
     }
     return true;
@@ -224,6 +270,7 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
     ROS_ERROR("Failed to attach bin #%d.", bin_number);
     return false;
   }
+
   ///////////////////////////// HOLDING BIN ///////////////////////////////////
   if(!deliverBin(x_target, y_target, angle_target, bin_height)) {
     ROS_ERROR("Failed to deliver bin to target (%.3f, %.3f, %f)", 
@@ -327,6 +374,10 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
       pose.position.x, pose.position.y, pose.position.z);
   while (ros::ok()) {
     // update planning scene
+    group.getCurrentState()->update(true);
+    group.setStartStateToCurrentState();
+    sleep(0.3); // Add if jump violation still appears
+
     moveit_msgs::PlanningScene planning_scene;
     planning_scene::PlanningScenePtr full_planning_scene;
     getPlanningScene(planning_scene, full_planning_scene);
@@ -538,7 +589,7 @@ bool MoveBin::verticalMove(double target_z)
 
     // getting the current	
     // group.setStartStateToCurrentState();
-    // sleep(0.3);	
+    sleep(0.3);	
     group.getCurrentState()->update(true);
     group.setStartStateToCurrentState();
 
@@ -951,10 +1002,12 @@ moveit_msgs::CollisionObjectPtr MoveBin::getBinCollisionObject(int bin_number)
   planning_scene::PlanningScenePtr full_planning_scene;
   getPlanningScene(planning_scene, full_planning_scene);
 
-  for(int i=0;i<planning_scene.world.collision_objects.size();i++) 
-    if(planning_scene.world.collision_objects[i].id == bin_name) 
-      return moveit_msgs::CollisionObjectPtr(
-          new moveit_msgs::CollisionObject(planning_scene.world.collision_objects[i]));
+  for(int i=0;i<planning_scene.world.collision_objects.size();i++){
+    if(planning_scene.world.collision_objects[i].id == bin_name){ 
+      return moveit_msgs::CollisionObjectPtr(new moveit_msgs::CollisionObject(planning_scene.world.collision_objects[i]));
+    }
+  }
+  ROS_ERROR("Failed to attach the bin. Attaching an empty collision object");
   return moveit_msgs::CollisionObjectPtr();
 }
 
@@ -1017,7 +1070,6 @@ void MoveBin::getToolboxAbovePose(moveit_msgs::CollisionObjectPtr toolbox_coll_o
   pose.orientation.w = quat.w();
 
   // fix pose
-  std::cout << "!!!!!!!!!!!!!! yaw = "<< yaw << std::endl;
   pose.position.x -= TOOLBOX_HANDLE_SHIFT*cos(yaw);
   pose.position.y -= TOOLBOX_HANDLE_SHIFT*sin(yaw) ;
 
