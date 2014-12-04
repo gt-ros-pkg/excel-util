@@ -102,32 +102,33 @@ class ARTagManager(ARTagManagerInterface):
         for bid in bin_data:
             if bid in self.tags_list:
                 if((bid == 100) or (bid==101)):
-                    if ((bin_data[100][:2] is None) or (bin_data[101][:2] is None)):
-                        # print "None type"
-                        break;
-
-                    if ((not bin_data[100][:2]) or (not bin_data[101][:2])):
-                        # print "empty"
-                        break;
+                    if ((101 not in bin_data) or (100 not in bin_data)):
+                       # print "empty"
+                       break;
 
                     # Get the average position
-                    ar_pose1 = PoseConv.to_homo_mat(bin_data[100][:2])
-                    ar_pose2 = PoseConv.to_homo_mat(bin_data[101][:2])
-                    ar_pose = PoseConv.to_homo_mat((ar_pose1+ar_pose2)/2)                       
-
+                    ar_pose1_x = (bin_data[100][:2])[0][0]
+                    ar_pose1_y = (bin_data[100][:2])[0][1]
+                    ar_pose1_z = (bin_data[100][:2])[0][2]
+                    ar_pose2_x = (bin_data[101][:2])[0][0]
+                    ar_pose2_y = (bin_data[101][:2])[0][1]
+                    ar_pose2_z = (bin_data[101][:2])[0][2]
+                    
                     # Create a bin message
                     bin = Bin()
                     bin.name = "toolbox"
                     bin.size = "toolbox"
 
-                    xdiff = ar_pose1[0,3] - ar_pose2[0,3] 
-                    ydiff = ar_pose1[1,3] - ar_pose2[1,3]
-                    ang = np.arctan2(xdiff, ydiff)
+                    xdiff = ar_pose1_x - ar_pose2_x
+                    ydiff = ar_pose1_y - ar_pose2_y
+                    pose_msg = Pose()
+                    pose_msg.position.x = (ar_pose1_x+ ar_pose2_x)/2.0
+                    pose_msg.position.y = (ar_pose1_y+ ar_pose2_y)/2.0
+                    pose_msg.position.z = (ar_pose1_z+ ar_pose2_z)/2.0
 
                     # Get quaternion from angle
+                    ang = np.arctan2(xdiff, ydiff)
                     new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
-
-                    pose_msg = PoseConv.to_pose_msg(self.camera_pose**-1 * ar_pose)
                     pose_msg.orientation.x = new_quaternion[1]
                     pose_msg.orientation.y = new_quaternion[2]
                     pose_msg.orientation.z = new_quaternion[3]
@@ -140,25 +141,17 @@ class ARTagManager(ARTagManagerInterface):
 
 
                 if bid+10 in bin_data:
-                    if bin_data[bid][:2] is None:
-                        # print "None type"
-                        break;
-
-                    if bin_data[bid+10][:2] is None:
-                        # print "None type"
-                        break;
-
-                    if not bin_data[bid][:2]:
-                        # print "empty"
-                        break;
-                    if not bin_data[bid+10][:2]:
-                        # print "empty"
-                        break;
+                    if ((bid not in bin_data) or (bid+10 not in bin_data)):
+                       # print "empty"
+                       break;
 
                     # Get the average position
-                    ar_pose1 = PoseConv.to_homo_mat(bin_data[bid][:2])
-                    ar_pose2 = PoseConv.to_homo_mat(bin_data[bid+10][:2])
-                    ar_pose = PoseConv.to_homo_mat((ar_pose1+ar_pose2)/2)                       
+                    ar_pose1_x = (bin_data[bid][:2])[0][0]
+                    ar_pose1_y = (bin_data[bid][:2])[0][1]
+                    ar_pose1_z = (bin_data[bid][:2])[0][2]
+                    ar_pose2_x = (bin_data[bid+10][:2])[0][0]
+                    ar_pose2_y = (bin_data[bid+10][:2])[0][1]
+                    ar_pose2_z = (bin_data[bid+10][:2])[0][2]
 
                     # Create a bin message
                     bin = Bin()
@@ -166,21 +159,26 @@ class ARTagManager(ARTagManagerInterface):
 
                     # Correct bin height
                     if (bid%2):
-                        ar_pose[2,3] = self.table_height + self.bin_large_height
+                        ar_pose1_z = self.table_height + self.bin_large_height
+                        ar_pose2_z = self.table_height + self.bin_large_height
                         bin.size = "large"
                     else:
-                        ar_pose[2,3] = self.table_height + self.bin_small_height
+                        ar_pose1_z = self.table_height + self.bin_small_height
+                        ar_pose2_z = self.table_height + self.bin_small_height
                         bin.size = "small"
 
 
-                    xdiff = ar_pose1[0,3] - ar_pose2[0,3] 
-                    ydiff = ar_pose1[1,3] - ar_pose2[1,3]
-                    ang = np.arctan2(xdiff, ydiff)
+                    xdiff = ar_pose1_x - ar_pose2_x
+                    ydiff = ar_pose1_y - ar_pose2_y
+                    pose_msg = Pose()
+                    pose_msg.position.x = (ar_pose1_x+ ar_pose2_x)/2.0
+                    pose_msg.position.y = (ar_pose1_y+ ar_pose2_y)/2.0
+                    pose_msg.position.z = (ar_pose1_z+ ar_pose2_z)/2.0
 
+                    
                     # Get quaternion from angle
+                    ang = np.arctan2(xdiff, ydiff)
                     new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
-
-                    pose_msg = PoseConv.to_pose_msg(self.camera_pose**-1 * ar_pose)
                     pose_msg.orientation.x = new_quaternion[1]
                     pose_msg.orientation.y = new_quaternion[2]
                     pose_msg.orientation.z = new_quaternion[3]
@@ -190,6 +188,8 @@ class ARTagManager(ARTagManagerInterface):
                     bin.pose = pose_msg
                     bins.append(bin)
                     self.real_bin_poses[bid] = bin.pose
+
+   
 
         # Publish bins
         msg_bins = bins
