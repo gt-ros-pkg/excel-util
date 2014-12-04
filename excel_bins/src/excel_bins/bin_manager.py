@@ -158,29 +158,33 @@ class BinDeliverer(object):
     def __init__(self):
         self.occupied_sub = rospy.Subscriber('/human/workspace/occupied', Bool, self.occupied_cb)
         self.is_occupied = False 
+        self.scanning_ended = False
+        self.display_message_pub = rospy.Publisher('/display/message', String, latch=True)
+        self.scan_status_pub = rospy.Publisher('/display/scanning_status', Int8, latch=True)
+        self.bins_required_pub = rospy.Publisher('/display/bins_required', Int8MultiArray, latch=True) # must be 2 or 3
+        self.parts_ready_pub = rospy.Publisher('/display/parts_ready', Bool, latch=True)
+        self.system_blocked_pub = rospy.Publisher('/display/system_blocked', Bool, latch=True)
 
     def occupied_cb(self, msg):
         self.is_occupied = msg.data
+        if (self.scanning_ended and not self.is_occupied):
+            self.scan_status_pub.publish(0)
+            self.scanning_ended = False
 
     def deliver_bin_orders(self, bin_man, bin_orders, bin_barcode_ids):
         scanning_ac = actionlib.SimpleActionClient('scan_parts', ScanningAction)
         print "Waiting for action server 'scan_parts' ..."
         scanning_ac.wait_for_server()
         print "Found action server."
-        display_message_pub = rospy.Publisher('/display/message', String, latch=True)
-        scan_status_pub = rospy.Publisher('/display/scanning_status', Int8, latch=True)
-        bins_required_pub = rospy.Publisher('/display/bins_required', Int8MultiArray, latch=True) # must be 2 or 3
-        parts_ready_pub = rospy.Publisher('/display/parts_ready', Bool, latch=True)
-        system_blocked_pub = rospy.Publisher('/display/system_blocked', Bool, latch=True)
 
-        display_message_pub.publish("Demo starting")
-        scan_status_pub.publish(0)
+        self.display_message_pub.publish("Demo starting")
+        self.scan_status_pub.publish(0)
         while not rospy.is_shutdown():
             for bin_order in bin_orders:
-                display_message_pub.publish("Fetching Part Numbers: {" + 
+                self.display_message_pub.publish("Fetching Part Numbers: {" + 
                                             ", ".join([str(b) for b in bin_order]) + "}...")
-                bins_required_pub.publish(data=bin_order)
-                parts_ready_pub.publish(False)
+                self.bins_required_pub.publish(data=bin_order)
+                self.parts_ready_pub.publish(False)
 
                 if False:
                     rospy.sleep(5.0)
@@ -188,21 +192,21 @@ class BinDeliverer(object):
                     bin_man.deliver_bin_order(bin_order)
 
                 print "Moving to home position"
-                parts_ready_pub.publish(True)
+                self.parts_ready_pub.publish(True)
                 home_act_goal = MoveBinGoal()
                 wait_time = 4.0
                 if self.is_occupied:
                     home_act_goal.bin_id = -6
-                    display_message_pub.publish("Workspace occupied, Moving to home position bis")
+                    self.display_message_pub.publish("Workspace occupied, Moving to home position bis")
                     wait_time = 0.5
                 else:
                     home_act_goal.bin_id = -5
-                    display_message_pub.publish("Moving to home position")
+                    self.display_message_pub.publish("Moving to home position")
 
                 bin_man.bin_move_ac.send_goal_and_wait(home_act_goal)
 
-                display_message_pub.publish("Waiting for associate")
-                scan_status_pub.publish(-1)
+                self.display_message_pub.publish("Waiting for associate")
+                self.scan_status_pub.publish(-1)
 
                 if True: 
                     r = rospy.Rate(0.5)
@@ -214,7 +218,7 @@ class BinDeliverer(object):
                     rospy.sleep(wait_time)
 
                     print "Starting first scan"
-                    display_message_pub.publish("Starting first scan")
+                    self.display_message_pub.publish("Starting first scan")
                     act_goal = ScanningGoal()
                     act_goal.good_bins = [bin_barcode_ids[bid] for bid in bin_order]
                     for bc_id in bin_barcode_ids.values():
@@ -228,66 +232,70 @@ class BinDeliverer(object):
 
                     if scanning_result == 0:
                         print "Scanning successful, going to next bin order"
-                        scan_status_pub.publish(1)
+                        self.scan_status_pub.publish(1)
+                        self.scanning_ended = True
                         continue
                     elif scanning_result == -1:
 
                         rospy.sleep(0.1)
                         print "Starting second scan"
 
-                        display_message_pub.publish("Starting second scan")
+                        self.display_message_pub.publish("Starting second scan")
                         outcome = scanning_ac.send_goal_and_wait(act_goal)
                         scanning_result = scanning_ac.get_result().result
                         print "2nd scanning_result", scanning_result
 
                         if scanning_result == 0:
-                            scan_status_pub.publish(1)
+                            self.scan_status_pub.publish(1)
                             print "Scanning successful, going to next bin order"
+                            self.scanning_ended = True
                             continue
                         elif scanning_result == -1:
                             print "Waiting for human to exit"
-                            system_blocked_pub.publish(True)
+                            self.system_blocked_pub.publish(True)
+                            self.display_message_pub.publish("Finish assembly and get out of the workspace")
                             r = rospy.Rate(1)
                             while not rospy.is_shutdown():
                                 print "Waiting for human to get out of workspace"
                                 if not self.is_occupied:
                                     break
                                 r.sleep()
-                            system_blocked_pub.publish(False)
+                            self.system_blocked_pub.publish(False)
 
-                            display_message_pub.publish("Starting third scan")
+                            self.display_message_pub.publish("Starting third scan")
                             outcome = scanning_ac.send_goal_and_wait(act_goal)
                             scanning_result = scanning_ac.get_result().result
                             print "3rd scanning_result", scanning_result
 
                             if scanning_result == 0:
-                                scan_status_pub.publish(1)
+                                self.scan_status_pub.publish(1)
                                 print "Scanning successful, going to next bin order"
+                                self.scanning_ended = True
                                 continue
                             elif scanning_result == -1:
-                                scan_status_pub.publish(0)
-                                display_message_pub.publish("MISSING PART")
+                                self.scan_status_pub.publish(0)
+                                self.display_message_pub.publish("MISSING PART")
                                 print "Still missing parts, exiting"
                                 return
                             elif scanning_result == -2:
-                                scan_status_pub.publish(0)
-                                display_message_pub.publish("BAD PART")
+                                self.scan_status_pub.publish(0)
+                                self.display_message_pub.publish("BAD PART")
                                 print "\n"* 5
                                 print "              WRONG PART"
                                 print "\n"* 5
                                 return
                             
                         elif scanning_result == -2:
-                            scan_status_pub.publish(0)
-                            display_message_pub.publish("BAD PART")
+                            self.scan_status_pub.publish(0)
+                            self.display_message_pub.publish("BAD PART")
                             print "\n"* 5
                             print "              WRONG PART"
                             print "\n"* 5
                             return
 
                     elif scanning_result == -2:
-                        scan_status_pub.publish(0)
-                        display_message_pub.publish("BAD PART")
+                        self.scan_status_pub.publish(0)
+                        self.display_message_pub.publish("BAD PART")
                         print "\n"* 5
                         print "              WRONG PART"
                         print "\n"* 5
@@ -299,8 +307,6 @@ class BinDeliverer(object):
                     print "Order complete, (scanning now), press enter to continue"
                     sys.stdin.readline()
                 
-                scan_status_pub.publish(0)
-
             print "Starting at the beginning"
 
 def main():
