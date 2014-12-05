@@ -3,10 +3,6 @@
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find excel_description)/urdf/excel_robot.urdf.xacro'" />
 
   <rosparam>
-    vel_forward_ctrl:
-      type: ur_controllers/VelocityForwardController
-      mode: vel
-
     pva_enable_mode:
       type: ur_controllers/PosVelAccModeController
       joint_names: 
@@ -76,8 +72,6 @@
       publish_rate: 1
 
   </rosparam>
-  <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
-            param="vel_forward_ctrl/joint_names" />
   <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
             param="vel_jogging_ctrl/joints" />
   <rosparam command="load" file="$(find excel_hw_iface)/config/joint_names.yaml"
