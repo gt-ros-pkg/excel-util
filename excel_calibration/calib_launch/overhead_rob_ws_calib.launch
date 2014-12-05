@@ -1,6 +1,6 @@
 
 <launch>
   <node name="overhead_rob_ws_frame_tf" pkg="tf" type="static_transform_publisher"
-        args="1.607184 -0.154380 2.545010 0.997223 -0.022301 -0.011231 -0.070163 /table_link overhead_rob_ws_frame 100"/>
+        args="1.599048 -0.163805 2.546536 0.997081 -0.022961 -0.012328 -0.071760 /table_link overhead_rob_ws_frame 100"/>
 </launch>
 

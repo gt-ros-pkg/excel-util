@@ -2,10 +2,13 @@
 <launch>
   <arg name="pose_file" default="overhead_rob" />
   <arg name="load_board" default="true" />
+  <arg name="start_srv" default="true" />
 
-  <include file="$(find excel_calibration)/launch/calib_server.launch">
-    <arg name="delete_job" value="true" />
-  </include>
+  <group if="$(arg start_srv)">
+    <include file="$(find excel_calibration)/launch/calib_server.launch">
+      <arg name="delete_job" value="true" />
+    </include>
+  </group> 
 
   <node pkg="excel_calibration" type="auto_calib_node" name="auto_calib_node" 
         output="screen">

@@ -120,11 +120,62 @@ bool MoveBin::moveToHome(bool bis)
 
     // Plan trajectory
     //group.setStartStateToCurrentState();
-    static double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
+
+    double arr[] = {2.267, 2.477, -1.186, 1.134, -1.062, -1.059, -3.927};
     if(bis)
     {
       arr[1] = 3.303;
     }
+    std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
+
+    // Fixing shoulder_pan and wrist_3 given by the IK
+    joint_vals[1] = this->optimalGoalAngle(joint_vals[1], planning_scene.robot_state.joint_state.position[1]);
+    joint_vals[6] = this->optimalGoalAngle(joint_vals[6], planning_scene.robot_state.joint_state.position[6]);
+
+    group.getCurrentState()->update(true);
+
+    group.setJointValueTarget(joint_vals);
+    int num_tries = 4;
+    MoveGroupPlan my_plan;
+    // try to plan a few times, just to be safe
+    while (ros::ok() && num_tries > 0) {
+      if (group.plan(my_plan))
+        break;
+      num_tries--;
+    }
+
+    if (num_tries > 0) {
+      // found plan, let's try and execute
+      if (executeJointTrajectory(my_plan, true)) {
+        ROS_INFO("Home position joint trajectory execution successful");
+        return true;
+      }
+      else {
+        ROS_WARN("Home position joint trajectory execution failed");
+        ros::Duration(0.5).sleep();
+        continue;
+      }
+    }
+    else {
+      ROS_ERROR("Home position Motion planning failed");
+      continue;
+    }
+  }
+  return true;
+}
+
+bool MoveBin::moveToToolboxHome()
+{
+  while (ros::ok()) {
+
+    moveit_msgs::PlanningScene planning_scene;
+    planning_scene::PlanningScenePtr full_planning_scene;
+    getPlanningScene(planning_scene, full_planning_scene);
+
+    // Plan trajectory
+    //group.setStartStateToCurrentState();
+
+    double arr[] = {1.5167, 1.6251, -1.6223, 1.8332, -1.7781, -1.5710, 1.6644};
     std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
 
     // Fixing shoulder_pan and wrist_3 given by the IK
@@ -172,7 +223,52 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
   if(bin_number == -6) {
     return moveToHome(true);
   }
+
   double bin_height;
+
+  if(bin_number == -10){
+    bin_height = TOOLBOX_HEIGHT;
+    executeGripperAction(false, false); // open gripper, but don't wait
+    if(!approachToolbox(bin_height)){
+        ROS_ERROR("Failed to approach the toolbox");
+        return false;
+    }
+    if(!attachToolbox()){
+        ROS_ERROR("Failed to attach toolbox");
+        return false;
+    }
+    if(!ascent(bin_height+0.05)) {
+      ROS_ERROR("Failed to ascend while grasping toolbox.");
+      return false;
+    }
+    if(!moveToToolboxHome()) {
+      ROS_ERROR("Failed to go to toolbox home position");
+      return false;
+    }
+    return true;
+  }
+
+  if(bin_number == -11){
+    bin_height = TOOLBOX_HEIGHT;
+    if(!deliverBin(x_target, y_target, angle_target, bin_height)){
+        ROS_ERROR("Failed to deliver toolbox");
+        return false;
+    }
+    if(!detachToolbox()){
+        ROS_ERROR("Failed to detach toolbox");
+        return false;
+    }
+    return true;
+  }
+
+  if(bin_number == -12){
+    if(!moveToToolboxHome()) {
+      ROS_ERROR("Failed to go to toolbox home position");
+      return false;
+    }
+    return true;
+  }
+
   executeGripperAction(false, false); // open gripper, but don't wait
   if(!approachBin(bin_number, bin_height)) {
     ROS_ERROR("Failed to approach bin #%d.", bin_number);
@@ -182,6 +278,7 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
     ROS_ERROR("Failed to attach bin #%d.", bin_number);
     return false;
   }
+
   ///////////////////////////// HOLDING BIN ///////////////////////////////////
   if(!deliverBin(x_target, y_target, angle_target, bin_height)) {
     ROS_ERROR("Failed to deliver bin to target (%.3f, %.3f, %f)", 
@@ -209,6 +306,20 @@ bool MoveBin::approachBin(int bin_number, double& bin_height)
   }
   if(!descent(bin_height)) {
     ROS_ERROR("Failed to descend after moving above bin.");
+    return false;
+  }
+  return true;
+}
+
+bool MoveBin::approachToolbox(double& bin_height)
+{
+  ROS_INFO("Approaching toolbox");
+  if(!moveAboveToolbox(bin_height)) {
+    ROS_ERROR("Failed to move above the toolbox");
+    return false;
+  }
+  if(!descent(bin_height)) {
+    ROS_ERROR("Failed to descend after moving above toolbox");
     return false;
   }
   return true;
@@ -249,12 +360,32 @@ bool MoveBin::moveAboveBin(int bin_number, double& bin_height)
   return traverseMove(target_pose);
 }
 
+bool MoveBin::moveAboveToolbox(double& bin_height)
+{
+  ROS_INFO("Moving above the toolbox");
+  moveit_msgs::CollisionObjectPtr toolbox_coll_obj = getToolboxCollisionObject();
+  if (!toolbox_coll_obj) {
+    // toolbox not found
+    ROS_ERROR("TOOLBOX NOT FOUND");
+    return false;
+  }
+
+  geometry_msgs::Pose target_pose;
+  getToolboxAbovePose(toolbox_coll_obj, target_pose, bin_height);
+
+  return traverseMove(target_pose);
+}
+
 bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
 {
   ROS_INFO("Traverse move to position (%.2f, %.2f, %.2f)", 
       pose.position.x, pose.position.y, pose.position.z);
   while (ros::ok()) {
     // update planning scene
+    group.getCurrentState()->update(true);
+    group.setStartStateToCurrentState();
+    sleep(0.3); // Add if jump violation still appears
+
     moveit_msgs::PlanningScene planning_scene;
     planning_scene::PlanningScenePtr full_planning_scene;
     getPlanningScene(planning_scene, full_planning_scene);
@@ -329,6 +460,7 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
     //group.setStartStateToCurrentState();
     //sleep(0.5);
     group.getCurrentState()->update(true);
+    group.setStartStateToCurrentState();
 
     group.setJointValueTarget(ik_srv_resp.solution.joint_state);
     int num_tries = 4;
@@ -465,7 +597,7 @@ bool MoveBin::verticalMove(double target_z)
 
     // getting the current	
     // group.setStartStateToCurrentState();
-    // sleep(0.3);	
+    sleep(0.3);	
     group.getCurrentState()->update(true);
     group.setStartStateToCurrentState();
 
@@ -587,6 +719,28 @@ bool MoveBin::attachBin(int bin_number)
   }
 }
 
+bool MoveBin::attachToolbox()
+{
+  ROS_INFO("Attaching the toolbox");
+  // close gripper
+  executeGripperAction(true, true);
+
+  moveit_msgs::CollisionObjectPtr toolbox_coll_obj = getToolboxCollisionObject();
+
+  if (toolbox_coll_obj) {
+    ROS_INFO("Attaching the bin");
+    moveit_msgs::AttachedCollisionObject attached_object;
+    attached_object.link_name = "wrist_3_link";
+    attached_object.object = *toolbox_coll_obj;
+    attached_object.object.operation = attached_object.object.ADD;
+    attached_object_publisher.publish(attached_object);
+    return true;
+  } else {
+    ROS_ERROR("The toolbox is not in the scene.");
+    return false;
+  }
+}
+
 bool MoveBin::detachBin()
 {
   ROS_INFO("Detaching bin");
@@ -631,6 +785,54 @@ bool MoveBin::detachBin()
     return 1;
   }else{
     ROS_ERROR("There was no bin attached to the robot");
+    return 0;
+  }
+}
+
+bool MoveBin::detachToolbox()
+{
+  ROS_INFO("Detaching the toolbox");
+  // open gripper
+  executeGripperAction(false, true);
+
+  // update the planning scene to get the robot's state
+  moveit_msgs::PlanningScene planning_scene;
+  planning_scene::PlanningScenePtr full_planning_scene;
+  getPlanningScene(planning_scene, full_planning_scene);
+
+  if (planning_scene.robot_state.attached_collision_objects.size()>0){
+    moveit_msgs::AttachedCollisionObject attached_object = planning_scene.robot_state.attached_collision_objects[0];
+    moveit_msgs::GetPositionFK::Request fk_request;
+    moveit_msgs::GetPositionFK::Response fk_response;
+    fk_request.header.frame_id = "table_link";
+    fk_request.fk_link_names.clear();
+    fk_request.fk_link_names.push_back("wrist_3_link");
+    fk_request.robot_state = planning_scene.robot_state;
+    fk_client.call(fk_request, fk_response);
+
+    tf::Quaternion co_quat;
+    quaternionMsgToTF(fk_response.pose_stamped[0].pose.orientation, co_quat);
+    double roll, pitch, yaw;
+    tf::Matrix3x3(co_quat).getRPY(roll, pitch, yaw);
+    ROS_INFO_STREAM(roll);
+    ROS_INFO_STREAM(pitch);
+    ROS_INFO_STREAM(yaw);
+    tf::Quaternion quat = tf::createQuaternionFromRPY(0,0,yaw);
+
+    attached_object.object.header.frame_id = "table_link";
+    attached_object.object.mesh_poses[0].position = fk_response.pose_stamped[0].pose.position;
+    attached_object.object.mesh_poses[0].position.z = TABLE_HEIGHT;
+    attached_object.object.mesh_poses[0].orientation.x = quat.x();
+    attached_object.object.mesh_poses[0].orientation.y = quat.y();
+    attached_object.object.mesh_poses[0].orientation.z = quat.z();
+    attached_object.object.mesh_poses[0].orientation.w = quat.w();
+
+    planning_scene.robot_state.attached_collision_objects.clear();
+    planning_scene.world.collision_objects.push_back(attached_object.object);
+    planning_scene_diff_publisher.publish(planning_scene);
+    return 1;
+  }else{
+    ROS_ERROR("There was nothing attached to the robot");
     return 0;
   }
 }
@@ -703,15 +905,17 @@ double MoveBin::avoid_human(double goal_angle, double current_angle, geometry_ms
   return goal_angle;
 }
 
-void MoveBin::human_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_stamped)
+void MoveBin::human_pose_callback(const geometry_msgs::PoseArray::ConstPtr& pose_array)
 {
-  if(isnan(pose_stamped->pose.position.x)){
+  return;
+  /*
+  if(isnan(pose_array->pose.position.x)){
     geometry_msgs::Pose fake_pose;
     fake_pose.position.x = 1000;
     fake_pose.position.y = 1000;
     human_pose = fake_pose;
   }
-  else human_pose = pose_stamped->pose;
+  else human_pose = pose_stamped->pose;*/
 }
 
 void MoveBin::avoidance_callback(const std_msgs::Bool::ConstPtr& avoid){
@@ -806,8 +1010,26 @@ moveit_msgs::CollisionObjectPtr MoveBin::getBinCollisionObject(int bin_number)
   planning_scene::PlanningScenePtr full_planning_scene;
   getPlanningScene(planning_scene, full_planning_scene);
 
-  for(int i=0;i<planning_scene.world.collision_objects.size();i++) 
-    if(planning_scene.world.collision_objects[i].id == bin_name) 
+  for(int i=0;i<planning_scene.world.collision_objects.size();i++){
+    if(planning_scene.world.collision_objects[i].id == bin_name){ 
+      return moveit_msgs::CollisionObjectPtr(new moveit_msgs::CollisionObject(planning_scene.world.collision_objects[i]));
+    }
+  }
+  ROS_ERROR("Failed to attach the bin. Attaching an empty collision object");
+  return moveit_msgs::CollisionObjectPtr();
+}
+
+moveit_msgs::CollisionObjectPtr MoveBin::getToolboxCollisionObject()
+{
+  std::string bin_name = "toolbox";
+
+  // update the planning scene to get the robot's state
+  moveit_msgs::PlanningScene planning_scene;
+  planning_scene::PlanningScenePtr full_planning_scene;
+  getPlanningScene(planning_scene, full_planning_scene);
+
+  for(int i=0;i<planning_scene.world.collision_objects.size();i++)
+    if(planning_scene.world.collision_objects[i].id == bin_name)
       return moveit_msgs::CollisionObjectPtr(
           new moveit_msgs::CollisionObject(planning_scene.world.collision_objects[i]));
   return moveit_msgs::CollisionObjectPtr();
@@ -835,6 +1057,32 @@ void MoveBin::getBinAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geom
   pose.orientation.w = quat.w();
 }
 
+void MoveBin::getToolboxAbovePose(moveit_msgs::CollisionObjectPtr toolbox_coll_obj, geometry_msgs::Pose& pose,
+    double& bin_height)
+{
+  pose = toolbox_coll_obj->mesh_poses[0];
+
+  // fix height
+  pose.position.z = TABLE_HEIGHT+GRIPPING_OFFSET+bin_height+DZ;
+
+  // fix orientation
+  tf::Quaternion co_quat(pose.orientation.x, pose.orientation.y,
+      pose.orientation.z, pose.orientation.w);
+  tf::Matrix3x3 m(co_quat);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  tf::Quaternion quat = tf::createQuaternionFromRPY(M_PI/2-yaw,M_PI/2,M_PI);
+  pose.orientation.x = quat.x();
+  pose.orientation.y = quat.y();
+  pose.orientation.z = quat.z();
+  pose.orientation.w = quat.w();
+
+  // fix pose
+  pose.position.x -= TOOLBOX_HANDLE_SHIFT*cos(yaw);
+  pose.position.y -= TOOLBOX_HANDLE_SHIFT*sin(yaw) ;
+
+}
+
 /*--------------------------------------------------------------------
  * Moves to target location keeping the grasping orientation
  *------------------------------------------------------------------*/
@@ -858,3 +1106,5 @@ void MoveBin::getCarryBinPose(double x_target, double y_target, double angle_tar
   pose.orientation.z = quat_goal.z();
   pose.orientation.w = quat_goal.w();
 }
+
+

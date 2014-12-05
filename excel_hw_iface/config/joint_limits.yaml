@@ -12,8 +12,8 @@ joint_limits:
     max_acceleration: 1
 
     k_position: 4.0
-    soft_lower_limit: 0.05
-    soft_upper_limit: 3.45
+    soft_lower_limit: 0.1
+    soft_upper_limit: 3.4
 
 
   shoulder_pan_joint:
@@ -28,8 +28,8 @@ joint_limits:
     max_acceleration: 3
 
     k_position: 10.0
-    soft_lower_limit: -6.28
-    soft_upper_limit: 6.28
+    soft_lower_limit: -6.2
+    soft_upper_limit: 6.2
 
 
   shoulder_lift_joint:
@@ -44,14 +44,14 @@ joint_limits:
     max_acceleration: 5
 
     k_position: 10.0
-    soft_lower_limit: -6.28
-    soft_upper_limit: 6.28
+    soft_lower_limit: -6.2
+    soft_upper_limit: 6.2
 
 
   elbow_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -2.73
+    max_position: 2.87
 
     has_velocity_limits: true
     max_velocity: 1.0
@@ -60,14 +60,14 @@ joint_limits:
     max_acceleration: 5
 
     k_position: 10.0
-    soft_lower_limit: -6.28
-    soft_upper_limit: 6.28
+    soft_lower_limit: -2.7
+    soft_upper_limit: 2.84
 
 
   wrist_1_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -5.12
+    max_position: 0.35
 
     has_velocity_limits: true
     max_velocity: 1.0
@@ -76,14 +76,14 @@ joint_limits:
     max_acceleration: 5
 
     k_position: 10.0
-    soft_lower_limit: -6.28
-    soft_upper_limit: 6.28
+    soft_lower_limit: -5.08
+    soft_upper_limit: 0.32
 
 
   wrist_2_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -3.65
+    max_position: 1.32
 
     has_velocity_limits: true
     max_velocity: 1.0
@@ -92,8 +92,8 @@ joint_limits:
     max_acceleration: 5
 
     k_position: 10.0
-    soft_lower_limit: -6.28
-    soft_upper_limit: 6.28
+    soft_lower_limit: -3.58
+    soft_upper_limit: 1.24
 
 
   wrist_3_joint:
@@ -108,5 +108,5 @@ joint_limits:
     max_acceleration: 5
 
     k_position: 10.0
-    soft_lower_limit: -6.28
-    soft_upper_limit: 6.28
+    soft_lower_limit: -6.2
+    soft_upper_limit: 6.2

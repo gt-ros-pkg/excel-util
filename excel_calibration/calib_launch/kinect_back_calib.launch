@@ -1,6 +1,8 @@
 
 <launch>
+  <node name="kinect_back_rgb_calib_tf" pkg="tf" type="static_transform_publisher"
+    args="4.376038 2.326519 2.335636 0.624212 0.588097 -0.382961 -0.339625 /table_link /kinect_back_rgb_calib 100"/>
   <node name="kinect_back_rgb_optical_frame_tf" pkg="tf" type="static_transform_publisher"
-        args="3.853371 3.675548 2.311574 0.467374 0.751248 -0.402218 -0.234827 /table_link kinect_back_rgb_optical_frame 100"/>
+    args="0 0 0.0 0 0 0 /kinect_back_rgb_calib /kinect_back_rgb_optical_frame 100"/>
 </launch>
 

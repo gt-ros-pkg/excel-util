@@ -7,7 +7,7 @@
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
 
   <node name="excel_load_ctrls" type="spawner" pkg="controller_manager"
-        output="screen" args="--stopped vel_trajectory_ctrl pva_enable_mode vel_forward_ctrl vel_pva_jogging_ctrl vel_pva_trajectory_ctrl" />
+        output="screen" args="--stopped vel_trajectory_ctrl pva_enable_mode vel_pva_jogging_ctrl vel_pva_trajectory_ctrl vel_cart_pos_ctrl" />
 
   <node name="excel_spawn_ctrls" type="spawner" pkg="controller_manager"
         output="screen" args="joint_state_pub mode_state_pub ur_diagnostics_pub config_fwd_ctrl vel_enable_mode vel_jogging_ctrl" />
