@@ -24,7 +24,7 @@ using namespace std;
 class BarcodeScan
 {
 public:
-  BarcodeScan(ros::NodeHandle& nh): nh_(nh), it(nh)
+  BarcodeScan(ros::NodeHandle& nh): nh_(nh), it(nh), frame_no_(0)
   {
     cout << "Start constructor" << endl;
 
@@ -57,7 +57,9 @@ public:
 private:
 
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
-  
+
+  int frame_no_;
+
   image_transport::ImageTransport it;
   image_transport::Subscriber sub;
   ros::NodeHandle nh_; 
@@ -84,7 +86,7 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
   cv::Mat di = cv::Mat(30,30,CV_8UC1);
   cv::Mat er = cv::Mat(5,5,CV_8UC1);
   while(!(frames>=total_frames )){
-   
+    
     if (currently_process_){
       cout << "TIME to get in " << t_get_in.elapsed() << endl;
 
@@ -96,12 +98,17 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
       DmtxRegion     *reg;
       DmtxMessage    *dmtx_msg;
       
-      /* SAVING IMAGES
+      ///* SAVING IMAGES
       double secs =ros::Time::now().toSec();
-      char filename[50];
-      sprintf(filename, "asif_jimmy_%f.png", secs);     
-      string file_str(filename);
+      // char filename[50];
+      // //sprintf(filename, "asif_jimmy_%f.png", secs);     
+      // sprintf("/home/hyatt/scan_img/", "asif.png");
+
+      string fname; string path("/home/hyatt/scan_img/");
+      fname = path + "scan_" + boost::lexical_cast<string>(frame_no_) + ".png"; 
+      string file_str(fname);
       cout << "File: " << file_str << endl;
+      frame_no_++;
       cv::imwrite(file_str, cv_ptr->image );
       //*/
 
@@ -141,7 +148,7 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
 		}
       
       cv::imshow("Image Display", image_thresh);
-      // cv::imwrite("/home/asif/ur10_new_ws/src/dmtx_barcode_scan/data/image_thresh1.jpg",image_thresh);
+      // cv::imwrite("/home/asif/ur10_new_ws/src/dmtx_barcode_scan/data/image_thresh1.jpg",cv_ptr->image);
       img = dmtxImageCreate(image_thresh.data, image_thresh.cols, image_thresh.rows, 
 			    DmtxPack8bppK);
       assert(img != NULL);

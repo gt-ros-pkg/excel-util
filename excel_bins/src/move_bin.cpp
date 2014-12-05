@@ -175,7 +175,7 @@ bool MoveBin::moveToToolboxHome()
     // Plan trajectory
     //group.setStartStateToCurrentState();
 
-    double arr[] = {1.5167, -4.6581, -1.6223, 1.8332, -1.7781, -1.5710, 1.6644};
+    double arr[] = {1.5167, 1.6251, -1.6223, 1.8332, -1.7781, -1.5710, 1.6644};
     std::vector<double> joint_vals(arr, arr + sizeof(arr) / sizeof(arr[0]));
 
     // Fixing shoulder_pan and wrist_3 given by the IK
@@ -257,6 +257,14 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
     if(!detachToolbox()){
         ROS_ERROR("Failed to detach toolbox");
         return false;
+    }
+    return true;
+  }
+
+  if(bin_number == -12){
+    if(!moveToToolboxHome()) {
+      ROS_ERROR("Failed to go to toolbox home position");
+      return false;
     }
     return true;
   }

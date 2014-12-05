@@ -71,9 +71,12 @@ int main(int argc, char **argv)
 
   actionlib::SimpleActionClient<control_msgs::GripperCommandAction> 
     gripper_ac("gripper_controller/gripper_action", true);
+  gripper_ac.waitForServer();
 
   for(int i=0; i<joints_list.size(); i++){
     int num_tries = 4;
+    group.getCurrentState()->update(true);
+    group.setStartStateToCurrentState();
     group.setJointValueTarget(joints_list[i]);
     // try to plan a few times, just to be safe
     while (ros::ok() && num_tries > 0) {

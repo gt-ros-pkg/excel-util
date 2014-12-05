@@ -12,6 +12,8 @@ from excel_bins.msg import MoveBinAction, MoveBinGoal
 from excel_move.msg import ScanningAction, ScanningGoal
 from std_msgs.msg import Int32, String, Bool, Int8, Int8MultiArray
 
+from ur_py_utils.ur_controller_manager import URControllerManager
+
 class BinManager(object):
     def __init__(self, ar_man, hum_ws_slots, bin_home_slots={}, is_sim=False):
         self.ar_man = ar_man
@@ -224,6 +226,9 @@ def main():
     ar_man = ARTagManager(slots, tags_list)
     bin_man = BinManager(ar_man, hum_ws_slots, bin_home_slots, IS_SIMULATION)
 
+    cman = URControllerManager()
+
+    cman.start_joint_controller('vel_pva_trajectory_ctrl')
     rospy.sleep(1.)
     print "Slot states:", ar_man.get_real_bin_slot_states()
 
@@ -232,7 +237,12 @@ def main():
     toolbox_deliverer = ToolboxDeliverer()
     toolbox_deliverer.prepare_toolbox(bin_man, bin_orders)
 
-    rospy.sleep(1.)
+    rospy.sleep(0.1)
+    cman.start_joint_controller('vel_cart_pos_ctrl')
+    raw_input("Press enter to remove toolbox")
+    cman.start_joint_controller('vel_pva_trajectory_ctrl')
+    rospy.sleep(0.1)
+
     toolbox_deliverer.remove_toolbox(bin_man, bin_orders)
 
 if __name__ == "__main__":

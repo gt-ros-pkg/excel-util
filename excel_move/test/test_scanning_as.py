@@ -13,10 +13,10 @@ def main():
     act_goal = ScanningGoal()
     # act_goal.good_bins = ["333", "555", "999"]
     # act_goal.bad_bins = ["111", "777"]
-    # act_goal.good_bins = ["111", "555"]
-    # act_goal.bad_bins = ["333", "777", "999"]
-    act_goal.good_bins = ["333", "555", "999"]
-    act_goal.bad_bins = ["111", "777"]
+    act_goal.good_bins = ["111", "555"]
+    act_goal.bad_bins = ["333", "777", "999"]
+   # act_goal.good_bins = ["333", "555", "999"]
+   # act_goal.bad_bins = ["111", "777"]
 
     print "Waiting for action server 'scan_parts' ..."
     scanning_ac = actionlib.SimpleActionClient('scan_parts', ScanningAction)

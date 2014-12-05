@@ -12,6 +12,8 @@ from excel_bins.msg import MoveBinAction, MoveBinGoal
 from excel_move.msg import ScanningAction, ScanningGoal
 from std_msgs.msg import Int32, String, Bool, Int8, Int8MultiArray
 
+from ur_py_utils.ur_controller_manager import URControllerManager
+
 class BinManager(object):
     def __init__(self, ar_man, hum_ws_slots, bin_home_slots={}, is_sim=False):
         self.ar_man = ar_man
@@ -177,8 +179,15 @@ class BinDeliverer(object):
         scanning_ac.wait_for_server()
         print "Found action server."
 
+        cman = URControllerManager()
+        cman.start_joint_controller('vel_pva_trajectory_ctrl')
+
         self.display_message_pub.publish("Demo starting")
         self.scan_status_pub.publish(0)
+        home_pose_act_goal = MoveBinGoal()
+        home_pose_act_goal.bin_id = -12
+        bin_man.bin_move_ac.send_goal_and_wait(home_pose_act_goal)
+
         while not rospy.is_shutdown():
             for bin_order in bin_orders:
                 self.display_message_pub.publish("Fetching Part Numbers: {" + 
