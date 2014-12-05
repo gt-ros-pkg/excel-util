@@ -1,9 +1,12 @@
 <launch>
-  <arg name="pub_tf" default="true" />
+  <arg name="pub_tf" default="false" />
 
   <group if="$(arg pub_tf)">
     <include file="$(find excel_calibration)/calib_launch/kinect_back_calib.launch"/>
   </group>
+
+  <param name="/kinect_back/driver/z_offset_mm" value="-73" />
+  <param name="/kinect_back/driver/z_scaling" value="1.07" />
 
   <include file="$(find openni2_launch)/launch/openni2.launch">
     <arg name="camera" value="kinect_back" />

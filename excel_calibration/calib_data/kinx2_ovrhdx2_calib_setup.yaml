@@ -7,7 +7,7 @@ cameras:
 - frame: /kinect_front_rgb_optical_frame
   image_topic: /kinect_front/rgb/image_rect_color
   guess_cam:
-    calibration: {fx: 555.1, fy: 555.0, skew: 0.0, u0: 319.1, v0: 244.2}
+    calibration: {fx: 538.3, fy: 540.2, skew: 0.0, u0: 325.1, v0: 230.0}
     pose:
       translation: {x: -1.065, y: 1.435, z: 2.280}
       rotation: {x: 0.641, y: -0.574, z: 0.340, w: -0.380}
@@ -22,8 +22,8 @@ cameras:
   guess_cam:
     calibration: {fx: 537.0, fy: 537.3, skew: 0.0, u0: 323.1, v0: 241.2}
     pose:
-      translation: {x: 3.807, y: 3.799, z: 2.300}
-      rotation: {x: 0.440, y: 0.767, z: -0.405, w: -0.232}
+      translation: {x: 4.32, y: 2.32, z: 2.32}
+      rotation: {x: 0.634, y: 0.583, z: -0.363, w: -0.352}
   calibrated_cam:
     calibration: {fx: 0.0, fy: 0.0, skew: 0.0, u0: 0.0, v0: 0.0}
     pose:
