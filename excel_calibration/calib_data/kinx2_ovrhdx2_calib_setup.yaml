@@ -20,9 +20,9 @@ cameras:
 - frame: /kinect_back_rgb_optical_frame
   image_topic: /kinect_back/rgb/image_rect_color
   guess_cam:
-    calibration: {fx: 537.0, fy: 537.3, skew: 0.0, u0: 323.1, v0: 241.2}
+    calibration: {fx: 561.8, fy: 564.0, skew: 0.0, u0: 302.0, v0: 238.7}
     pose:
-      translation: {x: 4.32, y: 2.32, z: 2.32}
+      translation: {x: 4.32, y: 2.12, z: 2.32}
       rotation: {x: 0.634, y: 0.583, z: -0.363, w: -0.352}
   calibrated_cam:
     calibration: {fx: 0.0, fy: 0.0, skew: 0.0, u0: 0.0, v0: 0.0}
@@ -33,10 +33,10 @@ cameras:
 - frame: /overhead_hum_ws_frame
   image_topic: /overhead_hum_ws_cam/image_rect
   guess_cam:
-    calibration: {fx: 1114.4, fy: 1155.6, skew: 0.0, u0: 647.0, v0: 515.5}
+    calibration: {fx: 1121.5, fy: 1162.9, skew: 0.0, u0: 647.5, v0: 515.6}
     pose:
-      translation: {x: 0.630, y: 1.420, z: 2.520}
-      rotation: {x: 1.0, y: 0.0, z: 0.0, w: 0.0}
+      translation: {x: -0.1, y: 1.450, z: 2.5}
+      rotation: {x: 0.712, y: -0.636, z: 0.16675, w: -0.248}
   calibrated_cam:
     calibration: {fx: 0.0, fy: 0.0, skew: 0.0, u0: 0.0, v0: 0.0}
     pose:
@@ -46,7 +46,7 @@ cameras:
 - frame: /overhead_rob_ws_frame
   image_topic: /overhead_rob_ws_cam/image_rect
   guess_cam:
-    calibration: {fx: 814.4, fy: 875.3, skew: 0.0, u0: 656.5, v0: 519.2}
+    calibration: {fx: 813.1, fy: 873.9, skew: 0.0, u0: 654.8, v0: 518.7}
     pose:
       translation: {x: 1.710, y: 0.070, z: 2.630}
       rotation: {x: 1.0, y: 0.0, z: 0.0, w: 0.0}
