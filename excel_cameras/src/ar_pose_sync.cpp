@@ -5,6 +5,7 @@
 
 using namespace ar_track_alvar;
 using namespace message_filters;
+using namespace std;
 
 ros::Publisher tag_pub;
 
@@ -13,21 +14,34 @@ void callback(const AlvarMarkersConstPtr& tags1, const AlvarMarkersConstPtr& tag
 
 	AlvarMarkers tags;
 	tags.header = tags1->header;
-	tags.markers = tags1->markers;
+	//tags.markers = tags1->>markers;
 	std::vector<int> ids_in_tags;
-
-	for(int i=0;i<tags.markers.size();i++){
-		ids_in_tags.push_back(tags.markers[i].id);
+cout << "Human ---- ";
+	for(int i=0;i<tags1->markers.size();i++){
+    if(tags1->markers[i].pose.pose.position.y > 1.0){
+		  tags.markers.push_back(tags1->markers[i]);
+      cout << tags1->markers[i].id << ", ";
+    }
 	}
+  cout<<endl;
+  cout <<"Robot ---";
+  //cout << "ids1 size " << tags.markers.size()<<endl; 
 
 	for(int i=0;i<tags2->markers.size();i++){
+    if(tags2->markers[i].pose.pose.position.y < 1.0)
+		  tags.markers.push_back(tags2->markers[i]);
+      cout << tags2->markers[i].id << " ,";
+	}
+/*
+	for(int i=0;i<tags2->>markers.size();i++){
 		std::vector<int>::iterator it;
-		it = std::find(ids_in_tags.begin(), ids_in_tags.end(), tags2->markers[i].id);
+		it = std::find(ids_in_tags.begin(), ids_in_tags.end(), tags2->>markers[i].id);
 		if (it == ids_in_tags.end()){
-			tags.markers.push_back(tags2->markers[i]);
+			tags.markers.push_back(tags2->>markers[i]);
 		}
 	}
-	
+	*/
+  cout << "ids1+2 size " << tags.markers.size()<<endl; 
 	//ROS_INFO_STREAM(tags);
 	
 	tag_pub.publish(tags);

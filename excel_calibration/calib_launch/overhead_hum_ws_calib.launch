@@ -1,6 +1,6 @@
 
 <launch>
   <node name="overhead_hum_ws_frame_tf" pkg="tf" type="static_transform_publisher"
-        args="-0.561782 1.447025 2.509015 0.717020 -0.632456 0.172805 -0.238259 /table_link overhead_hum_ws_frame 100"/>
+        args="-0.898107 1.683239 2.335499 -0.635013 0.674755 -0.315599 0.206314 /table_link overhead_hum_ws_frame 100"/>
 </launch>
 
