@@ -62,10 +62,10 @@ add_message_files(
 
 
 ## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  BinLocationEmpty.srv
-)
+#add_service_files(
+#  FILES
+  
+#)
 
 ## Generate actions in the 'action' folder
 add_action_files(
@@ -125,18 +125,17 @@ add_executable(add_bin_node src/add_bin.cpp)
 add_executable(pick_bin_node src/pick_bin.cpp)
 add_executable(update_bins_node src/update_bins.cpp)
 add_executable(move_bin_node src/move_bin_node.cpp)
+add_executable(tool_handling_sim_node src/tool_handling_sim.cpp)
 add_executable(move_bin_action_server src/move_bin_action_server.cpp)
-add_executable(isBinLocationEmpty_node src/isBinLocationEmpty.cpp)
-add_executable(isBinLocationEmpty_client_node src/isBinLocationEmpty_client.cpp)
+
 # add_executable(move_bin_constrained_node src/move_bin_constrained.cpp)
 # add_executable(get_slots_full_node src/get_slots_full.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(excel_bins_node excel_bins_generate_messages_cpp)
-add_dependencies(move_bin_action_server
-  ${excel_bins_EXPORTED_TARGETS}
-)
+add_dependencies(move_bin_action_server ${excel_bins_EXPORTED_TARGETS})
+add_dependencies(update_bins_node ${excel_bins_EXPORTED_TARGETS})
 
 target_link_libraries(move_bin ${catkin_LIBRARIES})
 
@@ -144,9 +143,12 @@ target_link_libraries(move_bin ${catkin_LIBRARIES})
 target_link_libraries(add_bin_node ${catkin_LIBRARIES})
 target_link_libraries(pick_bin_node ${catkin_LIBRARIES})
 target_link_libraries(update_bins_node ${catkin_LIBRARIES})
-target_link_libraries(isBinLocationEmpty_node ${catkin_LIBRARIES})
-target_link_libraries(isBinLocationEmpty_client_node ${catkin_LIBRARIES})
+
 target_link_libraries(move_bin_node 
+  ${catkin_LIBRARIES}
+  move_bin
+)
+target_link_libraries(tool_handling_sim_node
   ${catkin_LIBRARIES}
   move_bin
 )

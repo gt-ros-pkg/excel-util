@@ -3,23 +3,19 @@ joint_limits:
   table_rail_joint:
     has_position_limits: true
     min_position: 0.4
-    max_position: 3.3
+    max_position: 3.32
 
     has_velocity_limits: true
-    max_velocity: 0.8
+    max_velocity: 0.75
 
     has_acceleration_limits: false
     max_acceleration: 1
 
-    k_position: 4.0
-    soft_lower_limit: 0.4
-    soft_upper_limit: 3.3
-
 
   shoulder_pan_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -6.12
+    max_position: 6.12
 
     has_velocity_limits: true
     max_velocity: .7
@@ -27,86 +23,62 @@ joint_limits:
     has_acceleration_limits: false
     max_acceleration: 3
 
-    k_position: 10.0
-    soft_lower_limit: -6.0
-    soft_upper_limit: 6.0
-
 
   shoulder_lift_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -6.12
+    max_position: 6.12
 
     has_velocity_limits: true
     max_velocity: 1.0
 
     has_acceleration_limits: false
     max_acceleration: 5
-
-    k_position: 10.0
-    soft_lower_limit: -6.0
-    soft_upper_limit: 6.0
 
 
   elbow_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -2.66
+    max_position: 2.80
 
     has_velocity_limits: true
     max_velocity: 1.0
 
     has_acceleration_limits: false
     max_acceleration: 5
-
-    k_position: 10.0
-    soft_lower_limit: -6.0
-    soft_upper_limit: 6.0
 
 
   wrist_1_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -5.0
+    max_position: 0.3
 
     has_velocity_limits: true
     max_velocity: 1.0
 
     has_acceleration_limits: false
     max_acceleration: 5
-
-    k_position: 10.0
-    soft_lower_limit: -6.0
-    soft_upper_limit: 6.0
 
 
   wrist_2_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -3.5
+    max_position: 1.15
 
     has_velocity_limits: true
     max_velocity: 1.0
 
     has_acceleration_limits: false
     max_acceleration: 5
-
-    k_position: 10.0
-    soft_lower_limit: -6.0
-    soft_upper_limit: 6.0
 
 
   wrist_3_joint:
     has_position_limits: true
-    min_position: -6.28
-    max_position: 6.28
+    min_position: -6.1
+    max_position: 6.1
 
     has_velocity_limits: true
     max_velocity: 1.0
 
     has_acceleration_limits: false
     max_acceleration: 5
-
-    k_position: 10.0
-    soft_lower_limit: -6.0
-    soft_upper_limit: 6.0

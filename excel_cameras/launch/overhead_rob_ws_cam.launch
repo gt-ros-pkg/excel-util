@@ -1,7 +1,10 @@
 <launch>
   <arg name="camera_serial" default="14180963" />
+  <arg name="pub_tf" default="true" />
 
-  <!--<include file="$(find excel_calibration)/launch/overhead_rob_ws_calibration_tf.launch"/>-->
+  <group if="$(arg pub_tf)">
+    <include file="$(find excel_calibration)/calib_launch/overhead_rob_ws_calib.launch"/>
+  </group>
 
   <group ns="overhead_rob_ws_cam">
     <node pkg="nodelet" type="nodelet" name="camera_nodelet_manager" args="manager" />
@@ -30,6 +33,16 @@
           args="load image_proc/rectify camera_nodelet_manager">
       <remap from="image_mono" to="/overhead_rob_ws_cam/image_color" />
       <remap from="image_rect" to="/overhead_rob_ws_cam/image_rect_color" />
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="image_proc_crop"
+          args="load image_proc/crop_decimate camera_nodelet_manager">
+      <remap from="camera/image_raw" to="/overhead_rob_ws_cam/image_color" />
+      <remap from="camera_out/image_raw" to="/overhead_rob_ws_cam/image_color_cropped" />
+      <param name="width" value="1296" />
+      <param name="height" value="500" />
+      <param name="x_offset" value="0" />
+      <param name="y_offset" value="300" />
     </node>
   </group>
 </launch>

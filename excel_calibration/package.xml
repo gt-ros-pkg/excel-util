@@ -41,8 +41,12 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>extrinsic_calibration</build_depend>
+  <build_depend>excel_move</build_depend>
+  <build_depend>cv_bridge</build_depend>
   <!--<build_depend>industrial_extrinsic_cal</build_depend>-->
   <run_depend>extrinsic_calibration</run_depend>
+  <run_depend>excel_move</run_depend>
+  <run_depend>cv_bridge</run_depend>
   <!--<run_depend>industrial_extrinsic_cal</run_depend>-->
 
 

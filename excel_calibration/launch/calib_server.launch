@@ -5,10 +5,12 @@
   <arg name="delete_job" default="false" />
   <arg name="load_job" default="false" />
 
+  <!--
   <node pkg="tf" type="static_transform_publisher" name="kinect_front_depth_tf_pub" 
     args="-0.025 0.0 0.0 0.0 0.0 0.0 kinect_front_rgb_optical_frame kinect_front_depth_optical_frame 100" />
   <node pkg="tf" type="static_transform_publisher" name="kinect_back_depth_tf_pub" 
     args="-0.025 0.0 0.0 0.0 0.0 0.0 kinect_back_rgb_optical_frame kinect_back_depth_optical_frame 100" />
+  -->
 
   <group ns="excel_calib_srv">
     <group if="$(arg delete_job)">
