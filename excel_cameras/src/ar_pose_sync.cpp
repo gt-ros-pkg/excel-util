@@ -16,21 +16,21 @@ void callback(const AlvarMarkersConstPtr& tags1, const AlvarMarkersConstPtr& tag
 	tags.header = tags1->header;
 	//tags.markers = tags1->>markers;
 	std::vector<int> ids_in_tags;
-cout << "Human ---- ";
+// cout << "Human ---- ";
 	for(int i=0;i<tags1->markers.size();i++){
     if(tags1->markers[i].pose.pose.position.y > 1.0){
 		  tags.markers.push_back(tags1->markers[i]);
-      cout << tags1->markers[i].id << ", ";
+      // cout << tags1->markers[i].id << ", ";
     }
 	}
-  cout<<endl;
-  cout <<"Robot ---";
+  // cout<<endl;
+  // cout <<"Robot ---";
   //cout << "ids1 size " << tags.markers.size()<<endl; 
 
 	for(int i=0;i<tags2->markers.size();i++){
     if(tags2->markers[i].pose.pose.position.y < 1.0)
 		  tags.markers.push_back(tags2->markers[i]);
-      cout << tags2->markers[i].id << " ,";
+      // cout << tags2->markers[i].id << " ,";
 	}
 /*
 	for(int i=0;i<tags2->>markers.size();i++){
@@ -41,7 +41,7 @@ cout << "Human ---- ";
 		}
 	}
 	*/
-  cout << "ids1+2 size " << tags.markers.size()<<endl; 
+  // cout << "ids1+2 size " << tags.markers.size()<<endl; 
 	//ROS_INFO_STREAM(tags);
 	
 	tag_pub.publish(tags);
