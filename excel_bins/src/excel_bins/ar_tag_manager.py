@@ -44,9 +44,10 @@ class ARTagManager(ARTagManagerInterface):
 
     def not_track_cb(self, bin_id_msg):
         print "YO"
-        print self.ar_poses
+        print self.ar_poses.keys()
         print bin_id_msg
         bin_id = bin_id_msg.data
+        
         if ((not bin_id == 100) and (not bin_id ==-100)):
             if bin_id > 0:
                 self.ar_poses[bin_id].clear()

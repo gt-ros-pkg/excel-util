@@ -78,7 +78,7 @@ joint_limits:
     max_position: 6.1
 
     has_velocity_limits: true
-    max_velocity: 1.0
+    max_velocity: 1.8
 
     has_acceleration_limits: false
     max_acceleration: 5

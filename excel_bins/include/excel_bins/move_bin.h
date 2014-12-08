@@ -144,6 +144,8 @@ public:
 
   void avoidance_callback(const std_msgs::Bool::ConstPtr& avoid);
 
+  void jointStateCallback(const sensor_msgs::JointState::ConstPtr& js_msg);
+
   ros::ServiceClient service_client, fk_client, cartesian_path_service_;
   moveit_msgs::GetPositionIK::Request ik_srv_req;
   moveit_msgs::GetPositionIK::Response ik_srv_resp;
@@ -163,9 +165,12 @@ public:
   bool vertical_check_safety_, traverse_check_safety_;
   bool human_unsafe_;
   ros::Subscriber hum_unsafe_sub_, human_pose_sub_;
+  ros::Subscriber joint_state_sub_;
   geometry_msgs::Pose human_pose;
   bool use_gripper;
   bool avoiding_human;
+
+  double q_cur[7];
 };
 
 #endif

@@ -33,6 +33,8 @@ MoveBin::MoveBin() :
   human_unsafe_ = false;
   hum_unsafe_sub_ = nh_.subscribe("human/safety/stop", 1, &MoveBin::humanUnsafeCallback,this);
 
+  joint_state_sub_ = nh_.subscribe("/joint_states", 1, &MoveBin::jointStateCallback, this);
+
   ros::WallDuration sleep_t(0.5);
   group.setPlanningTime(8.0);
   group.allowReplanning(false);
@@ -132,7 +134,12 @@ bool MoveBin::moveToHome(bool bis)
     joint_vals[1] = this->optimalGoalAngle(joint_vals[1], planning_scene.robot_state.joint_state.position[1]);
     joint_vals[6] = this->optimalGoalAngle(joint_vals[6], planning_scene.robot_state.joint_state.position[6]);
 
-    group.getCurrentState()->update(true);
+    // TODO
+    robot_state::RobotStatePtr cur_state = group.getCurrentState();
+    cur_state->update(true);
+    cur_state->setJointPositions("table_rail_joint", q_cur);
+    group.setStartState(*cur_state);
+    // group.getCurrentState()->update(true);
 
     group.setJointValueTarget(joint_vals);
     int num_tries = 4;
@@ -182,7 +189,12 @@ bool MoveBin::moveToToolboxHome()
     joint_vals[1] = this->optimalGoalAngle(joint_vals[1], planning_scene.robot_state.joint_state.position[1]);
     joint_vals[6] = this->optimalGoalAngle(joint_vals[6], planning_scene.robot_state.joint_state.position[6]);
 
-    group.getCurrentState()->update(true);
+    // TODO
+    // group.getCurrentState()->update(true);
+    robot_state::RobotStatePtr cur_state = group.getCurrentState();
+    cur_state->update(true);
+    cur_state->setJointPositions("table_rail_joint", q_cur);
+    group.setStartState(*cur_state);
 
     group.setJointValueTarget(joint_vals);
     int num_tries = 4;
@@ -337,7 +349,7 @@ bool MoveBin::deliverBin(double x_target, double y_target, double angle_target, 
         x_target, y_target, angle_target);
     return false;
   }
-  if(!descent(bin_height)) {
+  if(!descent(bin_height+0.02)) {
     ROS_ERROR("Failed to descend after moving bin above target place.");
     return false;
   }
@@ -382,9 +394,14 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
       pose.position.x, pose.position.y, pose.position.z);
   while (ros::ok()) {
     // update planning scene
-    group.getCurrentState()->update(true);
-    group.setStartStateToCurrentState();
-    sleep(0.3); // Add if jump violation still appears
+    // TODO
+    // group.getCurrentState()->update(true);
+    // group.setStartStateToCurrentState();
+    // sleep(0.3); // Add if jump violation still appears
+    robot_state::RobotStatePtr cur_state = group.getCurrentState();
+    cur_state->update(true);
+    cur_state->setJointPositions("table_rail_joint", q_cur);
+    group.setStartState(*cur_state);
 
     moveit_msgs::PlanningScene planning_scene;
     planning_scene::PlanningScenePtr full_planning_scene;
@@ -459,8 +476,13 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
     // Plan trajectory
     //group.setStartStateToCurrentState();
     //sleep(0.5);
-    group.getCurrentState()->update(true);
-    group.setStartStateToCurrentState();
+    // TODO
+    // group.getCurrentState()->update(true);
+    // group.setStartStateToCurrentState();
+    cur_state = group.getCurrentState();
+    cur_state->update(true);
+    cur_state->setJointPositions("table_rail_joint", q_cur);
+    group.setStartState(*cur_state);
 
     group.setJointValueTarget(ik_srv_resp.solution.joint_state);
     int num_tries = 4;
@@ -598,8 +620,13 @@ bool MoveBin::verticalMove(double target_z)
     // getting the current	
     // group.setStartStateToCurrentState();
     sleep(0.3);	
-    group.getCurrentState()->update(true);
-    group.setStartStateToCurrentState();
+    // TODO
+    // group.getCurrentState()->update(true);
+    // group.setStartStateToCurrentState();
+    robot_state::RobotStatePtr cur_state = group.getCurrentState();
+    cur_state->update(true);
+    cur_state->setJointPositions("table_rail_joint", q_cur);
+    group.setStartState(*cur_state);
 
     /*
        int num_tries = 4;
@@ -636,7 +663,7 @@ bool MoveBin::verticalMove(double target_z)
     // find linear trajectory
     moveit_msgs::RobotTrajectory lin_traj_msg;
     std::vector<geometry_msgs::Pose> waypoints;
-    waypoints.push_back(pose1);
+    // waypoints.push_back(pose1);
     waypoints.push_back(pose2);
     // double fraction = group.computeCartesianPath(waypoints, 0.05, 0.0, lin_traj_msg, false);
 
@@ -924,6 +951,16 @@ void MoveBin::avoidance_callback(const std_msgs::Bool::ConstPtr& avoid){
 
 bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety)
 {
+  std::printf("Start state/current:\n");
+  // for(int i = 0; i < 7; i++)
+  //   std::printf("%s, ", mg_plan.start_state_.joint_state.name[i].c_str());
+  // for(int i = 0; i < 7; i++)
+  //   std::printf("%.5f, ", mg_plan.start_state_.joint_state.position[i]);
+  std::printf("\n");
+  for(int i = 0; i < 7; i++)
+    std::printf("%.5f, ", q_cur[i]);
+  std::printf("\n");
+  std::printf("\n");
   int num_pts = mg_plan.trajectory_.joint_trajectory.points.size();
   ROS_INFO("Executing joint trajectory with %d knots and duration %f", num_pts, 
       mg_plan.trajectory_.joint_trajectory.points[num_pts-1].time_from_start.toSec());
@@ -1107,4 +1144,14 @@ void MoveBin::getCarryBinPose(double x_target, double y_target, double angle_tar
   pose.orientation.w = quat_goal.w();
 }
 
+void MoveBin::jointStateCallback(const sensor_msgs::JointState::ConstPtr& js_msg)
+{
+  const char* joint_names[] = {"table_rail_joint", "shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"};
+  for(int i = 0; i < 7; i++)
+    for(int j = 0; j < 7; j++)
+      if(js_msg->name[j].compare(joint_names[i]) == 0) {
+        q_cur[i] = js_msg->position[j];
+        break;
+      }
+}
 

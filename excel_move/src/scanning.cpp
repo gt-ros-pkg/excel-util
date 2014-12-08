@@ -97,17 +97,33 @@ bool Scanning::move_robot(int pose, int orientation)
 {
     //*
     if (pose==0){
+      /*
         service_request.ik_request.pose_stamped.pose.position.x = 0.60;
         service_request.ik_request.pose_stamped.pose.position.y = 1.94;
         service_request.ik_request.pose_stamped.pose.position.z = 0.95;
+        */
+        service_request.ik_request.pose_stamped.pose.position.x = 0.56;
+        service_request.ik_request.pose_stamped.pose.position.y = 2.08;
+        service_request.ik_request.pose_stamped.pose.position.z = 0.95;
+
     }
     if (pose==1){
+      /*
         service_request.ik_request.pose_stamped.pose.position.x = 0.52;
         service_request.ik_request.pose_stamped.pose.position.y = 2.11;
         service_request.ik_request.pose_stamped.pose.position.z = 0.95;
+    */
+        service_request.ik_request.pose_stamped.pose.position.x = 0.56;
+        service_request.ik_request.pose_stamped.pose.position.y = 1.90;
+        service_request.ik_request.pose_stamped.pose.position.z = 0.95;
     }
     if (pose==2){
+      /*
         service_request.ik_request.pose_stamped.pose.position.x = 0.48;
+        service_request.ik_request.pose_stamped.pose.position.y = 2.00;
+        service_request.ik_request.pose_stamped.pose.position.z = 0.95;
+*/
+        service_request.ik_request.pose_stamped.pose.position.x = 0.62;
         service_request.ik_request.pose_stamped.pose.position.y = 2.00;
         service_request.ik_request.pose_stamped.pose.position.z = 0.95;
     }
