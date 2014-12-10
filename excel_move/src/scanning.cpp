@@ -14,7 +14,8 @@ using namespace std;
 
 Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_trajectory_ctrl/follow_joint_trajectory") ,spinner(1), scan_obj(nh_)
 {
-    spinner.start();
+
+  spinner.start();
     cout << "Spinner started?" << endl;
     boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(2.0)));
     planning_scene_monitor::PlanningSceneMonitorPtr plg_scn_mon(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf));
@@ -32,6 +33,8 @@ Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_traj
     ros::WallDuration sleep_t(0.5);
     group.setPlanningTime(8.0);
     group.allowReplanning(false);
+
+    scan_parts_pub = nh_.advertise<std_msgs::Int8>("display/scanned_parts",1);
 
     service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
 
@@ -254,6 +257,14 @@ int Scanning::scan_it(vector<string> &good_tags, const vector<string> &bad_tags)
                 }
 
                 oks = scan_obj.find_tag(not_found);
+		
+		for(int gi=0; gi<glob_oks.size(); gi++){
+		  if(oks[gi]){
+		    std_msgs::Int8 msg;
+		    msg.data = (boost::lexical_cast<int>(good_tags[gi])/100);
+		    scan_parts_pub.publish(msg);
+		  }
+		}
 
                 cout << "Find returns?" << endl;
 

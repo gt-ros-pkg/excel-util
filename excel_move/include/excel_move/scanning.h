@@ -29,6 +29,7 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
 #include <std_msgs/Int8MultiArray.h>
+#include <std_msgs/Int8.h>
 
 #include <vector>
 #include <string>
@@ -76,6 +77,7 @@ public:
 	BarcodeScan scan_obj;
 	int results[3];
 	
+	ros::Publisher scan_parts_pub;
 	/* ros::NodeHandle nh_; */
 };
 
