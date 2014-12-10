@@ -79,6 +79,20 @@ MoveBin::MoveBin() :
   human_pose_sub_ = nh_.subscribe("human/estimated/pose", 1, &MoveBin::human_pose_callback,this);
   avoiding_human = true;
 
+  sec_stopped_sub_ = nh_.subscribe("/mode_state_pub/is_security_stopped", 1, &MoveBin::secStoppedCallback,this);
+  emerg_stopped_sub_ = nh_.subscribe("/mode_state_pub/is_emergency_stopped", 1, &MoveBin::emergStoppedCallback,this);
+  security_stopped_ = false;
+  emergency_stopped_ = false;
+
+  success = true;
+  is_still_holding_bin = false;
+  planning_scene_update_bins_ = nh_.serviceClient<excel_bins::UpdateBins>("/planning_scene_update_bins");
+  while(!planning_scene_update_bins_.exists())
+  {
+    ROS_INFO("Waiting for service /planning_scene_update_bins");
+    sleep(1.0);
+  }
+
   // Define joint_constraints for the IK service
   rail_constraint.joint_name = "table_rail_joint";
   rail_constraint.position = 2.00;
@@ -226,9 +240,14 @@ bool MoveBin::moveToToolboxHome()
   return true;
 }
 
-bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target)
+bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target, bool is_holding_bin_at_start)
 {
   ROS_INFO("Moving bin %d to target (%.3f, %.3f, %f)", bin_number, x_target, y_target, angle_target);
+
+  success = false;
+  is_still_holding_bin = false;
+
+  ////////////////// EDGE CASES START HERE ///////////////////////////
   if(bin_number == -5) {
     return moveToHome();
   }
@@ -262,7 +281,7 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
 
   if(bin_number == -11){
     bin_height = TOOLBOX_HEIGHT;
-    if(!deliverBin(x_target, y_target, angle_target, bin_height)){
+    if(!deliverBin(bin_number, x_target, y_target, angle_target, bin_height)){
         ROS_ERROR("Failed to deliver toolbox");
         return false;
     }
@@ -281,18 +300,23 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
     return true;
   }
 
-  executeGripperAction(false, false); // open gripper, but don't wait
-  if(!approachBin(bin_number, bin_height)) {
-    ROS_ERROR("Failed to approach bin #%d.", bin_number);
-    return false;
+  ////////////////// TYPICAL OPERATION STARTS HERE ///////////////////////////
+
+  if (!is_holding_bin_at_start) {
+    executeGripperAction(false, false); // open gripper, but don't wait
+    if(!approachBin(bin_number, bin_height)) {
+      ROS_ERROR("Failed to approach bin #%d.", bin_number);
+      return false;
+    }
+    if(!attachBin(bin_number)) {
+      ROS_ERROR("Failed to attach bin #%d.", bin_number);
+      return false;
+    }
   }
-  if(!attachBin(bin_number)) {
-    ROS_ERROR("Failed to attach bin #%d.", bin_number);
-    return false;
-  }
+  is_still_holding_bin = true;
 
   ///////////////////////////// HOLDING BIN ///////////////////////////////////
-  if(!deliverBin(x_target, y_target, angle_target, bin_height)) {
+  if(!deliverBin(bin_number, x_target, y_target, angle_target, bin_height)) {
     ROS_ERROR("Failed to deliver bin to target (%.3f, %.3f, %f)", 
         x_target, y_target, angle_target);
     return false;
@@ -301,11 +325,13 @@ bool MoveBin::moveBinToTarget(int bin_number, double x_target, double y_target, 
     ROS_ERROR("Failed to detach bin.");
     return false;
   }
+  is_still_holding_bin = false;
   /////////////////////////////////////////////////////////////////////////////
   if(!ascent(bin_height)) {
     ROS_ERROR("Failed to ascend after releasing bin.");
     return false;
   }
+  success = true;
   return true;
 }
 
@@ -337,18 +363,27 @@ bool MoveBin::approachToolbox(double& bin_height)
   return true;
 }
 
-bool MoveBin::deliverBin(double x_target, double y_target, double angle_target, double bin_height)
+bool MoveBin::deliverBin(int bin_number, double x_target, double y_target, double angle_target, double bin_height)
 {
   ROS_INFO("Delivering to target (%.3f, %.3f, %f)", x_target, y_target, angle_target);
+
+  excel_bins::UpdateBins::Request update_bins_req;
+  excel_bins::UpdateBins::Response update_bins_resp;
+  update_bins_req.bins_to_ignore.push_back(bin_number);
+
   if(!ascent(bin_height)) {
     ROS_ERROR("Failed to ascend while grasping bin.");
     return false;
   }
+  // update planning scene
+  planning_scene_update_bins_.call(update_bins_req, update_bins_resp);
   if(!carryBinTo(x_target, y_target, angle_target, bin_height)) {
     ROS_ERROR("Failed to carry bin to target (%.3f, %.3f, %.3f)", 
         x_target, y_target, angle_target);
     return false;
   }
+  // update planning scene
+  planning_scene_update_bins_.call(update_bins_req, update_bins_resp);
   if(!descent(bin_height+0.02)) {
     ROS_ERROR("Failed to descend after moving bin above target place.");
     return false;
@@ -393,7 +428,7 @@ bool MoveBin::traverseMove(geometry_msgs::Pose& pose)
   ROS_INFO("Traverse move to position (%.2f, %.2f, %.2f)", 
       pose.position.x, pose.position.y, pose.position.z);
   while (ros::ok()) {
-    // update planning scene
+
     // TODO
     // group.getCurrentState()->update(true);
     // group.setStartStateToCurrentState();
@@ -661,11 +696,24 @@ bool MoveBin::verticalMove(double target_z)
         pose2.orientation.z,
         pose2.orientation.w);
     // find linear trajectory
-    moveit_msgs::RobotTrajectory lin_traj_msg;
+    moveit_msgs::RobotTrajectory lin_traj_msg, lin_traj_test_msg;
     std::vector<geometry_msgs::Pose> waypoints;
     // waypoints.push_back(pose1);
     waypoints.push_back(pose2);
-    // double fraction = group.computeCartesianPath(waypoints, 0.05, 0.0, lin_traj_msg, false);
+
+    moveit_msgs::GetPositionIK::Request ik_srv_req;
+    // setup IK request
+    ik_srv_req.ik_request.group_name = "excel";
+    ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
+    ik_srv_req.ik_request.avoid_collisions = true;
+    ik_srv_req.ik_request.attempts = 100;
+    ik_srv_req.ik_request.pose_stamped.pose = waypoints[0];
+    moveit_msgs::GetPositionIK::Response ik_srv_resp;
+    service_client.call(ik_srv_req, ik_srv_resp);
+    if(ik_srv_resp.error_code.val !=1){
+      ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
+      return false;
+    }
 
     moveit_msgs::GetCartesianPath::Request req;
     moveit_msgs::GetCartesianPath::Response res;
@@ -679,8 +727,30 @@ bool MoveBin::verticalMove(double target_z)
     robot_state::robotStateToRobotStateMsg(*group.getCurrentState(), req.start_state);
     if (!cartesian_path_service_.call(req, res))
       return false;
+    if (res.error_code.val != 1) {
+      ROS_ERROR("cartesian_path_service_ returned with error code %d", res.error_code.val);
+      return false;
+    }
     double fraction = res.fraction;
     lin_traj_msg = res.solution;
+
+    robot_trajectory::RobotTrajectory ret_traj(group.getCurrentState()->getRobotModel(), "excel");
+    ret_traj.setRobotTrajectoryMsg(*group.getCurrentState(), lin_traj_msg);
+    if(!full_planning_scene->isPathValid(ret_traj)) {
+      ROS_ERROR("INVALID FINAL STATE IN VERTICAL MOVE");
+      return false;
+    }
+
+    double fraction_test = group.computeCartesianPath(waypoints, 0.05, 0.0, lin_traj_test_msg, true);
+    std::printf("\n\n\n");
+    std::vector<const moveit::core::AttachedBody*> attached_bodies ;
+    full_planning_scene->getCurrentState().getAttachedBodies(attached_bodies);
+    ROS_WARN("fraction_test %f, numpoints %d, num_attached_objs %d", fraction_test, lin_traj_test_msg.joint_trajectory.points.size(), attached_bodies.size());
+    std::printf("\n\n\n");
+    if (fraction_test == -1.0) {
+      ROS_ERROR("Cartesian path didn't return valid path");
+      return false;
+    }
 
     //ROS_INFO_STREAM("currrent state "<< req.start_state);
 
@@ -734,7 +804,7 @@ bool MoveBin::attachBin(int bin_number)
   if (bin_coll_obj) {
     ROS_INFO("Attaching the bin");
     moveit_msgs::AttachedCollisionObject attached_object;
-    attached_object.link_name = "wrist_3_link";
+    attached_object.link_name = "robotiq_85_base_link";
     attached_object.object = *bin_coll_obj;
     attached_object.object.operation = attached_object.object.ADD;
     attached_object_publisher.publish(attached_object);
@@ -757,7 +827,7 @@ bool MoveBin::attachToolbox()
   if (toolbox_coll_obj) {
     ROS_INFO("Attaching the bin");
     moveit_msgs::AttachedCollisionObject attached_object;
-    attached_object.link_name = "wrist_3_link";
+    attached_object.link_name = "robotiq_85_base_link";
     attached_object.object = *toolbox_coll_obj;
     attached_object.object.operation = attached_object.object.ADD;
     attached_object_publisher.publish(attached_object);
@@ -952,6 +1022,20 @@ void MoveBin::avoidance_callback(const std_msgs::Bool::ConstPtr& avoid){
 bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety)
 {
   std::printf("Start state/current:\n");
+  if (security_stopped_ || emergency_stopped_) {
+    while (security_stopped_ || emergency_stopped_) {
+      ROS_WARN("Waiting for security/emergency stop to be removed");
+      if (!ros::ok()) 
+        return false;
+      ros::Duration(0.3).sleep();
+    }
+    if(security_stopped_)
+      ros::Duration(1.0).sleep();
+    if(emergency_stopped_) {
+      ROS_WARN("Starting in 5 seconds...");
+      ros::Duration(5.0).sleep();
+    }
+  }
   // for(int i = 0; i < 7; i++)
   //   std::printf("%s, ", mg_plan.start_state_.joint_state.name[i].c_str());
   // for(int i = 0; i < 7; i++)
@@ -989,6 +1073,12 @@ bool MoveBin::executeJointTrajectory(MoveGroupPlan& mg_plan, bool check_safety)
       break;
     if (check_safety && human_unsafe_) {
       ROS_WARN("Human unsafe condition detected. Stopping trajectory");
+      stopJointTrajectory();
+      ros::Duration(0.5).sleep();
+      return false;
+    }
+    if (security_stopped_ || emergency_stopped_) {
+      ROS_WARN("Robot security stopped, stopping trajectory!");
       stopJointTrajectory();
       ros::Duration(0.5).sleep();
       return false;
@@ -1155,3 +1245,11 @@ void MoveBin::jointStateCallback(const sensor_msgs::JointState::ConstPtr& js_msg
       }
 }
 
+void MoveBin::secStoppedCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  security_stopped_ = msg->data;
+}
+void MoveBin::emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  emergency_stopped_ = msg->data;
+}

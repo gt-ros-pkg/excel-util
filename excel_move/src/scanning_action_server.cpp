@@ -1,17 +1,15 @@
 #include <actionlib/server/simple_action_server.h>
 #include <excel_move/ScanningAction.h>
 #include <excel_move/scanning.h>
-
 class ScanningActionServer
 {
 public:
-  ScanningActionServer(ros::NodeHandle& nh, Scanning& scanning) :
-    nh_(nh), scanning_(scanning),
-    act_srv_(nh, "scan_parts", boost::bind(&ScanningActionServer::executeCB, this, _1), false)
-  {
-    act_srv_.start();
-  }
-
+ScanningActionServer(ros::NodeHandle& nh, Scanning& scanning) :
+nh_(nh), scanning_(scanning),
+act_srv_(nh, "scan_parts", boost::bind(&ScanningActionServer::executeCB, this, _1), false)
+{
+act_srv_.start();
+}
 protected:
   ros::NodeHandle nh_;
   Scanning& scanning_;
@@ -55,18 +53,13 @@ protected:
   }
 
 };
-
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "scanning_action_server");
-  usleep(1000*1000);
-
-  ros::NodeHandle nh;
-
-  Scanning scanning(nh);
-
-  ScanningActionServer scanning_as(nh, scanning);
-  ros::spin();
-
-  return 0;
+ros::init(argc, argv, "scanning_action_server");
+usleep(1000*1000);
+ros::NodeHandle nh;
+Scanning scanning(nh);
+ScanningActionServer scanning_as(nh, scanning);
+ros::spin();
+return 0;
 }

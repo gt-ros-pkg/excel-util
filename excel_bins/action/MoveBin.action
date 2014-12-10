@@ -3,5 +3,8 @@ string size
 float64 x_target
 float64 y_target
 float64 r_target
+bool is_holding_bin
 ---
+bool success
+bool is_still_holding_bin
 ---

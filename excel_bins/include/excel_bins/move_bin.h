@@ -33,6 +33,7 @@
 #include <std_msgs/Bool.h>
 #include <geometry_msgs/PoseArray.h>
 #include <math.h>
+#include <excel_bins/UpdateBins.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
@@ -57,7 +58,7 @@ public:
 
   // From the current joint pose, the robot moves the requested bin from its location
   // to the target location, and backs away
-  bool moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target);
+  bool moveBinToTarget(int bin_number, double x_target, double y_target, double angle_target, bool is_holding_bin_at_start);
   //////////////////////////////////////////////////////////////////
 
   //////////////// moveBinToTarget composite actions ///////////////
@@ -69,7 +70,7 @@ public:
 
   // On the assumption that the robot is currently holding a bin, the robot moves the
   // bin to the target place location, but does not release the bin
-  bool deliverBin(double x_target, double y_target, double angle_target, double bin_height);
+  bool deliverBin(int bin_number, double x_target, double y_target, double angle_target, double bin_height);
   //////////////////////////////////////////////////////////////////
 
   ///////////////////////// Traverse actions ///////////////////////
@@ -146,6 +147,9 @@ public:
 
   void jointStateCallback(const sensor_msgs::JointState::ConstPtr& js_msg);
 
+  void secStoppedCallback(const std_msgs::Bool::ConstPtr& msg);
+  void emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg);
+
   ros::ServiceClient service_client, fk_client, cartesian_path_service_;
   moveit_msgs::GetPositionIK::Request ik_srv_req;
   moveit_msgs::GetPositionIK::Response ik_srv_resp;
@@ -169,6 +173,14 @@ public:
   geometry_msgs::Pose human_pose;
   bool use_gripper;
   bool avoiding_human;
+
+  ros::Subscriber sec_stopped_sub_;
+  ros::Subscriber emerg_stopped_sub_;
+  bool security_stopped_, emergency_stopped_;
+
+  bool success;
+  bool is_still_holding_bin;
+  ros::ServiceClient planning_scene_update_bins_;
 
   double q_cur[7];
 };

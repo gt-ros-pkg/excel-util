@@ -239,7 +239,7 @@ class ARTagManagerInterface(object):
         return slot_states, missing_bins
 
 
-    #### NEW FONCTIONS TO CHECK BIN COLLISION
+    #### NEW FUNCTIONS TO CHECK BIN COLLISION
 
     def empty_slots(self, slots_to_check=None, invert_set=False):
         rospy.wait_for_service('is_bin_location_empty')
