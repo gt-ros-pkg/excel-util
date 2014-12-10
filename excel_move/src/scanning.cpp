@@ -33,8 +33,6 @@ Scanning::Scanning(ros::NodeHandle nh_) : group("excel"), excel_ac("vel_pva_traj
     group.setPlanningTime(8.0);
     group.allowReplanning(false);
 
-    scanned_parts_pub = nh_.advertise<std_msgs::Int8MultiArray>("display/scanned_parts",1);
-
     service_client = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
 
     while(!service_client.exists())
@@ -203,7 +201,9 @@ double Scanning::optimal_goal_angle(double goal_angle, double current_angle)
     return goal_angle;
 }
 
-int Scanning::scan_it(const vector<string> &good_tags, const vector<string> &bad_tags)
+// in case no bad part, good tags returns the list of parts with 0s for the 
+// ones not found
+int Scanning::scan_it(vector<string> &good_tags, const vector<string> &bad_tags)
 {
     vector<string> all_tags;
     all_tags.reserve(good_tags.size()+ bad_tags.size());
@@ -217,8 +217,7 @@ int Scanning::scan_it(const vector<string> &good_tags, const vector<string> &bad
     vector<bool> glob_oks, oks;
     vector<string> bad_tags_found;
 
-    std_msgs::Int8MultiArray scanned_numbers;
-    scanned_parts_pub.publish(scanned_numbers);
+    vector<string> scanned_numbers;
 
     glob_oks.resize(all_tags.size());
     fill(glob_oks.begin(), glob_oks.end(), false);
@@ -276,13 +275,6 @@ int Scanning::scan_it(const vector<string> &good_tags, const vector<string> &bad
                     }
                 }
 
-                // publish the globals_oks
-                scanned_numbers.data.resize(good_tags.size());
-                for(int p = 0; p<scanned_numbers.data.size(); p++){
-                    scanned_numbers.data[p] = glob_oks[p]*(boost::lexical_cast<int>(good_tags[p])/100);
-                }
-                scanned_parts_pub.publish(scanned_numbers);
-
                 //globals
                 cout << "***************GLOBALS***************" << endl;
                 for(int j=0; j<all_tags.size(); j++){
@@ -310,6 +302,16 @@ int Scanning::scan_it(const vector<string> &good_tags, const vector<string> &bad
         }
     }
 
+
+    //Add the tags found to the list of good tags...
+    scanned_numbers.resize(good_tags.size());
+    for(int p = 0; p<scanned_numbers.size(); p++){
+      scanned_numbers[p] = boost::lexical_cast<string>(glob_oks[p]*
+				 (boost::lexical_cast<int>(good_tags[p])/100));
+    }
+    good_tags = scanned_numbers; //return the tags found and those missed are zeros
+    //publish scanned parts
+    //scanned_parts_pub.publish(scanned_numbers);
 
     for(int i=0; i<good_tags.size(); ++i){
         //if any of the good tags not found

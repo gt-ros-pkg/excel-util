@@ -46,7 +46,11 @@ protected:
 
   void scanItCB(const excel_move::ScanningGoalConstPtr& goal, const ros::TimerEvent& te)
   {
-    result_.result = scanning_.scan_it(goal->good_bins, goal->bad_bins);
+    vector<string> goody_tags(goal->good_bins);
+    result_.result = scanning_.scan_it(goody_tags, goal->bad_bins);
+    result_.scanned.resize((goody_tags).size());
+    for(int i=0; i<(goody_tags).size();i++)
+      result_.scanned[i] = boost::lexical_cast<int>(goody_tags[i]);
     scan_done_ = true;
   }
 
