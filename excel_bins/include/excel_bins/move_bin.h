@@ -37,7 +37,7 @@
 
 # define M_PI 3.14159265358979323846  /* pi */
 # define TABLE_HEIGHT 0.88  
-# define TOOLBOX_HEIGHT 0.22
+# define TOOLBOX_HEIGHT 0.24
 # define TOOLBOX_HANDLE_SHIFT 0.12
 # define GRIPPING_OFFSET 0.1  
 # define DZ 0.30 

@@ -128,7 +128,7 @@ class BinManager(object):
                             if is_still_holding_bin:
                                 rospy.logerr("Failed moving bin to slot but still holding bin, will try to replace")
                                 rospy.sleep(1.)
-                                continue
+                                break
                             else:
                                 rospy.logerr("Failed moving bin to slot but not holding bin, will just skip")
                                 rospy.sleep(1.)
@@ -164,7 +164,7 @@ class BinManager(object):
                             if is_still_holding_bin:
                                 rospy.logerr("Failed moving bin to slot but still holding bin, will try to replace")
                                 rospy.sleep(1.)
-                                continue
+                                break
                             else:
                                 rospy.logerr("Failed moving bin to slot but not holding bin, will just skip")
                                 rospy.sleep(1.)
@@ -239,6 +239,7 @@ class BinDelivererScanner(object):
         self.parts_ready_pub = rospy.Publisher('/display/parts_ready', Bool, latch=True)
         self.system_blocked_pub = rospy.Publisher('/display/system_blocked', Bool, latch=True)
         self.scanned_parts_pub = rospy.Publisher('/display/scanned_parts', Int8, latch=True)
+        self.scanned_parts_pub.publish(0)
 
         if not is_sim:
             self.scanning_ac = actionlib.SimpleActionClient('scan_parts', ScanningAction)
@@ -260,6 +261,7 @@ class BinDelivererScanner(object):
 
         self.display_message_pub.publish("Demo starting")
         self.scan_status_pub.publish(0)
+        # self.scanned_parts_pub.publish(0)
 
         if not self.is_sim:
             # move robot to home position
@@ -303,6 +305,7 @@ class BinDelivererScanner(object):
                     while not rospy.is_shutdown():
                         print "Waiting for human to occupy workspace"
                         if self.is_occupied:
+                            self.display_message_pub.publish("Ready to scan")
                             break
                         r.sleep()
                     rospy.sleep(wait_time)
@@ -369,15 +372,16 @@ class BinDelivererScanner(object):
                             act_goal.good_bins = third_list
 
                             print "Waiting for human to exit"
-                            self.system_blocked_pub.publish(True)
-                            self.display_message_pub.publish("Finish assembly and get out of the workspace")
-                            r = rospy.Rate(1)
-                            while not rospy.is_shutdown():
-                                print "Waiting for human to get out of workspace"
-                                if not self.is_occupied:
-                                    break
-                                r.sleep()
-                            self.system_blocked_pub.publish(False)
+                            # self.system_blocked_pub.publish(True)
+                            self.display_message_pub.publish("Starting third scan, don't occlude the parts")
+                            # r = rospy.Rate(1)
+                            # while not rospy.is_shutdown():
+                            #     print "Waiting for human to get out of workspace"
+                            #     if not self.is_occupied:
+                            #         break
+                            #     r.sleep()
+                            rospy.sleep(2.0)
+                            # self.system_blocked_pub.publish(False)
 
                             self.display_message_pub.publish("Starting third scan")
                             outcome = self.scanning_ac.send_goal_and_wait(act_goal)
@@ -392,15 +396,19 @@ class BinDelivererScanner(object):
                             elif scanning_result == -1:
                                 self.scan_status_pub.publish(0)
                                 self.display_message_pub.publish("MISSING PART")
-                                print "Still missing parts, exiting"
-                                return
+                                print "Still missing parts, continuing to next order"
+                                rospy.sleep(5.)
+                                self.scanning_ended = True
+                                continue
                             elif scanning_result == -2:
                                 self.scan_status_pub.publish(0)
                                 self.display_message_pub.publish("BAD PART")
                                 print "\n"* 5
                                 print "              WRONG PART"
                                 print "\n"* 5
-                                return
+                                rospy.sleep(5.)
+                                self.scanning_ended = True
+                                continue
                             
                         elif scanning_result == -2:
                             self.scan_status_pub.publish(0)
@@ -408,7 +416,9 @@ class BinDelivererScanner(object):
                             print "\n"* 5
                             print "              WRONG PART"
                             print "\n"* 5
-                            return
+                            rospy.sleep(5.)
+                            self.scanning_ended = True
+                            continue
 
                     elif scanning_result == -2:
                         self.scan_status_pub.publish(0)
@@ -416,7 +426,9 @@ class BinDelivererScanner(object):
                         print "\n"* 5
                         print "              WRONG PART"
                         print "\n"* 5
-                        return
+                        rospy.sleep(5.)
+                        self.scanning_ended = True
+                        continue
 
                 elif True:
                     rospy.sleep(3.0)

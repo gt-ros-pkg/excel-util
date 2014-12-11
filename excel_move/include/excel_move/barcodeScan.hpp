@@ -109,7 +109,7 @@ vector<bool> BarcodeScan::find_tag(vector<string> tag_names)
       string file_str(fname);
       cout << "File: " << file_str << endl;
       frame_no_++;
-      cv::imwrite(file_str, cv_ptr->image );
+      // cv::imwrite(file_str, cv_ptr->image );
       //*/
 
       switch(processing_option_){

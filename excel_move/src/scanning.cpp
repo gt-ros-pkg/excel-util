@@ -240,13 +240,14 @@ int Scanning::scan_it(vector<string> &good_tags, const vector<string> &bad_tags)
 
                 oks = scan_obj.find_tag(not_found);
 		
-		for(int gi=0; gi<glob_oks.size(); gi++){
-		  if(oks[gi]){
-		    std_msgs::Int8 msg;
-		    msg.data = (boost::lexical_cast<int>(good_tags[gi])/100);
-		    scan_parts_pub.publish(msg);
-		  }
-		}
+                for(int gi=0; gi<oks.size(); gi++){
+                  if(oks[gi]){
+                    std_msgs::Int8 msg;
+                    msg.data = (boost::lexical_cast<int>(not_found[gi])/100);
+                    std::cout <<"msg.data : " <<msg.data <<std::endl;
+                    scan_parts_pub.publish(msg);
+                  }
+                }
 
                 cout << "Find returns?" << endl;
 

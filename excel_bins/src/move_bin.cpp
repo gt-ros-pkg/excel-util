@@ -87,11 +87,6 @@ MoveBin::MoveBin() :
   success = true;
   is_still_holding_bin = false;
   planning_scene_update_bins_ = nh_.serviceClient<excel_bins::UpdateBins>("/planning_scene_update_bins");
-  while(!planning_scene_update_bins_.exists())
-  {
-    ROS_INFO("Waiting for service /planning_scene_update_bins");
-    sleep(1.0);
-  }
 
   // Define joint_constraints for the IK service
   rail_constraint.joint_name = "table_rail_joint";
@@ -701,19 +696,18 @@ bool MoveBin::verticalMove(double target_z)
     // waypoints.push_back(pose1);
     waypoints.push_back(pose2);
 
-    moveit_msgs::GetPositionIK::Request ik_srv_req;
-    // setup IK request
-    ik_srv_req.ik_request.group_name = "excel";
-    ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
-    ik_srv_req.ik_request.avoid_collisions = true;
-    ik_srv_req.ik_request.attempts = 100;
-    ik_srv_req.ik_request.pose_stamped.pose = waypoints[0];
-    moveit_msgs::GetPositionIK::Response ik_srv_resp;
-    service_client.call(ik_srv_req, ik_srv_resp);
-    if(ik_srv_resp.error_code.val !=1){
-      ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
-      return false;
-    }
+    // moveit_msgs::GetPositionIK::Request ik_srv_req;
+    // ik_srv_req.ik_request.group_name = "excel";
+    // ik_srv_req.ik_request.pose_stamped.header.frame_id = "table_link";
+    // ik_srv_req.ik_request.avoid_collisions = true;
+    // ik_srv_req.ik_request.attempts = 100;
+    // ik_srv_req.ik_request.pose_stamped.pose = waypoints[0];
+    // moveit_msgs::GetPositionIK::Response ik_srv_resp;
+    // service_client.call(ik_srv_req, ik_srv_resp);
+    // if(ik_srv_resp.error_code.val !=1){
+    //   ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
+    //   return false;
+    // }
 
     moveit_msgs::GetCartesianPath::Request req;
     moveit_msgs::GetCartesianPath::Response res;
@@ -734,23 +728,23 @@ bool MoveBin::verticalMove(double target_z)
     double fraction = res.fraction;
     lin_traj_msg = res.solution;
 
-    robot_trajectory::RobotTrajectory ret_traj(group.getCurrentState()->getRobotModel(), "excel");
-    ret_traj.setRobotTrajectoryMsg(*group.getCurrentState(), lin_traj_msg);
-    if(!full_planning_scene->isPathValid(ret_traj)) {
-      ROS_ERROR("INVALID FINAL STATE IN VERTICAL MOVE");
-      return false;
-    }
+    // robot_trajectory::RobotTrajectory ret_traj(group.getCurrentState()->getRobotModel(), "excel");
+    // ret_traj.setRobotTrajectoryMsg(*group.getCurrentState(), lin_traj_msg);
+    // if(!full_planning_scene->isPathValid(ret_traj)) {
+    //   ROS_ERROR("INVALID FINAL STATE IN VERTICAL MOVE");
+    //   return false;
+    // }
 
-    double fraction_test = group.computeCartesianPath(waypoints, 0.05, 0.0, lin_traj_test_msg, true);
-    std::printf("\n\n\n");
-    std::vector<const moveit::core::AttachedBody*> attached_bodies ;
-    full_planning_scene->getCurrentState().getAttachedBodies(attached_bodies);
-    ROS_WARN("fraction_test %f, numpoints %d, num_attached_objs %d", fraction_test, lin_traj_test_msg.joint_trajectory.points.size(), attached_bodies.size());
-    std::printf("\n\n\n");
-    if (fraction_test == -1.0) {
-      ROS_ERROR("Cartesian path didn't return valid path");
-      return false;
-    }
+    // double fraction_test = group.computeCartesianPath(waypoints, 0.05, 0.0, lin_traj_test_msg, true);
+    // std::printf("\n\n\n");
+    // std::vector<const moveit::core::AttachedBody*> attached_bodies ;
+    // full_planning_scene->getCurrentState().getAttachedBodies(attached_bodies);
+    // ROS_WARN("fraction_test %f, numpoints %d, num_attached_objs %d", fraction_test, lin_traj_test_msg.joint_trajectory.points.size(), attached_bodies.size());
+    // std::printf("\n\n\n");
+    // if (fraction_test == -1.0) {
+    //   ROS_ERROR("Cartesian path didn't return valid path");
+    //   return false;
+    // }
 
     //ROS_INFO_STREAM("currrent state "<< req.start_state);
 
