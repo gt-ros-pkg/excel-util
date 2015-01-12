@@ -44,9 +44,9 @@
       base_frame: table_link
       ee_frame: ee_link
       gains:
-        lin_x_p: 0.35
+        lin_x_p: 0.5
         lin_x_max: 0.4
-        lin_y_p: 0.35
+        lin_y_p: 0.5
         lin_y_max: 0.4
         lin_z_p: 0.35
         lin_z_max: 0.3
