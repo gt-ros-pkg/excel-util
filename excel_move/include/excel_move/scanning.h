@@ -29,6 +29,7 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include "tf/transform_datatypes.h"
 #include <std_msgs/Int8MultiArray.h>
+#include <std_msgs/Int8.h>
 
 #include <vector>
 #include <string>
@@ -66,7 +67,7 @@ public:
 	moveit_msgs::JointConstraint rail_constraint, shoulder_constraint,elbow_constraint;
 	moveit::planning_interface::MoveGroup::Plan my_plan;
 	
-	int scan_it(const vector<string> &good_bins, const vector<string> &bad_bins);
+	int scan_it(vector<string> &good_bins, const vector<string> &bad_bins);
 	
 	bool move_robot(int pose, int orientation);
 	
@@ -76,8 +77,7 @@ public:
 	BarcodeScan scan_obj;
 	int results[3];
 	
-    ros::Publisher scanned_parts_pub;
-
+	ros::Publisher scan_parts_pub;
 	/* ros::NodeHandle nh_; */
 };
 

@@ -19,5 +19,5 @@
 		<remap from="ar_pose_marker" to="ar_pose_marker2"/> 
 	</node>
 
-	<node name="ar_pose_sync" pkg="excel_cameras" type="ar_pose_sync_node" />
+	<node name="ar_pose_sync" pkg="excel_cameras" type="ar_pose_sync_node" output="screen"/>
 </launch>

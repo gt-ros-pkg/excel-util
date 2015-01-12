@@ -12,6 +12,8 @@ from excel_bins.msg import MoveBinAction, MoveBinGoal
 from excel_move.msg import ScanningAction, ScanningGoal
 from std_msgs.msg import Int32, String, Bool, Int8, Int8MultiArray
 
+from ur_py_utils.ur_controller_manager import URControllerManager
+
 class BinManager(object):
     def __init__(self, ar_man, hum_ws_slots, bin_home_slots={}, is_sim=False):
         self.ar_man = ar_man
@@ -46,6 +48,9 @@ class BinManager(object):
                 r = rospy.Rate(1)
                 while order_bin_id not in all_bins and not rospy.is_shutdown():
                     print "Bin", order_bin_id, "is not currently in the workspace, will continue once it is"
+                    all_bins = self.ar_man.get_real_filled_slots()
+                    print "all_bins", all_bins
+                    print "hum_ws_start_bins", hum_ws_start_bins
                     r.sleep()
                 if order_bin_id not in hum_ws_start_bins:
                     # bin not in the workspace, we need to deliver
@@ -82,6 +87,12 @@ class BinManager(object):
                 if len(bins_to_deliver) > 0:
                     #empty_hum_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots)
                     empty_hum_ws_slots = self.ar_man.empty_slots(self.hum_ws_slots)
+                    while len(empty_hum_ws_slots) == 0:
+                        print "\n"
+                        print "No empty human ws slots found, is collision checker running?"
+                        print "\n"
+                        raw_input("PRESS ENTER TO CHECK FOR SLOTS")
+                        empty_hum_ws_slots = self.ar_man.empty_slots(self.hum_ws_slots)
                     bin_to_deliver = bins_to_deliver[0]
                     empty_hum_ws_slot = empty_hum_ws_slots[0]
 
@@ -130,6 +141,12 @@ class BinManager(object):
             remove_to_slot = self.bin_home_slots[bin_to_remove]
         #empty_rob_ws_slots = self.ar_man.get_real_empty_slots(self.hum_ws_slots, invert_set=True)
         empty_rob_ws_slots = self.ar_man.empty_slots(self.hum_ws_slots, invert_set=True)
+        while len(empty_rob_ws_slots) == 0:
+            print "\n"
+            print "No empty robot ws slots found, is collision checker running?"
+            print "\n"
+            raw_input("PRESS ENTER TO CHECK FOR SLOTS")
+            empty_rob_ws_slots = self.ar_man.empty_slots(self.hum_ws_slots, invert_set=True)
         print "Current empty robot workspace slots:", empty_rob_ws_slots
         if remove_to_slot not in empty_rob_ws_slots:
             print "Slot", remove_to_slot, "not an empty slot, picking a random empty slot"
@@ -177,8 +194,15 @@ class BinDeliverer(object):
         scanning_ac.wait_for_server()
         print "Found action server."
 
+        cman = URControllerManager()
+        cman.start_joint_controller('vel_pva_trajectory_ctrl')
+
         self.display_message_pub.publish("Demo starting")
         self.scan_status_pub.publish(0)
+        home_pose_act_goal = MoveBinGoal()
+        home_pose_act_goal.bin_id = -12
+        bin_man.bin_move_ac.send_goal_and_wait(home_pose_act_goal)
+
         while not rospy.is_shutdown():
             for bin_order in bin_orders:
                 self.display_message_pub.publish("Fetching Part Numbers: {" + 
@@ -208,7 +232,7 @@ class BinDeliverer(object):
                 self.display_message_pub.publish("Waiting for associate")
                 self.scan_status_pub.publish(-1)
 
-                if True: 
+                if False: 
                     r = rospy.Rate(0.5)
                     while not rospy.is_shutdown():
                         print "Waiting for human to occupy workspace"

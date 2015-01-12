@@ -43,28 +43,35 @@ class ARTagManager(ARTagManagerInterface):
             self.bin_set_sub = rospy.Subscriber('/bin_not_tracking', Int32, self.not_track_cb)
 
     def not_track_cb(self, bin_id_msg):
+        print "YO"
+        print self.ar_poses.keys()
+        print bin_id_msg
         bin_id = bin_id_msg.data
-	if ((not bin_id == 100) and (not bin_id ==-100)):
+        
+        if ((not bin_id == 100) and (not bin_id ==-100)):
             if bin_id > 0:
                 self.ar_poses[bin_id].clear()
                 self.ar_poses[bin_id+10].clear()
                 self.bins_not_tracking.append(bin_id)
             else:
                 self.bins_not_tracking.remove(-bin_id)
-	else:
-	    if bin_id > 0:
+        else:
+            if bin_id > 0:
                 self.ar_poses[100].clear()
                 self.ar_poses[101].clear()
                 self.bins_not_tracking.append(bin_id)
-	    else:
-		self.bins_not_tracking.remove(-bin_id)
+            else:
+                self.bins_not_tracking.remove(-bin_id)
 
     def ar_cb(self, msg):
         if self.lock.acquire(blocking=0):
             cur_time = rospy.get_time()
             now_time = rospy.Time.now()
-            new_tags_id = []
+            # new_tags_id = []
             for marker in msg.markers:
+                if marker.id not in self.tags_list:
+                    continue
+
                 marker.pose.header = marker.header
                 if marker.id not in self.ar_poses:
                     self.ar_poses[marker.id] = deque()
@@ -74,8 +81,7 @@ class ARTagManager(ARTagManagerInterface):
 
                 if not ((marker.id in self.bins_not_tracking) or (marker.id-10 in self.bins_not_tracking)): 
                     self.ar_poses[marker.id].append([cur_time, marker.pose])
-
-                new_tags_id.append(marker.id)
+                # new_tags_id.append(marker.id)
 
             if cur_time - self.last_clean_pub > self.clean_period:
                 self.update_bins(cur_time)
@@ -100,94 +106,93 @@ class ARTagManager(ARTagManagerInterface):
         bins = []
         #for bid in self.ar_poses:
         for bid in bin_data:
-            if bid in self.tags_list:
-                if((bid == 100) or (bid==101)):
-                    if ((101 not in bin_data) or (100 not in bin_data)):
-                       # print "empty"
-                       break;
+            if((bid == 100) or (bid==101)):
+                if ((101 not in bin_data) or (100 not in bin_data)):
+                   # print "empty"
+                   break
 
-                    # Get the average position
-                    ar_pose1_x = (bin_data[100][:2])[0][0]
-                    ar_pose1_y = (bin_data[100][:2])[0][1]
-                    ar_pose1_z = (bin_data[100][:2])[0][2]
-                    ar_pose2_x = (bin_data[101][:2])[0][0]
-                    ar_pose2_y = (bin_data[101][:2])[0][1]
-                    ar_pose2_z = (bin_data[101][:2])[0][2]
-                    
-                    # Create a bin message
-                    bin = Bin()
-                    bin.name = "toolbox"
-                    bin.size = "toolbox"
+                # Get the average position
+                ar_pose1_x = (bin_data[100][:2])[0][0]
+                ar_pose1_y = (bin_data[100][:2])[0][1]
+                ar_pose1_z = (bin_data[100][:2])[0][2]
+                ar_pose2_x = (bin_data[101][:2])[0][0]
+                ar_pose2_y = (bin_data[101][:2])[0][1]
+                ar_pose2_z = (bin_data[101][:2])[0][2]
+                
+                # Create a bin message
+                bin = Bin()
+                bin.name = "toolbox"
+                bin.size = "toolbox"
 
-                    xdiff = ar_pose1_x - ar_pose2_x
-                    ydiff = ar_pose1_y - ar_pose2_y
-                    pose_msg = Pose()
-                    pose_msg.position.x = (ar_pose1_x+ ar_pose2_x)/2.0
-                    pose_msg.position.y = (ar_pose1_y+ ar_pose2_y)/2.0
-                    pose_msg.position.z = (ar_pose1_z+ ar_pose2_z)/2.0
+                xdiff = ar_pose1_x - ar_pose2_x
+                ydiff = ar_pose1_y - ar_pose2_y
+                pose_msg = Pose()
+                pose_msg.position.x = (ar_pose1_x+ ar_pose2_x)/2.0
+                pose_msg.position.y = (ar_pose1_y+ ar_pose2_y)/2.0
+                pose_msg.position.z = (ar_pose1_z+ ar_pose2_z)/2.0
 
-                    # Get quaternion from angle
-                    ang = np.arctan2(xdiff, ydiff)
-                    new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
-                    pose_msg.orientation.x = new_quaternion[1]
-                    pose_msg.orientation.y = new_quaternion[2]
-                    pose_msg.orientation.z = new_quaternion[3]
-                    pose_msg.orientation.w = new_quaternion[0]
+                # Get quaternion from angle
+                ang = np.arctan2(xdiff, ydiff)
+                new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
+                pose_msg.orientation.x = new_quaternion[1]
+                pose_msg.orientation.y = new_quaternion[2]
+                pose_msg.orientation.z = new_quaternion[3]
+                pose_msg.orientation.w = new_quaternion[0]
 
-                    # Add the bin to the bin's array msg
-                    bin.pose = pose_msg
-                    bins.append(bin)
-                    self.real_bin_poses[bid] = bin.pose
-
-
-                if bid+10 in bin_data:
-                    if ((bid not in bin_data) or (bid+10 not in bin_data)):
-                       # print "empty"
-                       break;
-
-                    # Get the average position
-                    ar_pose1_x = (bin_data[bid][:2])[0][0]
-                    ar_pose1_y = (bin_data[bid][:2])[0][1]
-                    ar_pose1_z = (bin_data[bid][:2])[0][2]
-                    ar_pose2_x = (bin_data[bid+10][:2])[0][0]
-                    ar_pose2_y = (bin_data[bid+10][:2])[0][1]
-                    ar_pose2_z = (bin_data[bid+10][:2])[0][2]
-
-                    # Create a bin message
-                    bin = Bin()
-                    bin.name = "bin#"+str(bid)
-
-                    # Correct bin height
-                    if (bid%2):
-                        ar_pose1_z = self.table_height + self.bin_large_height
-                        ar_pose2_z = self.table_height + self.bin_large_height
-                        bin.size = "large"
-                    else:
-                        ar_pose1_z = self.table_height + self.bin_small_height
-                        ar_pose2_z = self.table_height + self.bin_small_height
-                        bin.size = "small"
+                # Add the bin to the bin's array msg
+                bin.pose = pose_msg
+                bins.append(bin)
+                self.real_bin_poses[bid] = bin.pose
 
 
-                    xdiff = ar_pose1_x - ar_pose2_x
-                    ydiff = ar_pose1_y - ar_pose2_y
-                    pose_msg = Pose()
-                    pose_msg.position.x = (ar_pose1_x+ ar_pose2_x)/2.0
-                    pose_msg.position.y = (ar_pose1_y+ ar_pose2_y)/2.0
-                    pose_msg.position.z = (ar_pose1_z+ ar_pose2_z)/2.0
+            if bid+10 in bin_data:
+                if ((bid not in bin_data) or (bid+10 not in bin_data)):
+                   # print "empty"
+                   break;
 
-                    
-                    # Get quaternion from angle
-                    ang = np.arctan2(xdiff, ydiff)
-                    new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
-                    pose_msg.orientation.x = new_quaternion[1]
-                    pose_msg.orientation.y = new_quaternion[2]
-                    pose_msg.orientation.z = new_quaternion[3]
-                    pose_msg.orientation.w = new_quaternion[0]
+                # Get the average position
+                ar_pose1_x = (bin_data[bid][:2])[0][0]
+                ar_pose1_y = (bin_data[bid][:2])[0][1]
+                ar_pose1_z = (bin_data[bid][:2])[0][2]
+                ar_pose2_x = (bin_data[bid+10][:2])[0][0]
+                ar_pose2_y = (bin_data[bid+10][:2])[0][1]
+                ar_pose2_z = (bin_data[bid+10][:2])[0][2]
 
-                    # Add the bin to the bin's array msg
-                    bin.pose = pose_msg
-                    bins.append(bin)
-                    self.real_bin_poses[bid] = bin.pose
+                # Create a bin message
+                bin = Bin()
+                bin.name = "bin#"+str(bid)
+
+                # Correct bin height
+                if (bid%2):
+                    ar_pose1_z = self.table_height + self.bin_large_height
+                    ar_pose2_z = self.table_height + self.bin_large_height
+                    bin.size = "large"
+                else:
+                    ar_pose1_z = self.table_height + self.bin_small_height
+                    ar_pose2_z = self.table_height + self.bin_small_height
+                    bin.size = "small"
+
+
+                xdiff = ar_pose1_x - ar_pose2_x
+                ydiff = ar_pose1_y - ar_pose2_y
+                pose_msg = Pose()
+                pose_msg.position.x = (ar_pose1_x+ ar_pose2_x)/2.0
+                pose_msg.position.y = (ar_pose1_y+ ar_pose2_y)/2.0
+                pose_msg.position.z = (ar_pose1_z+ ar_pose2_z)/2.0
+
+                
+                # Get quaternion from angle
+                ang = np.arctan2(xdiff, ydiff)
+                new_quaternion = quaternion_from_euler(ang+math.pi, 0, 0)
+                pose_msg.orientation.x = new_quaternion[1]
+                pose_msg.orientation.y = new_quaternion[2]
+                pose_msg.orientation.z = new_quaternion[3]
+                pose_msg.orientation.w = new_quaternion[0]
+
+                # Add the bin to the bin's array msg
+                bin.pose = pose_msg
+                bins.append(bin)
+                self.real_bin_poses[bid] = bin.pose
 
    
 

@@ -31,7 +31,9 @@ protected:
     ros::Rate r(30);
     while (ros::ok()) {
       if(move_done_) {
-        ROS_INFO("MoveBin action succeeded.");
+        ROS_INFO("MoveBin action complete.");
+        result_.success = move_bin_.success;
+        result_.is_still_holding_bin = move_bin_.is_still_holding_bin;
         act_srv_.setSucceeded(result_);
         return;
       }
@@ -47,7 +49,7 @@ protected:
 
   void moveBinCB(const excel_bins::MoveBinGoalConstPtr& goal, const ros::TimerEvent& te)
   {
-    move_bin_.moveBinToTarget(goal->bin_id, goal->x_target, goal->y_target, goal->r_target);
+    move_bin_.moveBinToTarget(goal->bin_id, goal->x_target, goal->y_target, goal->r_target, goal->is_holding_bin);
     move_done_ = true;
   }
 

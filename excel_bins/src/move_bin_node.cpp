@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     std::cout<< "angle :" << std::endl;
     std::cin >> o;
 
-    if(!movebin.moveBinToTarget(nb, x, y, o)) {
+    if(!movebin.moveBinToTarget(nb, x, y, o, false)) {
       ROS_ERROR("Failed to move bin to target.");
     }
 

@@ -34,5 +34,15 @@
       <remap from="image_mono" to="/overhead_hum_ws_cam/image_color" />
       <remap from="image_rect" to="/overhead_hum_ws_cam/image_rect_color" />
     </node>
+
+    <node pkg="nodelet" type="nodelet" name="image_proc_crop"
+          args="load image_proc/crop_decimate camera_nodelet_manager">
+      <remap from="camera/image_raw" to="/overhead_hum_ws_cam/image_color" />
+      <remap from="camera_out/image_raw" to="/overhead_hum_ws_cam/image_color_cropped" />
+      <param name="width" value="770" />
+      <param name="height" value="600" />
+      <param name="x_offset" value="235" />
+      <param name="y_offset" value="300" />
+    </node>
   </group>
 </launch>
