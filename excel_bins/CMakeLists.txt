@@ -134,6 +134,7 @@ add_executable(move_bin_action_server src/move_bin_action_server.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(excel_bins_node excel_bins_generate_messages_cpp)
+add_dependencies(move_bin ${excel_bins_EXPORTED_TARGETS})
 add_dependencies(move_bin_action_server ${excel_bins_EXPORTED_TARGETS})
 add_dependencies(update_bins_node ${excel_bins_EXPORTED_TARGETS})
 
